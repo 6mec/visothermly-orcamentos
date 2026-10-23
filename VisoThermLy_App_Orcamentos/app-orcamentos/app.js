@@ -478,19 +478,6 @@ function pillEstado(e) {
 var IC_DUP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
 var IC_DEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>';
 function estClasse(e) { return e === 'Aceite' || e === 'Concluído' ? 'ok' : e === 'Recusado' ? 'no' : e === 'Enviado' ? 'warn' : 'neutro'; }
-function orcHTML(items, mostrarCliente) {
-  if (!items.length) return '<p class="empty">Ainda não há orçamentos.</p>';
-  return items.map(function (x) {
-    return '<div class="item"><div class="item-top"><b>' + esc(mostrarCliente ? (x.cliente || 'Sem nome') : 'N.º ' + x.num) + '</b><span>' + eur(x.total) + '</span></div>' +
-      '<div class="meta">' + (mostrarCliente ? 'N.º ' + esc(x.num) + ' · ' : '') + dataPT(x.data) + (x.morada ? ' · ' + esc(x.morada) : '') + (x.atualizadoPor ? ' · por ' + esc(x.atualizadoPor) : '') + '</div>' +
-      '<div class="oacts"><label for="st' + x.id + '" class="sr">Estado</label><select id="st' + x.id + '" data-st="' + x.id + '" class="est est-' + estClasse(x.estado) + '">' +
-      ESTADOS.map(function (e) { return '<option' + (e === (x.estado || 'Por enviar') ? ' selected' : '') + '>' + e + '</option>'; }).join('') + '</select>' +
-      '<button type="button" class="btn small" data-open="' + x.id + '">Abrir</button>' +
-      ((x.estado === 'Aceite' || x.estado === 'Concluído') ? '<button type="button" class="btn acc small" data-mkobra="' + x.id + '">' + (obras.some(function (b) { return b.orcamentoId === x.id; }) ? 'Obra' : 'Criar obra') + '</button>' : '') +
-      '<button type="button" class="btn ghost small ico" data-dup="' + x.id + '" aria-label="Duplicar" title="Duplicar">' + IC_DUP + '</button>' +
-      '<button type="button" class="btn danger small ico" data-rm="' + x.id + '" aria-label="Apagar" title="Apagar">' + IC_DEL + '</button></div></div>';
-  }).join('');
-}
 function ligarListaOrc(box) {
   box.addEventListener('change', function (e) {
     var id = e.target.dataset.st; if (!id) return;
@@ -521,22 +508,9 @@ function ligarListaOrc(box) {
     }
   });
 }
-ligarListaOrc($('orc-todos'));
-ligarListaOrc($('cf-orcs'));
+
 
 // ---------- clientes ----------
-function renderClientes() {
-  var q = ($('cli_filtro').value || '').toLowerCase();
-  var items = clientes.filter(function (c) { return !q || ((c.nome || '') + ' ' + (c.telefone || '') + ' ' + (c.morada || '')).toLowerCase().indexOf(q) >= 0; });
-  $('cli-lista').innerHTML = items.length ? items.map(function (c) {
-    var os = orcs.filter(function (o) { return o.clienteId === c.id; });
-    return '<button type="button" class="cli" data-cli="' + c.id + '"><span class="cli-l">' + avatar(c.nome) + '<span style="min-width:0"><b>' + esc(c.nome || 'Sem nome') + '</b><span class="meta">' + esc([c.telefone, c.morada].filter(Boolean).join(' · ') || 'Sem contactos') + '</span></span></span>' +
-      '<span style="text-align:right">' + (os.length ? pillEstado(os[0].estado) : '<span class="pill">Sem orçamentos</span>') + '</span></button>';
-  }).join('') : '<p class="empty">' + (clientes.length ? 'Nenhum cliente encontrado.' : 'Ainda não há clientes. Carregue em "Novo cliente" ou guarde um orçamento.') + '</p>';
-  cabecalho();
-}
-$('cli_filtro').addEventListener('input', renderClientes);
-$('cli-lista').addEventListener('click', function (e) { var b = e.target.closest('[data-cli]'); if (b) abrirCliente(b.dataset.cli); });
 $('b-novocli').addEventListener('click', function () { abrirCliente(null); });
 $('b-voltar').addEventListener('click', function () { fecharCliente(); show('clientes'); });
 
@@ -865,17 +839,6 @@ document.querySelectorAll('[data-back]').forEach(function (b) { b.addEventListen
 
 // ---------- pedidos ----------
 function pedCls(e) { return e === 'Orçamentado' ? 'ok' : e === 'Perdido' ? 'no' : e === 'Visita marcada' ? 'warn' : ''; }
-function renderPedidos() {
-  var ordem = { 'Novo': 0, 'Visita marcada': 1, 'Orçamentado': 2, 'Perdido': 3 };
-  var it = pedidos.slice().sort(function (a, b) { return (ordem[a.estado] || 0) - (ordem[b.estado] || 0) || (b.data || '').localeCompare(a.data || ''); });
-  $('ped-lista').innerHTML = it.length ? it.map(function (p) {
-    var vis = p.visita ? 'Visita ' + dataPT(p.visita) + (p.hora ? ' às ' + p.hora : '') : (p.origem || 'Sem visita marcada');
-    return '<button type="button" class="row-i" data-ped="' + p.id + '">' + avatar(p.nome) + '<span class="grow"><b>' + esc(p.nome || 'Sem nome') + '</b><span class="meta">' + esc(vis) + (p.morada ? ' · ' + esc(p.morada) : '') + '</span></span><span class="end">' + pill(p.estado || 'Novo', pedCls(p.estado)) + '</span><span class="chev"></span></button>';
-  }).join('') : '<p class="empty">Sem pedidos. Registe aqui quem liga ou manda mensagem a pedir orçamento.</p>';
-  var n = pedidos.filter(function (p) { return p.estado === 'Novo' || p.estado === 'Visita marcada' || !p.estado; }).length;
-  $('ped-badge').hidden = !n; $('ped-badge').textContent = n;
-}
-$('ped-lista').addEventListener('click', function (e) { var b = e.target.closest('[data-ped]'); if (b) dlgPedido(b.dataset.ped); });
 $('b-novoped').addEventListener('click', function () { dlgPedido(null); });
 function dlgPedido(id) {
   var p = id ? pedidos.find(function (x) { return x.id === id; }) || {} : { data: hoje(), estado: 'Novo' };
@@ -957,10 +920,6 @@ function renderObras() {
   $('obra-filtros').innerHTML = fs.map(function (f) { return '<button type="button" class="chip-f" data-fo="' + f + '" aria-pressed="' + (f === filtroObra) + '">' + f + '</button>'; }).join('');
   var it = obras.filter(function (o) { return filtroObra === 'Todas' || (filtroObra === 'Ativas' ? o.estado !== 'Concluída' : o.estado === filtroObra); });
   $('obras-lista').innerHTML = it.length ? it.map(obraRow).join('') : '<p class="empty">Sem obras' + (filtroObra === 'Todas' ? '' : ' neste filtro') + '. As obras criam-se a partir de um orçamento aceite ou na pasta do cliente.</p>';
-}
-function obraRow(o) {
-  var p = progFases(o);
-  return '<button type="button" class="row-i" data-obra="' + o.id + '"><span class="grow"><b>' + esc(o.nome || 'Obra') + '</b><span class="meta">' + esc([o.cliente, o.inicio ? dataPT(o.inicio) + (o.fim ? ' a ' + dataPT(o.fim) : '') : 'Sem datas'].filter(Boolean).join(' · ')) + '</span><span class="prog" style="margin-top:6px"><i style="width:' + p + '%"></i></span></span><span class="end">' + pill(o.estado || 'Planeada', obraCls(o.estado)) + '<span class="meta">' + p + ' %</span></span><span class="chev"></span></button>';
 }
 $('obra-filtros').addEventListener('click', function (e) { var b = e.target.closest('[data-fo]'); if (b) { filtroObra = b.dataset.fo; renderObras(); } });
 $('obras-lista').addEventListener('click', function (e) { var b = e.target.closest('[data-obra]'); if (b) abrirObra(b.dataset.obra); });
@@ -1232,6 +1191,7 @@ function avisos() {
 // ---------- lista de orçamentos ----------
 var filtroOrc = 'Todos';
 function renderOrcs() {
+  renderOrcResumo();
   var fs = ['Todos', 'Por enviar', 'Enviado', 'Aceite', 'Recusado', 'Concluído'];
   $('orc-filtros').innerHTML = fs.map(function (f) { var n = f === 'Todos' ? orcs.length : orcs.filter(function (o) { return (o.estado || 'Por enviar') === f; }).length; return '<button type="button" class="chip-f" data-fq="' + f + '" aria-pressed="' + (f === filtroOrc) + '">' + f + ' · ' + n + '</button>'; }).join('');
   var q = ($('orc_filtro').value || '').toLowerCase();
@@ -1243,6 +1203,7 @@ $('orc_filtro').addEventListener('input', renderOrcs);
 $('b-novoorc').addEventListener('click', function () { if (dirty && !confirm('O orçamento aberto tem alterações por guardar. Começar um novo na mesma?')) return; cur = blankQuote(); dirty = false; lsSet(K_DRAFT, { q: cur, dirty: false }); toForm(cur); show('novo'); });
 
 function renderTudo() {
+  renderClientes();
   renderPedidos(); renderObras(); if (vistaAtual === 'obra') renderObra();
   if (!$('oseg-agenda').hidden) renderAgenda();
   if (vistaAtual === 'despesas') renderDespesas();
@@ -2008,6 +1969,190 @@ $('cf_cam').addEventListener('change', async function (e) {
   var est = $('f-estado');
   await enviarFotos(files, ['clientes', clienteAberto], {}, $('f_fase').value, function (t) { est.textContent = t; });
 });
+
+// =====================================================================
+// LISTAS (clientes, pedidos, obras, orçamentos) e ficha do orçamento
+// =====================================================================
+function cidade(m) { var p = String(m || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean); return p.length > 1 ? p[p.length - 1] : (p[0] || ''); }
+function estadoCli(id) {
+  var os = orcs.filter(function (o) { return o.clienteId === id; }), ob = obras.filter(function (o) { return o.clienteId === id; });
+  if (ob.some(function (o) { return o.estado === 'Em curso' || o.estado === 'Parada'; })) return ['Obra em curso', 'warn', 'obra'];
+  if (ob.some(function (o) { return o.estado === 'Planeada'; })) return ['Obra marcada', 'info', 'obra'];
+  if (ob.length) return ['Obra concluída', 'ok', 'concl'];
+  if (os.some(function (o) { return o.estado === 'Aceite'; })) return ['Orçamento aceite', 'ok', 'orc'];
+  if (os.some(function (o) { return o.estado === 'Enviado' || o.estado === 'Por enviar'; })) return ['Em orçamento', '', 'orc'];
+  if (os.length) return ['Orçamento recusado', 'no', 'outro'];
+  return ['Contacto', '', 'outro'];
+}
+function telA(tel) { var t = String(tel || '').replace(/[^\d+]/g, ''); return t ? '<a class="ic-call" href="tel:' + t + '" aria-label="Ligar">' + ICO.tel + '</a>' : ''; }
+var filtroCli = 'Todos';
+function renderClientes() {
+  var q = ($('cli_filtro').value || '').toLowerCase();
+  var fs = [['Todos', null], ['Em orçamento', 'orc'], ['Com obra', 'obra'], ['Concluídos', 'concl']];
+  $('cli-filtros').innerHTML = fs.map(function (f) { var n = f[1] ? clientes.filter(function (c) { return estadoCli(c.id)[2] === f[1]; }).length : clientes.length; return '<button type="button" class="chip-f" data-fc="' + f[0] + '" aria-pressed="' + (f[0] === filtroCli) + '">' + f[0] + ' · ' + n + '</button>'; }).join('');
+  var fk = (fs.find(function (f) { return f[0] === filtroCli; }) || [])[1];
+  var items = clientes.filter(function (c) { return (!q || ((c.nome || '') + ' ' + (c.telefone || '') + ' ' + (c.morada || '')).toLowerCase().indexOf(q) >= 0) && (!fk || estadoCli(c.id)[2] === fk); })
+    .sort(function (a, b) { return (a.nome || '').localeCompare(b.nome || '', 'pt'); });
+  var h = '', letra = '';
+  items.forEach(function (c) {
+    var l = (c.nome || '#').trim().charAt(0).toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    if (l !== letra) { if (letra) h += '</div>'; letra = l; h += '<div class="grp-l">' + esc(l) + '</div><div class="card list lst">'; }
+    var e = estadoCli(c.id);
+    h += '<div class="row-i" role="button" tabindex="0" data-cli="' + c.id + '">' + avatar(c.nome) + '<span class="grow"><b>' + esc(c.nome || 'Sem nome') + '</b><span class="meta"><span class="est-d d-' + (e[1] || 'n') + '"></span>' + esc(e[0]) + (cidade(c.morada) ? ' · ' + esc(cidade(c.morada)) : '') + '</span></span>' + telA(c.telefone) + '</div>';
+  });
+  if (letra) h += '</div>';
+  $('cli-lista').innerHTML = h || '<section class="card"><p class="empty">' + (clientes.length ? 'Nenhum cliente encontrado.' : 'Ainda não há clientes. Carregue em "Novo" ou guarde um orçamento.') + '</p></section>';
+  cabecalho();
+}
+$('cli_filtro').addEventListener('input', renderClientes);
+$('cli-filtros').addEventListener('click', function (e) { var b = e.target.closest('[data-fc]'); if (b) { filtroCli = b.dataset.fc; renderClientes(); } });
+$('cli-lista').addEventListener('click', function (e) { if (e.target.closest('a')) return; var b = e.target.closest('[data-cli]'); if (b) abrirCliente(b.dataset.cli); });
+$('cli-lista').addEventListener('keydown', function (e) { if (e.key === 'Enter') { var b = e.target.closest('[data-cli]'); if (b) abrirCliente(b.dataset.cli); } });
+
+function renderPedidos() {
+  var ordem = { 'Novo': 0, 'Visita marcada': 1, 'Orçamentado': 2, 'Perdido': 3 };
+  var it = pedidos.slice().sort(function (a, b) { return (ordem[a.estado] || 0) - (ordem[b.estado] || 0) || (b.data || '').localeCompare(a.data || ''); });
+  var grupos = [['Por tratar', function (p) { return !p.estado || p.estado === 'Novo'; }], ['Visita marcada', function (p) { return p.estado === 'Visita marcada'; }], ['Tratados', function (p) { return p.estado === 'Orçamentado' || p.estado === 'Perdido'; }]];
+  var h = '';
+  grupos.forEach(function (g) {
+    var l = it.filter(g[1]); if (!l.length) return;
+    h += '<div class="grp-l">' + g[0] + ' · ' + l.length + '</div><div class="card list lst">' + l.map(function (p) {
+      var sub = p.visita ? (diaRot(p.visita) === 'Hoje' || diaRot(p.visita) === 'Amanhã' ? diaRot(p.visita) : dataPT(p.visita)) + (p.hora ? ' às ' + p.hora : '') : (p.origem || '') + (p.data ? ' · há ' + Math.max(0, diasEntre(p.data, hoje())) + ' dias' : '');
+      return '<div class="row-i" role="button" tabindex="0" data-ped="' + p.id + '">' + avatar(p.nome) + '<span class="grow"><b>' + esc(p.nome || 'Sem nome') + '</b><span class="meta">' + (p.visita ? ICO.cal.replace('<svg ', '<svg class="mi" ') : '') + esc(sub) + (p.morada ? ' · ' + esc(cidade(p.morada)) : '') + '</span>' + (p.descricao ? '<span class="meta trunc">' + esc(p.descricao) + '</span>' : '') + '</span>' + (p.estado === 'Orçamentado' || p.estado === 'Perdido' ? '<span class="end">' + pill(p.estado, pedCls(p.estado)) + '</span>' : '') + telA(p.telefone) + '</div>';
+    }).join('') + '</div>';
+  });
+  $('ped-lista').innerHTML = h || '<section class="card"><p class="empty">Sem pedidos. Registe aqui quem liga ou manda mensagem a pedir orçamento.</p></section>';
+  var n = pedidos.filter(function (p) { return p.estado === 'Novo' || p.estado === 'Visita marcada' || !p.estado; }).length;
+  $('ped-badge').hidden = !n; $('ped-badge').textContent = n;
+}
+$('ped-lista').addEventListener('click', function (e) { if (e.target.closest('a')) return; var b = e.target.closest('[data-ped]'); if (b) dlgPedido(b.dataset.ped); });
+
+function obraRow(o) {
+  var p = progFases(o), px = proximaFase(o), eq = o.equipa || [];
+  var datas = o.inicio ? dataPT(o.inicio).slice(0, 5) + (o.fim ? ' – ' + dataPT(o.fim).slice(0, 5) : '') : 'Sem datas';
+  return '<button type="button" class="ob-c" data-obra="' + o.id + '">' + anelMini(p) + '<span class="grow"><span class="ob-h"><b>' + esc(o.nome || 'Obra') + '</b>' + pill(o.estado || 'Planeada', obraCls(o.estado)) + '</span><span class="meta">' + esc([o.cliente && o.nome.indexOf(o.cliente) < 0 ? o.cliente : '', cidade(o.morada)].filter(Boolean).join(' · ')) + '</span>' +
+    '<span class="ob-f"><span class="meta">' + ICO.cal.replace('<svg ', '<svg class="mi" ') + esc(datas) + '</span><span class="meta">' + esc(o.estado === 'Concluída' ? 'Concluída' : px ? px[1] : 'Fases feitas') + '</span></span>' +
+    (eq.length ? '<span class="eqs">' + eq.slice(0, 4).map(function (n) { return '<span class="av mini" style="background:' + corDe(n) + '" title="' + esc(n) + '">' + esc(iniciais(n)) + '</span>'; }).join('') + '</span>' : '') + '</span></button>';
+}
+
+// ---------- orçamentos ----------
+function orcHTML(items, mostrarCliente) {
+  if (!items.length) return '<p class="empty">Ainda não há orçamentos.</p>';
+  return items.map(function (x) {
+    var e = x.estado || 'Por enviar', ob = obras.some(function (b) { return b.orcamentoId === x.id; });
+    var sub = mostrarCliente ? 'N.º ' + x.num + ' · ' + dataPT(x.data) + (x.morada ? ' · ' + cidade(x.morada) : '') : dataPT(x.data) + (x.morada ? ' · ' + x.morada : '');
+    var extra = e === 'Enviado' ? (function () { var d = diasEntre(x.enviadoEm || x.data, hoje()); return d >= 7 ? '<span class="meta warn-t">Sem resposta há ' + d + ' dias</span>' : ''; })() : (e === 'Aceite' && !ob ? '<span class="meta warn-t">Falta criar a obra</span>' : '');
+    return '<button type="button" class="orc-r e-' + estClasse(e) + '" data-orcx="' + x.id + '"><span class="grow"><b>' + esc(mostrarCliente ? (x.cliente || 'Sem nome') : 'N.º ' + x.num) + '</b><span class="meta">' + esc(sub) + '</span>' + extra + '</span><span class="end"><b>' + eur(x.total) + '</b>' + pillEstado(e) + '</span></button>';
+  }).join('');
+}
+function abrirOrcForm(x, dup) {
+  if (dirty && !confirm('O orçamento aberto tem alterações por guardar. Continuar na mesma?')) return;
+  cur = { id: x.id, num: x.num, data: x.data, estado: x.estado || 'Por enviar', f: JSON.parse(JSON.stringify(x.f || {})), extras: JSON.parse(JSON.stringify(x.extras || [])), clienteId: x.clienteId || null, medicao: x.medicao ? JSON.parse(JSON.stringify(x.medicao)) : null };
+  if (dup) { cur.id = null; cur.num = null; cur.data = null; cur.estado = 'Por enviar'; }
+  dirty = !!dup; lsSet(K_DRAFT, { q: cur, dirty: dirty }); toForm(cur); show('novo');
+  if (dup) toast('Cópia criada. Altere o que precisar e guarde.');
+}
+function mudarEstado(x, e) {
+  var up = { estado: e, atualizadoEm: serverTimestamp(), atualizadoPor: porQuem() };
+  if (e === 'Enviado') up.enviadoEm = hoje();
+  updateDoc(doc(db, 'orcamentos', x.id), up).catch(function (er) { falhou(er, 'mudar o estado'); });
+  x.estado = e; if (up.enviadoEm) x.enviadoEm = up.enviadoEm;
+  if (cur && cur.id === x.id) cur.estado = e;
+}
+function dlgOrc(id) {
+  var x = orcs.find(function (o) { return o.id === id; }); if (!x) return;
+  function corpo() {
+    var e = x.estado || 'Por enviar', ob = obras.find(function (b) { return b.orcamentoId === x.id; });
+    var acts = [['abrir', 'doc', 'Abrir e editar'], ['dup', 'recibo', 'Duplicar']];
+    if (e === 'Aceite' || e === 'Concluído' || ob) acts.push(['obra', 'caixa', ob ? 'Ver obra' : 'Criar obra']);
+    if (x.clienteId) acts.push(['cli', 'cli', 'Pasta do cliente']);
+    acts.push(['apagar', 'ajustes', 'Apagar']);
+    return '<div class="orc-hd"><span class="meta">N.º ' + esc(x.num) + ' · ' + dataPT(x.data) + '</span><b class="orc-tot">' + eur(x.total) + '</b><span>' + esc(x.cliente || '') + (x.morada ? ' · ' + esc(x.morada) : '') + '</span></div>' +
+      '<label>Estado</label><div class="est-b">' + ESTADOS.map(function (s) { return '<button type="button" class="e-' + estClasse(s) + '" data-est="' + s + '" aria-pressed="' + (s === e) + '">' + s + '</button>'; }).join('') + '</div>' +
+      '<div class="qa fabg">' + acts.map(function (a) { return '<button type="button" class="qbtn' + (a[0] === 'apagar' ? ' qdel' : '') + '" data-oac="' + a[0] + '">' + (a[0] === 'apagar' ? IC_DEL.replace('style="pointer-events:none"', '') : ICO[a[1]]) + '<span>' + a[2] + '</span></button>'; }).join('') + '</div>';
+  }
+  abrirDlg((x.cliente || 'Orçamento'), corpo(), []);
+  $('dlg-b').onclick = function (ev) {
+    var b = ev.target.closest('[data-est],[data-oac]'); if (!b) return;
+    if (b.dataset.est) {
+      var e = b.dataset.est; if (e === (x.estado || 'Por enviar')) return;
+      mudarEstado(x, e); $('dlg-b').innerHTML = corpo();
+      if (e === 'Aceite' && !obras.some(function (o) { return o.orcamentoId === x.id; })) toast('Aceite! Carregue em "Criar obra" para planear a obra.');
+      else toast('Estado: ' + e + '.');
+      return;
+    }
+    var a = b.dataset.oac;
+    if (a === 'abrir') { fecharDlg(); abrirOrcForm(x, false); }
+    else if (a === 'dup') { fecharDlg(); abrirOrcForm(x, true); }
+    else if (a === 'obra') { fecharDlg(); criarObraDeOrc(x); }
+    else if (a === 'cli') { fecharDlg(); abrirCliente(x.clienteId); }
+    else if (a === 'apagar') {
+      if (!confirm('Apagar o orçamento ' + x.num + (x.cliente ? ' de ' + x.cliente : '') + '? Não dá para desfazer.')) return;
+      fecharDlg(); deleteDoc(doc(db, 'orcamentos', x.id)).catch(function (er) { falhou(er, 'apagar o orçamento'); });
+      if (cur && cur.id === x.id) { cur.id = null; cur.num = null; toForm(cur); }
+      toast('Orçamento apagado.');
+    }
+  };
+}
+['orc-todos', 'cf-orcs'].forEach(function (k) { $(k).addEventListener('click', function (e) { var b = e.target.closest('[data-orcx]'); if (b) dlgOrc(b.dataset.orcx); }); });
+function renderOrcResumo() {
+  var pend = orcs.filter(function (o) { return o.estado === 'Enviado' || o.estado === 'Por enviar' || !o.estado; });
+  var ano = String(new Date().getFullYear()), ac = orcs.filter(function (o) { return (o.estado === 'Aceite' || o.estado === 'Concluído') && (o.data || '').slice(0, 4) === ano; });
+  var env = orcs.filter(function (o) { return o.estado && o.estado !== 'Por enviar' && (o.data || '').slice(0, 4) === ano; }).length;
+  var soma = function (l) { return l.reduce(function (a, o) { return a + (o.total || 0); }, 0); };
+  $('orc-resumo').innerHTML = '<button type="button" class="ktile dest" data-fq="Enviado"><small>À espera de resposta</small><b>' + eur(soma(pend)) + '</b><span class="kt-s">' + pend.length + (pend.length === 1 ? ' orçamento' : ' orçamentos') + '</span></button>' +
+    '<button type="button" class="ktile" data-fq="Aceite"><small>Aceites em ' + ano + '</small><b>' + eur(soma(ac)) + '</b><span class="kt-s">' + (env ? Math.round(ac.length / env * 100) + ' % dos enviados' : 'Ainda sem envios') + '</span></button>';
+}
+$('orc-resumo').addEventListener('click', function (e) { var b = e.target.closest('[data-fq]'); if (b) { filtroOrc = b.dataset.fq; renderOrcs(); } });
+
+// ---------- ficha do orçamento: secções com resumo ----------
+var Q_SECS = ['cliente', 'obra', 'med', 'mo', 'mat', 'desl', 'extras', 'iva'];
+function estadoQ() {
+  var f = cur.f, r = compute(cur), F = r.falta.join('|'), S = {};
+  S.cliente = [f.c_nome ? f.c_nome + (f.o_morada ? ' · ' + cidade(f.o_morada) : '') : 'Escolha ou escreva o cliente', !!f.c_nome];
+  S.obra = [[f.o_area ? f.o_area.replace('.', ',') + ' m²' : 'Sem área', f.modo === 'completa' ? 'Obra completa' : 'Só mão de obra', f.o_iso ? f.o_iso + (f.o_esp ? ' ' + f.o_esp + ' cm' : '') : ''].filter(Boolean).join(' · '), !/Área de fachada/.test(F)];
+  var am = cur.medicao ? areaMed(cur.medicao) : 0;
+  S.med = [am ? fmtN(am) + ' m² medidos' : 'Opcional · medir fachadas e vãos', am ? true : null];
+  var mo = r.lines.find(function (l) { return /^Mão de obra/.test(l[0]); });
+  S.mo = [mo ? eur(mo[1]) + ' · ' + mo[0].replace(/^Mão de obra:? ?/, '') : 'Falta o preço', !/mão de obra|Dias de trabalho/i.test(F)];
+  var mat = r.lines.filter(function (l) { return /^Material|^Andaime/.test(l[0]); });
+  S.mat = [mat.length ? eur(mat.reduce(function (a, l) { return a + l[1]; }, 0)) : 'Falta o preço do material', !/material/i.test(F)];
+  var de = r.lines.find(function (l) { return /^Deslocações/.test(l[0]); });
+  S.desl = [f.d_tipo === 'nao' ? 'Não cobrar' : de ? eur(de[1]) + ' · ' + de[0].replace(/^Deslocações:? ?/, '') : 'Faltam dados', f.d_tipo === 'nao' || !/deslocaç|carrinha|combustível|viagens/i.test(F)];
+  var ex = (cur.extras || []).filter(function (x) { return num(x.v) > 0; });
+  S.extras = [ex.length ? ex.length + (ex.length === 1 ? ' trabalho' : ' trabalhos') + ' · ' + eur(ex.reduce(function (a, x) { return a + num(x.v); }, 0)) : 'Nenhum (opcional)', /Valor de "/.test(F) ? false : (ex.length ? true : null)];
+  S.iva = [(r.taxa ? 'IVA ' + r.taxa + ' %' : 'Sem IVA') + (f.validade ? ' · válido ' + f.validade + ' dias' : ''), true];
+  return { S: S, r: r };
+}
+function resumoQ() {
+  if (!cur || !cur.f) return;
+  var q = estadoQ();
+  if (vistaAtual === 'novo') cabecalho();
+  Q_SECS.forEach(function (k) {
+    var s = q.S[k], m = $('qs-' + k), ok = $('qk-' + k); if (!m) return;
+    m.textContent = s[0];
+    ok.className = 'qok ' + (s[1] === true ? 'q-ok' : s[1] === false ? 'q-falta' : 'q-op');
+  });
+  var r = q.r, f = cur.f;
+  $('qh-total').textContent = eur(r.total);
+  $('qh-cli').textContent = f.c_nome || 'Cliente por escolher';
+  $('qh-sub').textContent = [f.o_area ? f.o_area.replace('.', ',') + ' m²' : '', r.area && r.base ? eur(r.base / r.area) + '/m² s/ IVA' : '', r.taxa ? 'IVA ' + r.taxa + ' %' : 'Sem IVA'].filter(Boolean).join(' · ');
+  $('qh-num').textContent = cur.num ? 'N.º ' + cur.num : 'Novo orçamento';
+  $('qh-est').textContent = cur.num ? (cur.estado || 'Por enviar') : 'Rascunho';
+  $('qh-est').className = 'oh-est' + (cur.estado === 'Aceite' || cur.estado === 'Concluído' ? ' e-ok' : cur.estado === 'Enviado' ? ' e-warn' : '');
+  var tot = Q_SECS.filter(function (k) { return k !== 'mat' || f.modo === 'completa'; }), feitos = tot.filter(function (k) { return q.S[k][1] !== false; }).length;
+  $('qh-prog').style.width = Math.round(feitos / tot.length * 100) + '%';
+  $('qh-falta').textContent = r.falta.length ? 'Falta: ' + r.falta.slice(0, 2).join(', ').toLowerCase() + (r.falta.length > 2 ? ' e mais ' + (r.falta.length - 2) : '') : 'Pronto para enviar';
+}
+function abrirSecsQ() {
+  var q = estadoQ(), primeira = Q_SECS.find(function (k) { return q.S[k][1] === false && (k !== 'mat' || cur.f.modo === 'completa'); });
+  document.querySelectorAll('#v-novo details[data-qsec]').forEach(function (d) { d.open = d.dataset.qsec === primeira; });
+}
+var calcBase = calc;
+calc = function () { calcBase(); resumoQ(); };
+var toFormBase = toForm;
+toForm = function (q) { toFormBase(q); abrirSecsQ(); resumoQ(); };
+$('qh-ver').addEventListener('click', function () { $('resumo').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
 
 $('dlg-form').addEventListener('submit', function (e) { e.preventDefault(); });
 
