@@ -1082,7 +1082,7 @@ function renderDias() {
   var por = {}; it.forEach(function (d) { por[d.pessoa] = (por[d.pessoa] || 0) + (d.fracao || 1); });
   $('dias-resumo').innerHTML = Object.keys(por).length ? '<table class="tbl"><thead><tr><th>Pessoa</th><th>Dias em ' + nomeMes(m) + '</th></tr></thead><tbody>' + Object.keys(por).sort().map(function (k) { return '<tr><td>' + esc(k) + '</td><td>' + fmtN(por[k]) + '</td></tr>'; }).join('') + '</tbody></table>' : '<p class="hint">Sem dias registados em ' + nomeMes(m) + '.</p>';
   var g = agrupaDias(it);
-  $('dias-lista').innerHTML = g.length ? g.map(function (x) { return '<div class="row-i" role="button" tabindex="0" data-eddias="' + x.ids.join(',') + '"><span class="grow"><b>' + dataPT(x.data) + ' · ' + esc(x.obra || 'Sem obra') + '</b><span class="meta">' + esc(x.pessoas.join(', ')) + '</span></span><span class="end"><b>' + fmtN(x.total) + '</b><button type="button" class="btn danger small ico" data-rmdias="' + x.ids.join(',') + '" aria-label="Apagar registo">' + IC_DEL + '</button></span></div>'; }).join('') : '<p class="empty">Sem registos.</p>';
+  $('dias-lista').innerHTML = g.length ? g.map(function (x) { return '<div class="row-i" role="button" tabindex="0" data-eddias="' + x.ids.join(',') + '"><span class="grow"><b>' + dataPT(x.data) + ' · ' + esc(x.obra || 'Sem obra') + '</b><span class="meta">' + esc(x.pessoas.join(', ')) + '</span></span><span class="end"><b>' + pessTxt(x) + '</b><button type="button" class="btn danger small ico" data-rmdias="' + x.ids.join(',') + '" aria-label="Apagar registo">' + IC_DEL + '</button></span></div>'; }).join('') : '<p class="empty">Sem registos.</p>';
 }
 $('dias_mes').addEventListener('change', renderDias);
 $('dias-lista').addEventListener('click', function (e) { var ed = e.target.closest('[data-eddias]'); if (ed && !e.target.closest('[data-rmdias]')) { dlgEditDias(ed.dataset.eddias.split(',')); return; } var b = e.target.closest('[data-rmdias]'); if (!b || !confirm('Apagar este registo de dias?')) return; b.dataset.rmdias.split(',').forEach(function (id) { deleteDoc(doc(db, 'dias', id)).catch(function (er) { falhou(er, 'apagar'); }); }); });
@@ -1124,7 +1124,7 @@ function renderContas() {
     var g = despesas.filter(function (d) { return d.obraId === o.id; }).reduce(function (a, d) { return a + (d.valor || 0); }, 0);
     var nd = dias.filter(function (d) { return d.obraId === o.id; }).reduce(function (a, d) { return a + (d.fracao || 1); }, 0);
     var r = (o.valor || 0) - g;
-    return '<button type="button" class="mrow2" data-obra="' + o.id + '" style="width:100%;background:none;border:0;border-bottom:1px solid var(--line);text-align:left;cursor:pointer;font:inherit;color:inherit"><span style="flex:1;min-width:0"><b>' + esc(o.nome) + '</b><span class="meta">Valor ' + eur(o.valor) + ' · despesas ' + eur(g) + ' · ' + fmtN(nd) + (nd === 1 ? ' dia' : ' dias') + '</span></span><span class="q" style="color:' + (r < 0 ? 'var(--no)' : 'var(--ok)') + '">' + eur(r) + '<small>resultado</small></span></button>';
+    return '<button type="button" class="mrow2" data-obra="' + o.id + '" style="width:100%;background:none;border:0;border-bottom:1px solid var(--line);text-align:left;cursor:pointer;font:inherit;color:inherit"><span style="flex:1;min-width:0"><b>' + esc(o.nome) + '</b><span class="meta">Valor ' + eur(o.valor) + ' · despesas ' + eur(g) + ' · ' + jorn(nd) + '</span></span><span class="q" style="color:' + (r < 0 ? 'var(--no)' : 'var(--ok)') + '">' + eur(r) + '<small>resultado</small></span></button>';
   }).join('') + '</div>' : '<p class="hint">Ainda não há obras.</p>';
 }
 $('ct_ano').addEventListener('change', renderContas);
@@ -1671,7 +1671,7 @@ function renderObra() {
   h += '<div class="kgrid">' +
     '<button type="button" class="ktile dest" data-abrir="pag"><small>Recebido</small><b>' + eur(rec) + '</b><span class="kt-s">' + (o.valor ? 'de ' + eur(o.valor) : 'Sem valor acordado') + '</span><span class="kt-bar"><i style="width:' + (o.valor ? Math.min(100, Math.round(rec / o.valor * 100)) : 0) + '%"></i></span></button>' +
     '<button type="button" class="ktile" data-abrir="dsp"><small>Resultado</small><b class="' + ((o.valor || 0) - gasto < 0 ? 'neg' : '') + '">' + eur((o.valor || 0) - gasto) + '</b><span class="kt-s">Despesas ' + eur(gasto) + '</span></button>' +
-    '<button type="button" class="ktile" data-abrir="dias"><small>Dias de equipa</small><b>' + fmtN(nd) + '</b><span class="kt-s">' + (eq.length ? esc(eq.join(', ')) : 'Equipa por definir') + '</span></button>' +
+    '<button type="button" class="ktile" data-abrir="dias"><small>Dias na obra</small><b>' + diasObra(ds) + '</b><span class="kt-s">' + (nd ? jorn(nd) + ' de trabalho' : (eq.length ? esc(eq.join(', ')) : 'Equipa por definir')) + '</span></button>' +
     '<button type="button" class="ktile" data-abrir="mat"><small>Área</small><b>' + (o.area ? esc(String(o.area).replace('.', ',')) + ' m²' : '—') + '</b><span class="kt-s">' + (o.iso || o.esp ? esc([o.iso, o.esp ? o.esp + ' cm' : ''].filter(Boolean).join(' · ')) : 'Ver material') + '</span></button></div>';
 
   // --- fotos em fita ---
@@ -1723,8 +1723,8 @@ function renderObra() {
   h += sec('diario', ICO.livro, 'Diário de obra', diario.length ? diario.length + (diario.length === 1 ? ' registo' : ' registos') + ' · último a ' + dataPT(diario[0].data) + (parados ? ' · ' + parados + ' parado' + (parados === 1 ? '' : 's') : '') : 'Sem registos', dc);
 
   // dias
-  var dd = '<button type="button" class="btn small" data-oa="dia" style="align-self:flex-start">Registar dia</button>' + (ds.length ? '<div>' + agrupaDias(ds).slice(0, 20).map(function (g) { return '<button type="button" class="mrow2 dia-ed" data-eddias="' + g.ids.join(',') + '"><span style="flex:1;min-width:0"><b>' + dataPT(g.data) + '</b><span class="meta">' + esc(g.pessoas.join(', ')) + '</span></span><span class="q">' + fmtN(g.total) + (g.total === 1 ? ' dia' : ' dias') + '<small>Alterar</small></span></button>'; }).join('') + '</div>' : '<p class="hint">Ainda sem dias registados.</p>');
-  h += sec('dias', ICO.equipa, 'Equipa e dias', fmtN(nd) + (nd === 1 ? ' dia' : ' dias') + ' de trabalho', dd);
+  var dd = '<button type="button" class="btn small" data-oa="dia" style="align-self:flex-start">Registar dia</button>' + (ds.length ? '<p class="hint">Cada linha é um dia na obra. Uma jornada é o dia de trabalho de uma pessoa: 3 pessoas num dia são 3 jornadas.</p><div>' + agrupaDias(ds).slice(0, 20).map(function (g) { return '<button type="button" class="mrow2 dia-ed" data-eddias="' + g.ids.join(',') + '"><span style="flex:1;min-width:0"><b>' + dataPT(g.data) + '</b><span class="meta">' + esc(g.pessoas.join(', ')) + '</span></span><span class="q">' + pessTxt(g) + '<small>Alterar</small></span></button>'; }).join('') + '</div>' : '<p class="hint">Ainda sem dias registados.</p>');
+  h += sec('dias', ICO.equipa, 'Equipa e dias', ds.length ? diasObra(ds) + (diasObra(ds) === 1 ? ' dia na obra' : ' dias na obra') + ' · ' + jorn(nd) : 'Sem dias registados', dd);
 
   // despesas
   var dpc = '<button type="button" class="btn small" data-oa="despesa" style="align-self:flex-start">Registar despesa</button>' + (dsp.length ? '<div>' + dsp.slice(0, 30).map(dspRow).join('') + '</div>' : '<p class="hint">Ainda sem despesas nesta obra.</p>');
@@ -1835,7 +1835,7 @@ function renderInicio() {
   h += '<section class="card"><div class="titulo"><h2>Esta semana</h2><button type="button" class="lnk" data-goto="obras" data-ag="1">Agenda</button></div><div class="dias7">' + dd + '</div>' + (lista || '<p class="hint">Nada marcado para os próximos 7 dias.</p>') + '</section>';
   // mês
   h += '<div class="titulo sec-tit"><h2>' + nomeMes(mes).replace(/^\w/, function (c) { return c.toUpperCase(); }) + '</h2><button type="button" class="lnk" data-goto="contas">Contas</button></div>';
-  h += '<div class="kgrid"><button type="button" class="ktile" data-goto="despesas"><small>Despesas</small><b>' + eur(dm) + '</b><span class="kt-s">Combustível, material…</span></button><button type="button" class="ktile" data-goto="dias"><small>Dias de equipa</small><b>' + fmtN(dMes) + '</b><span class="kt-s">Registados este mês</span></button></div>';
+  h += '<div class="kgrid"><button type="button" class="ktile" data-goto="despesas"><small>Despesas</small><b>' + eur(dm) + '</b><span class="kt-s">Combustível, material…</span></button><button type="button" class="ktile" data-goto="dias"><small>Jornadas</small><b>' + fmtN(dMes) + '</b><span class="kt-s">Dias × pessoas este mês</span></button></div>';
   $('ini-corpo').innerHTML = h;
 }
 $('ini-corpo').addEventListener('click', function (e) {
@@ -2155,6 +2155,9 @@ toForm = function (q) { toFormBase(q); abrirSecsQ(); resumoQ(); };
 $('qh-ver').addEventListener('click', function () { $('resumo').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
 
 
+function jorn(n) { return fmtN(n) + (n === 1 ? ' jornada' : ' jornadas'); }
+function pessTxt(g) { var n = g.pessoas.length; return n + (n === 1 ? ' pessoa' : ' pessoas') + (g.total !== n ? ' · ' + jorn(g.total) : ''); }
+function diasObra(ds) { var u = {}; ds.forEach(function (d) { u[d.data] = 1; }); return Object.keys(u).length; }
 // ---------- alterar um registo de dias ----------
 function dlgEditDias(ids) {
   var regs = dias.filter(function (d) { return ids.indexOf(d.id) >= 0; });
