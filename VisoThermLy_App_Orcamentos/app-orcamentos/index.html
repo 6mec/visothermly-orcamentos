@@ -196,6 +196,35 @@ dialog form{display:flex;flex-direction:column;max-height:calc(100vh - 40px)}
 .estsel{font-weight:700}
 .mat td:first-child{font-weight:600}
 .mrow2{display:flex;justify-content:space-between;align-items:baseline;gap:4px 12px;flex-wrap:wrap;padding:9px 0;border-bottom:1px solid var(--line)}.mrow2:last-child{border-bottom:0}.mrow2 b{font-size:.93rem}.mrow2 .q{font-weight:800;font-variant-numeric:tabular-nums;text-align:right}.mrow2 .q small{display:block;font-weight:600;color:var(--muted);font-size:.76rem}
+
+html{-webkit-tap-highlight-color:transparent}
+button,a,label,select,summary,.row-i,.cli{touch-action:manipulation}
+main.vt-a{animation:vtA .24s cubic-bezier(.2,.8,.2,1)}
+main.vt-b{animation:vtB .24s cubic-bezier(.2,.8,.2,1)}
+main.vt-c{animation:vtC .2s ease-out}
+@keyframes vtA{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+@keyframes vtB{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
+@keyframes vtC{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.row-i,.cli,.ag,.aviso,.mrow,.item{transition:background-color .15s}
+.row-i:active,.cli:active,.ag:active,.aviso:active,.mrow:active{background-color:var(--surface2)}
+.ktile,.qbtn,.chip-f,.seg button,nav button,.foto{transition:transform .1s,background-color .15s,color .15s}
+.ktile:active,.qbtn:active,.chip-f:active,.foto:active{transform:scale(.97)}
+nav button:active{transform:scale(.94)}
+.prog i{transition:width .4s cubic-bezier(.2,.8,.2,1)}
+.toast:not([hidden]){animation:vtT .22s cubic-bezier(.2,.8,.2,1)}
+@keyframes vtT{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
+dialog[open]{animation:vtD .24s cubic-bezier(.2,.8,.2,1)}
+dialog[open]::backdrop{animation:vtF .24s ease-out}
+dialog.fecha{animation:vtDo .15s ease-in forwards}
+dialog.fecha::backdrop{animation:vtFo .15s ease-in forwards}
+@keyframes vtD{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
+@keyframes vtDo{to{opacity:0;transform:translateY(28px)}}
+@keyframes vtF{from{opacity:0}}
+@keyframes vtFo{to{opacity:0}}
+@media (max-width:600px){dialog{margin:auto 0 0;width:100%;max-width:100%;border-radius:20px 20px 0 0;max-height:92vh}dialog form{max-height:92vh}.dlg-f{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}}
+.foto img{animation:vtF .3s ease-out}
+.ad{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ad>div{display:flex;flex-direction:column;gap:8px;min-width:0}.ad .fotos{grid-template-columns:1fr}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after,dialog::backdrop{animation:none!important;transition:none!important}}
 </style></head>
 <body>
 <div id="v-login" class="login" hidden>
