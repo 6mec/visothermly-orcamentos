@@ -385,6 +385,63 @@ dialog.fecha::backdrop{animation:vtFo .15s ease-in forwards}
 .ed-p label{flex:1;flex-direction:row;align-items:center;gap:10px;color:var(--fg);font-size:.95rem;min-height:44px}
 .ed-p input{width:20px;height:20px;min-height:0;accent-color:var(--blue)}
 .ed-p select{width:auto;min-height:40px;padding:6px 10px;font-size:.9rem}
+
+/* ===== estrutura nova ===== */
+main{padding-bottom:calc(112px + env(safe-area-inset-bottom,0px))}
+nav.nav2{left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));padding:6px;border-radius:24px;border:1px solid var(--line);background:color-mix(in srgb,var(--surface) 88%,transparent);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);box-shadow:0 12px 34px rgba(18,42,70,.18);max-width:520px;margin:0 auto;align-items:center}
+nav.nav2 button{min-height:54px;border-radius:18px}
+nav.nav2 .nav-c{flex:0 0 62px;max-width:62px;height:62px;min-height:62px;border-radius:21px;background:linear-gradient(145deg,#eba25a,var(--accent));color:var(--on-accent);margin-top:-26px;box-shadow:0 10px 24px rgba(225,148,66,.5),0 0 0 5px var(--bg)}
+nav.nav2 .nav-c svg{width:28px;height:28px;stroke-width:2.6}
+nav.nav2 .nav-c:active{transform:scale(.92)}
+.fab{bottom:calc(98px + env(safe-area-inset-bottom,0px))}
+.funil{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:12px 8px 10px}
+.fn-e{border:0;background:none;font:inherit;color:inherit;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0;border-radius:12px;cursor:pointer;min-width:0;transition:background-color .15s}
+.fn-e.sel{background:color-mix(in srgb,var(--blue) 12%,transparent)}
+.fn-bar{width:22px;height:46px;border-radius:7px;background:var(--surface2);display:flex;align-items:flex-end;overflow:hidden}
+.fn-bar i{display:block;width:100%;background:linear-gradient(180deg,var(--blue-2),var(--blue));border-radius:7px;transition:height .5s cubic-bezier(.2,.8,.2,1)}
+.fn-e:nth-child(5) .fn-bar i{background:linear-gradient(180deg,#eba25a,var(--accent))}
+.fn-e:nth-child(6) .fn-bar i{background:linear-gradient(180deg,#46b277,#2b9a5a)}
+.fn-e b{font-size:1.05rem;position:relative}.fn-e b em{position:absolute;top:0;right:-7px;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.fn-e small{font-size:.6rem;font-weight:700;color:var(--muted);text-align:center;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.et-h{display:flex;align-items:center;gap:10px;margin:8px 2px -4px}
+.et-h span:nth-child(2){flex:1;display:flex;flex-direction:column}.et-h b{font-size:1.02rem}.et-h small{font-size:.78rem;color:var(--muted)}
+.et-n{width:26px;height:26px;border-radius:9px;background:var(--blue);color:#fff;font-weight:800;font-size:.8rem;display:grid;place-items:center;flex:none}
+.et-c{font-weight:800;color:var(--muted);font-size:.9rem}
+.tl-list{position:relative;padding-left:12px;border-left:2px solid var(--line);margin-left:12px}
+.tcard{display:flex;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:12px 12px 12px 14px;cursor:pointer;position:relative;transition:transform .1s}
+.tcard:active{transform:scale(.985)}
+.tcard.urg{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
+.tcard.urg::before{content:"";position:absolute;left:-19px;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--bg)}
+.tcard .grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}.tcard .grow b{font-size:.98rem}
+.tcard .meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tc-a{flex:none}.tc-a .btn{white-space:nowrap}
+.cal-nav{display:flex;align-items:center;gap:6px}.cal-nav b{flex:1;text-align:center;font-size:1.05rem}
+.cal-card{padding:12px}
+.cg{display:grid;grid-template-columns:118px repeat(var(--n),34px);row-gap:6px;min-width:max-content}
+.cg-l{grid-column:1;display:flex;flex-direction:column;justify-content:center;text-align:left;background:none;border:0;font:inherit;color:inherit;padding:0 8px 0 0;min-width:0;cursor:pointer;min-height:40px}
+.cg-l b{font-size:.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cg-l small{font-size:.68rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cg-hd{min-height:0}
+.cg-d{display:flex;flex-direction:column;align-items:center;padding:4px 0;border-radius:10px}
+.cg-d small{font-size:.62rem;color:var(--muted);font-weight:700}.cg-d b{font-size:.9rem}
+.cg-d.fds{opacity:.55}.cg-d.hoje{background:var(--blue);color:#fff;opacity:1}.cg-d.hoje small{color:rgba(255,255,255,.8)}
+.cg-row{display:grid;grid-template-columns:repeat(var(--n),34px);align-items:center;min-height:40px;position:relative}
+.cg-row>span{grid-row:1;height:100%;border-left:1px dashed var(--line)}
+.cg-row>span.hoje{background:color-mix(in srgb,var(--blue) 8%,transparent)}
+.cg-bar{grid-row:1;height:28px;border:0;border-radius:9px;background:linear-gradient(90deg,var(--blue-2),var(--blue));color:#fff;font:inherit;font-size:.68rem;font-weight:800;cursor:pointer;margin:0 2px;box-shadow:0 3px 8px rgba(33,91,135,.3);z-index:1}
+.cg-bar.e-warn{background:linear-gradient(90deg,#eba25a,var(--accent));color:var(--on-accent)}.cg-bar.e-no{background:#d64534}
+.cg-vis{grid-row:1;width:28px;height:28px;border-radius:50%;border:2px solid var(--accent);background:var(--accent-soft);color:var(--accent-text);font:inherit;font-size:.6rem;font-weight:800;justify-self:center;cursor:pointer;z-index:1}
+.cr-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.cr-b{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:1px solid var(--line);background:var(--surface2);border-radius:18px;padding:14px;font:inherit;color:inherit;cursor:pointer;transition:transform .1s}
+.cr-b:active{transform:scale(.96)}
+.cr-i{width:40px;height:40px;border-radius:13px;background:var(--blue);color:#fff;display:grid;place-items:center;margin-bottom:6px}.cr-i svg{width:21px;height:21px}
+.cr-b:nth-child(2) .cr-i{background:var(--accent);color:var(--on-accent)}
+.cr-b b{font-size:.98rem}.cr-b small{font-size:.75rem;color:var(--muted)}
+.fab{display:none!important}
+.cg{grid-template-columns:96px repeat(var(--n),minmax(0,1fr));min-width:0}
+.cg-row{grid-template-columns:repeat(var(--n),minmax(0,1fr))}
+.cal-card .scrollx{overflow:visible}
+.cg-d small{font-size:.6rem}
+.tcard .grow .meta:first-of-type{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .demo-bar{position:sticky;top:0;z-index:30;background:#e19442;color:#1b2b3a;font:700 .78rem/1.3 system-ui,sans-serif;text-align:center;padding:6px 10px}.demo-bar a{color:inherit}
 </style></head>
 <body>
@@ -425,15 +482,16 @@ dialog.fecha::backdrop{animation:vtFo .15s ease-in forwards}
   <div class="brand"><b><img src="/visothermly-orcamentos/VisoThermLy_App_Orcamentos/app-orcamentos/logo-icone.png" alt="">VisoThermLy</b><span id="quem" class="chip"></span></div>
   <div class="hero"><div><h1 id="h-titulo">Clientes</h1><p id="h-sub">Capoto &amp; isolamento térmico</p></div></div>
 </header>
-<nav>
-  <button type="button" data-v="inicio" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2z"/></svg><span>Início</span></button>
-  <button type="button" data-v="clientes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Clientes</span></button>
-  <button type="button" data-v="obras"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/></svg><span>Obras</span></button>
-  <button type="button" data-v="orcs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg><span>Orçamentos</span></button>
+<nav class="nav2">
+  <button type="button" data-v="inicio" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2z"/></svg><span>Hoje</span></button>
+  <button type="button" data-v="trab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/></svg><span>Trabalhos</span></button>
+  <button type="button" class="nav-c" id="nav-criar" aria-label="Criar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>
+  <button type="button" data-v="cal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h3M8 18h6"/></svg><span>Agenda</span></button>
   <button type="button" data-v="mais"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span>Mais</span></button>
 </nav>
 
 <main id="v-clientes">
+  <button type="button" class="back" data-back="mais">‹ Mais</button>
   <div class="seg" role="tablist"><button type="button" role="tab" data-seg="cli" aria-selected="true">Clientes</button><button type="button" role="tab" data-seg="ped" aria-selected="false">Pedidos <span class="badge" id="ped-badge" hidden></span></button></div>
   <div id="seg-cli">
   <div class="row" style="flex-wrap:nowrap">
@@ -450,7 +508,7 @@ dialog.fecha::backdrop{animation:vtFo .15s ease-in forwards}
 </main>
 
 <main id="v-cliente" hidden>
-  <button type="button" class="back" id="b-voltar">‹ Voltar aos clientes</button>
+  <button type="button" class="back" id="b-voltar">‹ Voltar</button>
   <section class="ohero chero"><div class="oh-top"><span class="av big" id="cf-av">?</span><div class="oh-txt"><span class="oh-est" id="cf-est">Cliente</span><h2 id="cf-titulo">Cliente</h2><p id="cf-sub"></p></div></div><div class="oh-acts so-ex" id="cf-acts"></div></section>
   <div id="cf-dyn" class="vcol so-ex"></div>
   <input id="cf_cam" type="file" accept="image/*" capture="environment" hidden>
@@ -593,6 +651,7 @@ dialog.fecha::backdrop{animation:vtFo .15s ease-in forwards}
 </main>
 
 <main id="v-obras" hidden>
+  <button type="button" class="back" data-back="mais">‹ Mais</button>
   <div class="seg" role="tablist"><button type="button" role="tab" data-oseg="lista" aria-selected="true">Obras</button><button type="button" role="tab" data-oseg="agenda" aria-selected="false">Agenda</button></div>
   <div id="oseg-lista">
     <div class="chips" id="obra-filtros"></div>
@@ -607,6 +666,7 @@ dialog.fecha::backdrop{animation:vtFo .15s ease-in forwards}
 </main>
 
 <main id="v-orcs" hidden>
+  <button type="button" class="back" data-back="mais">‹ Mais</button>
   <div class="row" style="flex-wrap:nowrap">
     <label class="search" for="orc_filtro" style="flex:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="orc_filtro" type="search" placeholder="Procurar orçamento" aria-label="Procurar orçamento"></label>
     <button type="button" class="btn acc" id="b-novoorc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Novo</button>
@@ -616,8 +676,22 @@ dialog.fecha::backdrop{animation:vtFo .15s ease-in forwards}
   <section class="card list lst" id="orc-todos-card"><div id="orc-todos"></div></section>
 </main>
 
+<main id="v-trab" hidden>
+  <div class="funil" id="trab-funil"></div>
+  <label class="search" for="trab_q"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="trab_q" type="search" placeholder="Procurar cliente, terra ou obra" aria-label="Procurar"></label>
+  <div class="chips" id="trab-chips"></div>
+  <div class="vcol" id="trab-lista"></div>
+</main>
+<main id="v-cal" hidden>
+  <div class="cal-nav"><button type="button" class="btn ghost small ico" id="cal-ant" aria-label="Semanas anteriores">‹</button><b id="cal-tit"></b><button type="button" class="btn ghost small" id="cal-hoje">Hoje</button><button type="button" class="btn ghost small ico" id="cal-seg" aria-label="Semanas seguintes">›</button></div>
+  <section class="card cal-card"><div class="scrollx" id="cal-grade"></div></section>
+  <section class="card"><h2>Neste período</h2><div id="cal-lista"></div><div id="cal-sem"></div></section>
+</main>
 <main id="v-mais" hidden>
   <section class="card list menu">
+    <button type="button" class="mrow" data-go="clientes"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span><span><b>Clientes e pedidos</b><small>Lista de A a Z e contactos novos</small></span></button>
+    <button type="button" class="mrow" data-go="obras"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/></svg></span><span><b>Obras</b><small>Todas as obras, por estado</small></span></button>
+    <button type="button" class="mrow" data-go="orcs"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></span><span><b>Orçamentos</b><small>Todos os orçamentos e valores</small></span></button>
     <button type="button" class="mrow" data-go="despesas"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 7a7 7 0 1 0 0 10M4 10h10M4 14h10"/></svg></span><span><b>Despesas</b><small>Combustível, material, refeições e outros gastos</small></span></button>
     <button type="button" class="mrow" data-go="dias"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><span><b>Equipa e dias</b><small>Dias trabalhados por pessoa e por obra</small></span></button>
     <button type="button" class="mrow" data-go="contas"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></span><span><b>Contas da empresa</b><small>Recebido, gasto e resultado por mês e por obra</small></span></button>
@@ -727,6 +801,6 @@ dialog.fecha::backdrop{animation:vtFo .15s ease-in forwards}
 <script>window.VT_FIREBASE={};</script>
 <script src="/visothermly-orcamentos/VisoThermLy_App_Orcamentos/app-orcamentos/pdf-lib.min.js"></script>
 <script type="importmap">{"imports":{"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js":"/visothermly-orcamentos/demo/fb-demo.js","https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js":"/visothermly-orcamentos/demo/fb-demo.js","https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js":"/visothermly-orcamentos/demo/fb-demo.js","https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js":"/visothermly-orcamentos/demo/fb-demo.js"}}</script>
-<script type="module" src="/visothermly-orcamentos/demo/app.js?v=1"></script>
+<script type="module" src="/visothermly-orcamentos/demo/app.js?v=2"></script>
 </body>
 </html>
