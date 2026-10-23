@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Orçamentos">
+<meta name="apple-mobile-web-app-title" content="VisoThermLy">
 <style>
 [hidden]{display:none!important}
 :root{--bg:#f1f4f8;--surface:#fff;--fg:#2b3440;--muted:#5b6573;--line:#d5dce5;--accent:#e19442;--on-accent:#173f5f;--accent-soft:#fbeedd;--accent-text:#a35d17;--dark:#215b87;--deep:#173f5f;--on-dark:#fff;--warn-bg:#fff4d6;--warn-fg:#6b4a00;--ok:#1d7a45;
@@ -63,19 +63,137 @@ tr.sum td{font-weight:700}
 .empty{color:var(--muted);text-align:center;padding:20px 0}
 .facts{display:flex;flex-wrap:wrap;gap:6px 20px;font-size:.9rem;color:var(--muted)}
 .facts strong{color:var(--fg)}
-</style>
-</head>
+
+.login{max-width:420px;margin:40px auto;padding:0 16px;display:flex;flex-direction:column;gap:14px}
+.login .logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.3rem;color:var(--fg)}
+.login .logo img{width:52px;height:52px}
+.err{color:#c0392b;font-size:.9rem;margin:0}
+.cli{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);cursor:pointer;background:none;border-left:0;border-right:0;border-top:0;width:100%;text-align:left;font:inherit;color:inherit;min-height:56px}
+.cli:last-child{border-bottom:0}
+.cli b{display:block}
+.pill{display:inline-block;font-size:.75rem;font-weight:700;padding:3px 8px;border-radius:99px;background:var(--bg);color:var(--muted);white-space:nowrap}
+.pill.ok{background:#e3f4ea;color:#1d6b3e}.pill.warn{background:var(--warn-bg);color:var(--warn-fg)}.pill.no{background:#f9e3e1;color:#9b2c22}
+@media (prefers-color-scheme: dark){.pill.ok{background:#173524;color:#7fdca3}.pill.no{background:#3a1d1a;color:#f0a39b}}
+.fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
+.foto{position:relative;border-radius:8px;overflow:hidden;background:var(--bg);aspect-ratio:1/1;border:1px solid var(--line)}
+.foto img{width:100%;height:100%;object-fit:cover;display:block}
+.foto span{position:absolute;left:4px;bottom:4px;background:rgba(0,0,0,.6);color:#fff;font-size:.7rem;padding:2px 6px;border-radius:5px}
+.foto button{position:absolute;right:4px;top:4px;background:rgba(0,0,0,.6);color:#fff;border:0;border-radius:6px;width:30px;height:30px;font-size:.9rem;cursor:pointer}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.kpi{background:var(--bg);border-radius:8px;padding:10px}
+.kpi small{display:block;color:var(--muted);font-size:.75rem;font-weight:600}
+.kpi b{font-variant-numeric:tabular-nums;font-size:1rem}
+.back{background:none;border:0;color:var(--dark);font:inherit;font-weight:600;padding:8px 0;cursor:pointer;align-self:flex-start;min-height:44px}
+@media (prefers-color-scheme: dark){.back{color:#8fc0e8}}
+.sync{font-size:.75rem;opacity:.8}
+.pag{display:flex;justify-content:space-between;align-items:center;gap:6px 10px;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid var(--line)}
+.pag>span:last-child{display:flex;align-items:center;gap:8px;font-variant-numeric:tabular-nums;font-weight:700}
+</style></head>
 <body>
+<div id="v-login" class="login" hidden>
+  <div class="logo"><img src="logo-icone.png" alt="">VisoThermLy</div>
+  <section class="card">
+    <h2 id="l-titulo">Entrar</h2>
+    <label for="l_email">Email<input id="l_email" type="email" autocomplete="username" inputmode="email"></label>
+    <label for="l_pass">Palavra-passe<input id="l_pass" type="password" autocomplete="current-password"></label>
+    <div id="l-extra" hidden class="grid">
+      <label for="l_nome">O seu nome<input id="l_nome" type="text" autocomplete="name"></label>
+      <label for="l_codigo">Código da equipa<input id="l_codigo" type="text" autocapitalize="characters"></label>
+    </div>
+    <p class="err" id="l-err" hidden></p>
+    <button type="button" class="btn acc" id="l-ok">Entrar</button>
+    <div class="row">
+      <button type="button" class="btn ghost small" id="l-modo">Criar conta</button>
+      <button type="button" class="btn ghost small" id="l-reset">Esqueci-me da palavra-passe</button>
+    </div>
+  </section>
+</div>
+
+<div id="v-codigo" class="login" hidden>
+  <div class="logo"><img src="logo-icone.png" alt="">VisoThermLy</div>
+  <section class="card">
+    <h2>Juntar-se à equipa</h2>
+    <p class="hint">A sua conta está criada. Para ver os clientes da equipa, escreva o código da equipa que o Daniel lhe deu.</p>
+    <label for="j_nome">O seu nome<input id="j_nome" type="text"></label>
+    <label for="j_codigo">Código da equipa<input id="j_codigo" type="text" autocapitalize="characters"></label>
+    <p class="err" id="j-err" hidden></p>
+    <div class="row"><button type="button" class="btn acc" id="j-ok">Entrar na equipa</button><button type="button" class="btn ghost" id="j-sair">Sair</button></div>
+  </section>
+</div>
+
+<div id="app" hidden>
 <header>
-  <div class="brand"><b><img src="logo-icone.png" alt="">VisoThermLy</b><span>Orçamentos</span></div>
+  <div class="brand"><b><img src="logo-icone.png" alt="">VisoThermLy</b><span id="quem" class="sync"></span></div>
   <nav>
-    <button type="button" data-v="novo" aria-current="page">Orçamento</button>
-    <button type="button" data-v="lista">Guardados</button>
+    <button type="button" data-v="clientes" aria-current="page">Clientes</button>
+    <button type="button" data-v="novo">Orçamento</button>
     <button type="button" data-v="def">Definições</button>
   </nav>
 </header>
 
-<main id="v-novo">
+<main id="v-clientes">
+  <div class="row" style="justify-content:space-between;align-items:center">
+    <b style="font-size:1.1rem">Clientes</b>
+    <button type="button" class="btn acc small" id="b-novocli">Novo cliente</button>
+  </div>
+  <label for="cli_filtro">Procurar<input id="cli_filtro" type="search" placeholder="Nome, telefone ou morada"></label>
+  <section class="card" id="cli-lista"></section>
+  <section class="card">
+    <h2>Todos os orçamentos</h2>
+    <div id="orc-todos"></div>
+  </section>
+</main>
+
+<main id="v-cliente" hidden>
+  <button type="button" class="back" id="b-voltar">‹ Clientes</button>
+  <section class="card">
+    <h2 id="cf-titulo">Cliente</h2>
+    <div class="grid">
+      <label for="cf_nome">Nome<input id="cf_nome" type="text"></label>
+      <label for="cf_tel">Telefone<input id="cf_tel" type="tel"></label>
+      <label for="cf_email">Email<input id="cf_email" type="email"></label>
+      <label for="cf_nif">NIF<input id="cf_nif" type="text" inputmode="numeric"></label>
+      <label for="cf_morada">Morada da obra<input id="cf_morada" type="text"></label>
+    </div>
+    <label for="cf_notas">Notas da obra<textarea id="cf_notas" placeholder="Medidas, o que foi combinado, o que falta fazer…"></textarea></label>
+    <div class="row">
+      <button type="button" class="btn acc" id="cf-guardar">Guardar dados</button>
+      <button type="button" class="btn danger" id="cf-apagar">Apagar cliente</button>
+    </div>
+  </section>
+  <section class="card" id="cf-resumo">
+    <h2>Contas</h2>
+    <div class="kpis">
+      <div class="kpi"><small>Orçamentos aceites</small><b id="k-aceite">0,00 €</b></div>
+      <div class="kpi"><small>Recebido</small><b id="k-pago">0,00 €</b></div>
+      <div class="kpi"><small>Falta receber</small><b id="k-falta">0,00 €</b></div>
+    </div>
+  </section>
+  <section class="card">
+    <div class="row" style="justify-content:space-between;align-items:center"><h2>Orçamentos</h2><button type="button" class="btn small" id="cf-novoorc">Novo orçamento</button></div>
+    <div id="cf-orcs"></div>
+  </section>
+  <section class="card">
+    <h2>Pagamentos</h2>
+    <div id="cf-pags"></div>
+    <div class="grid">
+      <label for="p_data">Data<input id="p_data" type="date"></label>
+      <label for="p_valor">Valor (€)<input id="p_valor" type="text" inputmode="decimal"></label>
+      <label for="p_desc">Descrição<input id="p_desc" type="text" placeholder="Ex.: adjudicação, 2.ª prestação"></label>
+    </div>
+    <button type="button" class="btn ghost small" id="p-add" style="align-self:flex-start">Registar pagamento</button>
+  </section>
+  <section class="card">
+    <h2>Fotografias</h2>
+    <div class="grid">
+      <label for="f_fase">Fase<select id="f_fase"><option>Antes</option><option>Durante</option><option>Depois</option></select></label>
+      <label class="btn" for="f_ficheiros" style="justify-content:center;align-items:center;display:flex;color:var(--on-dark);font-size:.95rem">Adicionar fotografias<input id="f_ficheiros" type="file" accept="image/*" multiple hidden></label>
+    </div>
+    <p class="hint" id="f-estado"></p>
+    <div class="fotos" id="cf-fotos"></div>
+  </section>
+</main>
+<main id="v-novo" hidden>
   <div class="row" style="justify-content:space-between;align-items:center">
     <div><b id="q-num">Novo orçamento</b><div class="meta" id="q-info"></div></div>
     <button type="button" class="btn ghost small" id="b-novo">Começar novo</button>
@@ -83,6 +201,7 @@ tr.sum td{font-weight:700}
 
   <section class="card">
     <h2>Cliente</h2>
+    <label for="c_sel">Cliente<select id="c_sel"><option value="">Novo cliente</option></select></label>
     <div class="grid">
       <label for="c_nome">Nome<input id="c_nome" type="text" autocomplete="off"></label>
       <label for="c_tel">Telefone<input id="c_tel" type="tel" inputmode="tel"></label>
@@ -171,53 +290,54 @@ tr.sum td{font-weight:700}
   </section>
 </main>
 
-<main id="v-lista" hidden>
-  <section class="card">
-    <h2>Orçamentos guardados</h2>
-    <label for="filtro">Procurar<input id="filtro" type="search" placeholder="Nome do cliente ou morada"></label>
-    <div id="lista"></div>
-  </section>
-</main>
-
 <main id="v-def" hidden>
   <section class="card">
-    <h2>Dados que aparecem no PDF</h2>
+    <h2>O meu perfil</h2>
+    <p class="hint">Aparece no PDF como responsável pelo orçamento.</p>
     <div class="grid">
-      <label for="s_nome">Nome da empresa ou equipa<input id="s_nome" type="text"></label>
-      <label for="s_resp">Responsável<input id="s_resp" type="text"></label>
+      <label for="u_nome">Nome<input id="u_nome" type="text"></label>
+      <label for="u_tel">Telefone<input id="u_tel" type="tel"></label>
+    </div>
+    <button type="button" class="btn ghost small" id="u-guardar" style="align-self:flex-start">Guardar perfil</button>
+  </section>
+  <section class="card">
+    <h2>Dados da empresa (partilhados pela equipa)</h2>
+    <div class="grid">
+      <label for="s_nome">Nome da empresa<input id="s_nome" type="text"></label>
       <label for="s_nif">NIF<input id="s_nif" type="text" inputmode="numeric"></label>
-      <label for="s_tel">Telefone<input id="s_tel" type="tel"></label>
+      <label for="s_tel">Telefone geral<input id="s_tel" type="tel"></label>
       <label for="s_email">Email<input id="s_email" type="email"></label>
       <label for="s_morada">Morada<input id="s_morada" type="text"></label>
     </div>
-    <label for="s_isencao">Frase de isenção de IVA (aparece quando o orçamento é sem IVA)<input id="s_isencao" type="text" placeholder="Ex.: IVA – regime de isenção, art. 53.º do CIVA"></label>
+    <label for="s_isencao">Frase de isenção de IVA<input id="s_isencao" type="text" placeholder="Ex.: IVA – regime de isenção, art. 53.º do CIVA"></label>
     <p class="hint">Confirme a frase certa com o contabilista.</p>
-  </section>
-  <section class="card">
-    <h2>Valores sugeridos em cada orçamento novo</h2>
-    <p class="hint">São só sugestões que aparecem já escritas. Pode mudá-las em cada orçamento. Deixe vazio o que preferir escrever sempre à mão.</p>
+    <h2 style="margin-top:6px">Valores sugeridos em orçamentos novos</h2>
     <div class="grid">
-      <label for="s_rend">Rendimento da equipa (m² por dia)<input id="s_rend" type="text" inputmode="decimal"></label>
+      <label for="s_rend">Rendimento (m² por dia)<input id="s_rend" type="text" inputmode="decimal"></label>
       <label for="s_cons">Consumo da carrinha (L/100 km)<input id="s_cons" type="text" inputmode="decimal"></label>
-      <label for="s_validade">Validade do orçamento (dias)<input id="s_validade" type="text" inputmode="numeric"></label>
+      <label for="s_validade">Validade (dias)<input id="s_validade" type="text" inputmode="numeric"></label>
       <label for="s_iva">IVA habitual<select id="s_iva"><option value="0">Isento / sem IVA</option><option value="6">6 %</option><option value="23">23 %</option></select></label>
-      <label for="s_num">Próximo número de orçamento<input id="s_num" type="text" inputmode="numeric"></label>
     </div>
     <label for="s_desc">Descrição dos trabalhos habitual<textarea id="s_desc"></textarea></label>
     <label for="s_cond">Condições de pagamento habituais<textarea id="s_cond"></textarea></label>
+    <button type="button" class="btn acc" id="s-guardar" style="align-self:flex-start">Guardar dados da empresa</button>
+  </section>
+  <section class="card" id="sec-import" hidden>
+    <h2>Orçamentos antigos neste telemóvel</h2>
+    <p class="hint" id="imp-txt"></p>
+    <button type="button" class="btn ghost small" id="b-import" style="align-self:flex-start">Passar para a equipa</button>
   </section>
   <section class="card">
-    <h2>Cópia de segurança</h2>
-    <p class="hint">Os orçamentos ficam guardados só neste telemóvel. Faça uma cópia de vez em quando, ou para passar tudo para outro telemóvel.</p>
-    <div class="row">
-      <button type="button" class="btn ghost" id="b-export">Fazer cópia de segurança</button>
-      <label class="btn ghost" for="f-import" style="display:inline-flex;align-items:center;color:var(--fg);font-size:.95rem">Recuperar cópia<input id="f-import" type="file" accept=".json,application/json" hidden></label>
-    </div>
+    <h2>Equipa</h2>
+    <div id="equipa"></div>
+    <button type="button" class="btn ghost small" id="b-sair" style="align-self:flex-start">Terminar sessão</button>
   </section>
 </main>
+</div>
 
 <div class="toast" id="toast" hidden></div>
+<script src="config.js"></script>
 <script src="pdf-lib.min.js"></script>
-<script src="app.js"></script>
+<script type="module" src="app.js"></script>
 </body>
 </html>
