@@ -1,0 +1,732 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>VisoThermLy · Teste</title>
+<meta name="theme-color" content="#215b87">
+<link rel="icon" href="/visothermly-orcamentos/VisoThermLy_App_Orcamentos/app-orcamentos/icon-192.png">
+<link rel="apple-touch-icon" href="/visothermly-orcamentos/VisoThermLy_App_Orcamentos/app-orcamentos/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="VisoThermLy">
+<style>
+[hidden]{display:none!important}
+:root{--bg:#eef2f7;--surface:#fff;--surface2:#f6f8fb;--fg:#1d2733;--muted:#5f6b7a;--line:#e1e7ef;--blue:#215b87;--blue-2:#2c74ab;--blue-t:#215b87;--deep:#163a57;--accent:#e19442;--on-accent:#1b2b3a;--accent-soft:#fdf1e3;--accent-text:#a35d17;--ok-bg:#e4f5ec;--ok:#1b6b3f;--warn-bg:#fff4d6;--warn-fg:#6b4a00;--no-bg:#fbe6e3;--no:#9b2c22;
+--shadow:0 1px 2px rgba(18,42,70,.06),0 6px 20px rgba(18,42,70,.07);--r:16px;
+--font:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+@media (prefers-color-scheme: dark){:root{--bg:#0f141a;--surface:#18202a;--surface2:#1f2933;--fg:#e9eef4;--muted:#9aa7b6;--line:#2a3542;--blue:#2c6ea3;--blue-2:#3a85c2;--blue-t:#8cc3ef;--deep:#0c1f30;--accent-soft:#33281c;--accent-text:#f0b06a;--ok-bg:#163a26;--ok:#7fdca3;--warn-bg:#3a3118;--warn-fg:#f3dc9a;--no-bg:#3a1d1a;--no:#f0a39b;--shadow:0 1px 2px rgba(0,0,0,.3);color-scheme:dark}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:16px;line-height:1.45}
+header{background:linear-gradient(160deg,var(--blue) 0%,var(--deep) 100%);color:#fff;padding:calc(14px + env(safe-area-inset-top,0px)) 18px 22px;border-radius:0 0 24px 24px}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:10px;max-width:760px;margin:0 auto}
+.brand b{font-size:1.15rem;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+.brand img{width:38px;height:38px;background:#fff;border-radius:11px;padding:4px;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.chip{font-size:.78rem;font-weight:600;background:rgba(255,255,255,.16);padding:6px 11px;border-radius:99px;max-width:45vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hero{max-width:760px;margin:18px auto 0}
+.hero h1{margin:0;font-size:1.6rem;letter-spacing:-.02em;line-height:1.15}
+.hero p{margin:4px 0 0;opacity:.8;font-size:.9rem}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;gap:4px;padding:6px 10px calc(6px + env(safe-area-inset-bottom,0px));box-shadow:0 -4px 16px rgba(18,42,70,.06)}
+nav button{flex:1;max-width:180px;background:none;border:0;color:var(--muted);font:inherit;font-size:.74rem;font-weight:600;padding:6px 4px;border-radius:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;min-height:52px}
+nav button svg{width:24px;height:24px}
+nav button[aria-current="page"]{color:var(--blue-t);background:color-mix(in srgb,var(--blue) 12%,transparent)}
+main{max-width:760px;margin:0 auto;padding:16px 16px calc(96px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow)}
+.card h2{margin:0;font-size:1.02rem;display:flex;align-items:center;gap:10px}
+.ic{width:32px;height:32px;border-radius:10px;background:color-mix(in srgb,var(--blue) 12%,transparent);color:var(--blue-t);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.ic svg{width:17px;height:17px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+label{display:flex;flex-direction:column;gap:5px;font-size:.8rem;color:var(--muted);font-weight:600;min-width:0}
+input,select,textarea{font:inherit;font-size:16px;color:var(--fg);background:var(--surface2);border:1.5px solid var(--line);border-radius:11px;padding:11px 12px;width:100%;min-width:0;min-height:46px;transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue-2);box-shadow:0 0 0 3px color-mix(in srgb,var(--blue-2) 22%,transparent);background:var(--surface)}
+textarea{min-height:80px;resize:vertical}
+button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hint{font-size:.8rem;color:var(--muted);margin:0;font-weight:400}
+.row{display:flex;flex-wrap:wrap;gap:10px}
+.btn{font:inherit;font-weight:700;font-size:.95rem;border:0;border-radius:12px;padding:12px 18px;min-height:46px;cursor:pointer;background:var(--blue);color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;transition:transform .08s}
+.btn:active{transform:scale(.97)}
+.btn svg{width:18px;height:18px;flex:none}
+.btn.acc{background:var(--accent);color:var(--on-accent)}
+.btn.ghost{background:var(--surface);color:var(--fg);border:1.5px solid var(--line)}
+.btn.small{padding:8px 13px;min-height:40px;font-size:.86rem;border-radius:10px}
+.btn.danger{background:transparent;color:var(--no);border:1.5px solid var(--line)}
+.btn[disabled]{opacity:.6}
+.extra{display:grid;grid-template-columns:1fr 110px 46px;gap:8px;align-items:end}
+.extra .btn{padding:0;min-width:46px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+td{padding:10px 0;border-bottom:1px solid var(--line);vertical-align:top}
+td:last-child{text-align:right;white-space:nowrap;padding-left:10px}
+tr.sum td{font-weight:700}
+.total{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:linear-gradient(135deg,var(--blue),var(--deep));color:#fff;border-radius:14px;padding:16px 18px}
+.total span{opacity:.85;font-weight:600}
+.total b{font-size:1.75rem;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.warn{background:var(--warn-bg);color:var(--warn-fg);border-radius:12px;padding:12px 14px;font-size:.9rem}
+.warn ul{margin:4px 0 0;padding-left:18px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--deep);color:#fff;padding:12px 18px;border-radius:12px;font-size:.9rem;z-index:20;max-width:90vw;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.item{display:flex;flex-direction:column;gap:10px;border-bottom:1px solid var(--line);padding-bottom:14px}
+.item:last-child{border-bottom:0;padding-bottom:0}
+.item-top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.item-top span{font-variant-numeric:tabular-nums;font-weight:800;white-space:nowrap}
+.meta{font-size:.8rem;color:var(--muted);display:block}
+.empty{color:var(--muted);text-align:center;padding:18px 0;margin:0}
+.facts{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.88rem;color:var(--muted)}
+.facts strong{color:var(--fg)}
+.login{min-height:100vh;display:flex;flex-direction:column;justify-content:center;gap:18px;padding:calc(30px + env(safe-area-inset-top,0px)) 18px 30px;background:linear-gradient(175deg,var(--blue) 0%,var(--deep) 46%,var(--bg) 46.3%)}
+.login>*{width:100%;max-width:420px;margin:0 auto}
+.login .logo{display:flex;flex-direction:column;align-items:center;gap:10px;font-weight:800;font-size:1.5rem;color:#fff;text-align:center}
+.login .logo img{width:84px;height:84px;background:#fff;border-radius:22px;padding:8px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.login .logo small{font-size:.85rem;font-weight:500;opacity:.85}
+.err{color:var(--no);font-size:.9rem;margin:0}
+.cli{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 2px;border:0;border-bottom:1px solid var(--line);cursor:pointer;background:none;width:100%;text-align:left;font:inherit;color:inherit;min-height:66px}
+.cli:last-child{border-bottom:0}
+.cli-l{display:flex;align-items:center;gap:12px;min-width:0}
+.cli-l b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.av{width:46px;height:46px;border-radius:15px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;color:#fff;flex:none;font-size:.95rem;letter-spacing:.02em}
+.av.big{width:62px;height:62px;border-radius:20px;font-size:1.3rem}
+.pill{display:inline-block;font-size:.72rem;font-weight:700;padding:4px 9px;border-radius:99px;background:var(--surface2);color:var(--muted);white-space:nowrap;border:1px solid var(--line)}
+.pill.ok{background:var(--ok-bg);color:var(--ok);border-color:transparent}.pill.warn{background:var(--warn-bg);color:var(--warn-fg);border-color:transparent}.pill.no{background:var(--no-bg);color:var(--no);border-color:transparent}
+.search{position:relative;display:block}
+.search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--muted);pointer-events:none}
+.search input{padding-left:42px;background:var(--surface);box-shadow:var(--shadow)}
+.ficha{display:flex;align-items:center;gap:14px}
+.ficha h2{font-size:1.25rem}
+.acoes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
+.foto{position:relative;border-radius:12px;overflow:hidden;background:var(--surface2);aspect-ratio:1/1}
+.foto img{width:100%;height:100%;object-fit:cover;display:block}
+.foto span{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,.55);color:#fff;font-size:.7rem;font-weight:700;padding:3px 7px;border-radius:7px}
+.foto button{position:absolute;right:6px;top:6px;background:rgba(0,0,0,.55);color:#fff;border:0;border-radius:9px;width:32px;height:32px;font-size:.9rem;cursor:pointer}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.kpi{background:var(--surface2);border-radius:12px;padding:12px}
+.kpi small{display:block;color:var(--muted);font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+.kpi b{font-variant-numeric:tabular-nums;font-size:1rem}
+.kpi.falta{background:var(--accent-soft)}.kpi.falta b{color:var(--accent-text)}
+.back{background:none;border:0;color:var(--blue-t);font:inherit;font-weight:700;padding:6px 0;cursor:pointer;align-self:flex-start;min-height:44px}
+.pag{display:flex;justify-content:space-between;align-items:center;gap:6px 10px;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--line)}
+.pag>span:last-child{display:flex;align-items:center;gap:8px;font-variant-numeric:tabular-nums;font-weight:800}
+.barra{position:sticky;bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:5;background:var(--deep);color:#fff;border-radius:16px;padding:10px 10px 10px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 10px 30px rgba(10,30,50,.35)}
+.barra small{display:block;opacity:.75;font-size:.72rem;font-weight:600}
+.barra b{font-size:1.2rem;font-variant-numeric:tabular-nums}
+.barra .row{gap:6px;flex-wrap:nowrap}
+.titulo{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.qhead{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.oacts{display:grid;grid-template-columns:minmax(0,1fr) auto 46px 46px;gap:8px;align-items:center}
+.btn.ico{padding:0;width:46px;min-height:44px}
+.est{font-weight:700;font-size:.9rem;min-height:44px;padding:8px 10px;border-color:transparent}
+.est-ok{background:var(--ok-bg);color:var(--ok)}.est-warn{background:var(--warn-bg);color:var(--warn-fg)}.est-no{background:var(--no-bg);color:var(--no)}
+details{border-top:1px solid var(--line);padding-top:4px}
+summary{cursor:pointer;font-weight:700;color:var(--blue-t);padding:10px 0;list-style:none;display:flex;justify-content:space-between;align-items:center;min-height:44px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"";width:9px;height:9px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-right:6px;transition:transform .2s}
+details[open] summary::after{transform:rotate(-135deg)}
+.det-body{display:flex;flex-direction:column;gap:14px;padding-top:6px}
+.barra b{font-size:1.05rem;white-space:nowrap}
+.barra>div:first-child{min-width:0}
+.barra .btn{flex:none}
+#resumo .row .btn{flex:1 1 140px}
+
+
+.seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px;box-shadow:var(--shadow)}
+.seg button{flex:1;border:0;background:none;font:inherit;font-weight:700;font-size:.9rem;color:var(--muted);padding:9px 6px;border-radius:9px;min-height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.seg button[aria-selected="true"]{background:var(--blue);color:#fff}
+.badge{background:var(--accent);color:var(--on-accent);border-radius:99px;font-size:.7rem;padding:1px 7px;font-weight:800}
+.card.list{padding:6px 16px;gap:0}
+.row-i{display:flex;align-items:center;gap:12px;padding:13px 0;border:0;border-bottom:1px solid var(--line);background:none;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;min-height:64px}
+.row-i:last-child{border-bottom:0}
+.row-i .grow{flex:1;min-width:0}
+.row-i b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-i .end{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
+.chev{width:8px;height:8px;border-right:2px solid var(--muted);border-top:2px solid var(--muted);transform:rotate(45deg);flex:none;opacity:.6}
+.kgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ktile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:4px;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.ktile small{color:var(--muted);font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+.ktile b{font-size:1.35rem;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.ktile.dest{background:linear-gradient(140deg,var(--blue),var(--deep));color:#fff;border-color:transparent}
+.ktile.dest small{color:rgba(255,255,255,.8)}
+.qa{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.qbtn{border:0;background:var(--surface2);border-radius:14px;padding:12px 4px;display:flex;flex-direction:column;align-items:center;gap:6px;font:inherit;font-size:.72rem;font-weight:700;color:var(--fg);cursor:pointer;min-height:76px;text-align:center}
+.qbtn svg{width:24px;height:24px;color:var(--blue-t)}
+.aviso{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.aviso:last-child{border-bottom:0}
+.dot{width:10px;height:10px;border-radius:50%!important;padding:0!important;margin-top:6px;flex:none;background:var(--muted)}
+.dot.warn{background:#e0a100}.dot.no{background:#d64534}.dot.ok{background:#2b9a5a}.dot.info{background:var(--blue-2)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.chip-f{border:1.5px solid var(--line);background:var(--surface);color:var(--fg);border-radius:99px;padding:7px 13px;font:inherit;font-size:.82rem;font-weight:700;white-space:nowrap;cursor:pointer;min-height:38px}
+.chip-f[aria-pressed="true"]{background:var(--fg);color:var(--surface);border-color:var(--fg)}
+.menu .mrow{display:flex;align-items:center;gap:14px;padding:14px 0;border:0;border-bottom:1px solid var(--line);background:none;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;min-height:64px}
+.menu .mrow:last-child{border-bottom:0}
+.mrow small{display:block;color:var(--muted);font-size:.8rem}
+.medrow{display:grid;grid-template-columns:minmax(0,1.4fr) repeat(2,minmax(0,1fr)) 46px;gap:8px;align-items:end}
+.medrow.vao{grid-template-columns:minmax(0,1.2fr) repeat(3,minmax(0,.8fr)) 46px}
+.medrow .btn{padding:0;min-width:46px}
+.medtot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--surface2);border-radius:12px;padding:12px 14px}
+.medtot span{color:var(--muted);font-weight:700;font-size:.85rem}
+.medtot b{font-size:1.2rem;font-variant-numeric:tabular-nums;flex:1}
+.fase{display:flex;flex-direction:row;text-align:left;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.fase:last-child{border-bottom:0}
+.fase input{width:24px;height:24px;min-height:0;accent-color:var(--blue);flex:none}
+.fase small{display:block;color:var(--muted);font-size:.76rem}
+.prog{height:8px;background:var(--surface2);border-radius:99px;overflow:hidden}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--blue-2),var(--blue))}
+.tbl{width:100%;border-collapse:collapse;font-size:.9rem;font-variant-numeric:tabular-nums}
+.tbl th{text-align:left;font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;padding:6px 8px 6px 0;border-bottom:1px solid var(--line)}
+.tbl td{padding:9px 8px 9px 0}
+.tbl th:not(:first-child),.tbl td:not(:first-child){text-align:right}
+.scrollx{overflow-x:auto}
+.wk{font-size:.75rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 6px}
+.wk:first-child{margin-top:0}
+.ag{display:flex;gap:12px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:8px;box-shadow:var(--shadow);cursor:pointer;width:100%;text-align:left;font:inherit;color:inherit}
+.ag .bar{width:4px;border-radius:4px;background:var(--blue);flex:none}
+.ag.visita .bar{background:var(--accent)}
+.checks{display:flex;flex-wrap:wrap;gap:8px}
+.checks label{flex-direction:row;align-items:center;gap:8px;background:var(--surface2);border-radius:10px;padding:8px 12px;color:var(--fg);font-size:.9rem;min-height:44px}
+.checks input{width:20px;height:20px;min-height:0;accent-color:var(--blue)}
+dialog{border:0;border-radius:20px;padding:0;width:min(560px,calc(100vw - 24px));max-height:calc(100vh - 40px);background:var(--surface);color:var(--fg);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(10,20,30,.5)}
+dialog form{display:flex;flex-direction:column;max-height:calc(100vh - 40px)}
+.dlg-h{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border-bottom:1px solid var(--line)}
+.dlg-h b{font-size:1.1rem}
+.dlg-x{border:0;background:var(--surface2);color:var(--fg);width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:1rem}
+.dlg-b{padding:16px 18px;overflow:auto;display:flex;flex-direction:column;gap:12px}
+.dlg-f{padding:12px 18px 16px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.estsel{font-weight:700}
+.mat td:first-child{font-weight:600}
+.mrow2{display:flex;justify-content:space-between;align-items:baseline;gap:4px 12px;flex-wrap:wrap;padding:9px 0;border-bottom:1px solid var(--line)}.mrow2:last-child{border-bottom:0}.mrow2 b{font-size:.93rem}.mrow2 .q{font-weight:800;font-variant-numeric:tabular-nums;text-align:right}.mrow2 .q small{display:block;font-weight:600;color:var(--muted);font-size:.76rem}
+
+html{-webkit-tap-highlight-color:transparent}
+button,a,label,select,summary,.row-i,.cli{touch-action:manipulation}
+main.vt-a{animation:vtA .24s cubic-bezier(.2,.8,.2,1)}
+main.vt-b{animation:vtB .24s cubic-bezier(.2,.8,.2,1)}
+main.vt-c{animation:vtC .2s ease-out}
+@keyframes vtA{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+@keyframes vtB{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
+@keyframes vtC{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.row-i,.cli,.ag,.aviso,.mrow,.item{transition:background-color .15s}
+.row-i:active,.cli:active,.ag:active,.aviso:active,.mrow:active{background-color:var(--surface2)}
+.ktile,.qbtn,.chip-f,.seg button,nav button,.foto{transition:transform .1s,background-color .15s,color .15s}
+.ktile:active,.qbtn:active,.chip-f:active,.foto:active{transform:scale(.97)}
+nav button:active{transform:scale(.94)}
+.prog i{transition:width .4s cubic-bezier(.2,.8,.2,1)}
+.toast:not([hidden]){animation:vtT .22s cubic-bezier(.2,.8,.2,1)}
+@keyframes vtT{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
+dialog[open]{animation:vtD .24s cubic-bezier(.2,.8,.2,1)}
+dialog[open]::backdrop{animation:vtF .24s ease-out}
+dialog.fecha{animation:vtDo .15s ease-in forwards}
+dialog.fecha::backdrop{animation:vtFo .15s ease-in forwards}
+@keyframes vtD{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
+@keyframes vtDo{to{opacity:0;transform:translateY(28px)}}
+@keyframes vtF{from{opacity:0}}
+@keyframes vtFo{to{opacity:0}}
+@media (max-width:600px){dialog{margin:auto 0 0;width:100%;max-width:100%;border-radius:20px 20px 0 0;max-height:92vh}dialog form{max-height:92vh}.dlg-f{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}}
+.foto img{animation:vtF .3s ease-out}
+.ad{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ad>div{display:flex;flex-direction:column;gap:8px;min-width:0}.ad .fotos{grid-template-columns:1fr}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after,dialog::backdrop{animation:none!important;transition:none!important}}
+
+.ohero{background:linear-gradient(150deg,var(--blue) 0%,var(--deep) 100%);color:#fff;border-radius:22px;padding:18px 16px 14px;display:flex;flex-direction:column;gap:16px;box-shadow:0 12px 30px rgba(22,58,87,.28)}
+.oh-top{display:flex;gap:16px;align-items:center}
+.oh-ring{position:relative;width:78px;height:78px;flex:none}
+.anel{width:78px;height:78px;transform:rotate(-90deg);display:block}
+.anel circle{fill:none;stroke-width:7}
+.a-bg{stroke:rgba(255,255,255,.16)}.a-fg{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset .7s cubic-bezier(.2,.8,.2,1)}
+.oh-ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:1.05rem;font-variant-numeric:tabular-nums}
+.oh-txt{min-width:0;display:flex;flex-direction:column;gap:3px}
+.oh-txt h2{margin:2px 0 0;font-size:1.22rem;line-height:1.2;color:#fff;letter-spacing:-.01em}
+.oh-txt p{margin:0;opacity:.85;font-size:.86rem}
+.oh-d{display:flex;align-items:center;gap:6px}.oh-d svg{width:14px;height:14px;flex:none}
+.oh-est{align-self:flex-start;font-size:.68rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;background:rgba(255,255,255,.16);padding:4px 9px;border-radius:99px}
+.oh-est.e-warn{background:var(--accent);color:var(--on-accent)}.oh-est.e-ok{background:#2b9a5a}.oh-est.e-no{background:#d64534}
+.oh-acts{display:flex;gap:4px;justify-content:space-around;border-top:1px solid rgba(255,255,255,.14);padding-top:12px}
+.oh-a{flex:1 1 0;display:flex;flex-direction:column;align-items:center;gap:6px;color:#fff;text-decoration:none;font-size:.7rem;font-weight:700;background:none;border:0;font-family:inherit;cursor:pointer;padding:0;min-width:0;max-width:76px}
+.oh-a i{width:44px;height:44px;border-radius:14px;background:rgba(255,255,255,.13);display:grid;place-items:center;transition:background-color .15s,transform .1s}
+.oh-a:active i{transform:scale(.9);background:rgba(255,255,255,.26)}
+.oh-a svg{width:20px;height:20px}
+.agora{gap:0}.agora h2{margin-bottom:6px}
+.ag-r{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.agora h2+.ag-r{border-top:0}
+.ag-ic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;flex:none}.ag-ic svg{width:19px;height:19px}
+.t-warn{background:var(--accent-soft);color:var(--accent-text)}.t-blue,.t-info{background:var(--surface2);color:var(--blue-t)}.t-ok{background:var(--ok-bg);color:var(--ok)}
+.ag-t{flex:1;min-width:0;display:flex;flex-direction:column}.ag-t b{font-size:.95rem}
+.ag-r .btn{flex:none}
+.kt-s{font-size:.78rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ktile.dest .kt-s{color:rgba(255,255,255,.8)}
+.ktile b.neg{color:var(--no)}
+.kt-bar{display:block;height:5px;border-radius:9px;background:rgba(255,255,255,.2);margin-top:6px;overflow:hidden}.kt-bar i{display:block;height:100%;background:var(--accent);border-radius:9px;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.strip{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x proximity;padding:2px 2px 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.strip::-webkit-scrollbar{display:none}
+.strip>*{flex:none;width:86px;height:86px;border-radius:16px;overflow:hidden;scroll-snap-align:start;box-shadow:var(--shadow)}
+.strip img{width:100%;height:100%;object-fit:cover;display:block;animation:vtF .3s ease-out}
+.strip-add{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:2px dashed var(--line);color:var(--blue-t);background:var(--surface);cursor:pointer;font-size:.75rem;font-weight:700;box-shadow:none!important}
+.strip-add svg{width:24px;height:24px}
+.strip-mais{border:0;background:var(--surface2);color:var(--fg);font:inherit;font-weight:800;cursor:pointer}
+.sec{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.sec>summary{gap:12px;padding:12px 14px;min-height:66px;color:var(--fg);font-weight:400;justify-content:flex-start}
+.sec>summary::after{margin-left:4px;flex:none;color:var(--muted)}
+.sec>summary:active{background:var(--surface2)}
+.sec-ic{width:40px;height:40px;border-radius:12px;background:var(--surface2);color:var(--blue-t);display:grid;place-items:center;flex:none}.sec-ic svg{width:20px;height:20px}
+.sec[open] .sec-ic{background:var(--blue);color:#fff}
+.sec-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}.sec-t b{font-size:1rem}
+.sec-t .meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sec-b{padding:4px 16px 16px;display:flex;flex-direction:column;gap:12px}
+.sec[open] .sec-b{animation:vtC .24s cubic-bezier(.2,.8,.2,1)}
+.sub{font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.tl{list-style:none;margin:0;padding:0}
+.tl li{position:relative}
+.tl li::before{content:"";position:absolute;left:12px;top:0;bottom:0;width:2px;background:var(--line)}
+.tl li:first-child::before{top:50%}.tl li:last-child::before{bottom:50%}
+.tl li.ok::before{background:#2b9a5a}
+.tl label{display:flex;flex-direction:row;align-items:center;gap:14px;padding:9px 0;min-height:50px;cursor:pointer;color:var(--fg);font-weight:400}
+.tl input{position:absolute;opacity:0;width:1px;height:1px;min-height:0}
+.tl-dot{position:relative;z-index:1;width:26px;height:26px;border-radius:50%;border:2px solid var(--line);background:var(--surface);flex:none;display:grid;place-items:center;transition:background-color .2s,border-color .2s,transform .15s}
+.tl li.ok .tl-dot{background:#2b9a5a;border-color:#2b9a5a}
+.tl li.ok .tl-dot::after{content:"";width:6px;height:11px;border-right:2.5px solid #fff;border-bottom:2.5px solid #fff;transform:translateY(-1px) rotate(45deg);animation:vtCk .25s ease-out}
+.tl li.prox .tl-dot{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.tl label:active .tl-dot{transform:scale(.88)}
+.tl input:focus-visible+.tl-dot{outline:2px solid var(--blue-2);outline-offset:2px}
+.tl-t{display:flex;flex-direction:column}.tl-t b{font-size:.95rem;font-weight:600}.tl li.ok .tl-t b{color:var(--muted)}.tl-t small{color:var(--muted);font-size:.76rem}
+@keyframes vtCk{from{opacity:0;transform:translateY(-1px) rotate(45deg) scale(.4)}}
+.fab{position:fixed;right:18px;bottom:calc(88px + env(safe-area-inset-bottom,0px));width:58px;height:58px;border-radius:19px;border:0;background:var(--accent);color:var(--on-accent);box-shadow:0 10px 26px rgba(225,148,66,.45);z-index:15;cursor:pointer;display:grid;place-items:center;transition:transform .12s;animation:vtFab .35s cubic-bezier(.2,.8,.2,1)}
+.fab svg{width:26px;height:26px;stroke-width:2.5}
+.fab:active{transform:scale(.9)}
+@keyframes vtFab{from{transform:scale(.3) rotate(-90deg);opacity:0}}
+.fabg{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.fabg .qbtn svg{width:24px;height:24px}
+@media (min-width:800px){.fab{right:calc(50% - 380px + 18px)}}
+#obra-corpo{display:flex;flex-direction:column;gap:14px}
+.dlg-f:empty{display:none}
+
+.vcol{display:flex;flex-direction:column;gap:14px}
+.ihero{gap:14px}
+.ih-top small{display:block;font-size:.72rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;opacity:.8}
+.ih-top b{display:block;font-size:2.1rem;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin:2px 0 8px}
+.ih-top .kt-bar{height:6px;margin:0 0 8px}
+.ih-s{font-size:.82rem;opacity:.85}
+.ih-chips{display:flex;gap:8px;flex-wrap:wrap}
+.ih-chips button{border:0;background:rgba(255,255,255,.13);color:#fff;font:inherit;font-size:.78rem;font-weight:600;border-radius:12px;padding:8px 11px;display:flex;align-items:baseline;gap:6px;cursor:pointer;transition:background-color .15s,transform .1s}
+.ih-chips button:active{transform:scale(.96);background:rgba(255,255,255,.22)}
+.ih-chips b{font-size:1.05rem}
+.badge-n{background:var(--accent);color:var(--on-accent);font-weight:800;font-size:.8rem;border-radius:99px;min-width:24px;height:24px;display:grid;place-items:center;padding:0 7px}
+.ag-r[data-av]{cursor:pointer}
+.sec-tit{padding:4px 2px 0;margin-bottom:-4px}
+.lnk{border:0;background:none;color:var(--blue-t);font:inherit;font-weight:700;font-size:.9rem;cursor:pointer;padding:6px 0}
+.carr{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 8px;margin:0 -16px;padding-left:16px;padding-right:16px;scrollbar-width:none}
+.carr::-webkit-scrollbar{display:none}
+.ocard{flex:none;width:min(78vw,300px);scroll-snap-align:start;display:flex;gap:12px;align-items:flex-start;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:14px;font:inherit;color:inherit;cursor:pointer;transition:transform .1s}
+.ocard:active{transform:scale(.98)}
+.oc-t{display:flex;flex-direction:column;gap:3px;min-width:0}.oc-t b{font-size:1rem;line-height:1.25}.oc-t .pill{align-self:flex-start}
+.anel-m{position:relative;width:46px;height:46px;flex:none}
+.anel-m svg{width:46px;height:46px;transform:rotate(-90deg)}
+.anel-m circle{fill:none;stroke-width:5}
+.anel-m .a-bg{stroke:var(--surface2)}
+.anel-m b{position:absolute;inset:0;display:grid;place-items:center;font-size:.8rem}
+.dias7{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dch{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0 6px;border-radius:12px;background:var(--surface2)}
+.dch small{font-size:.66rem;color:var(--muted);font-weight:700;text-transform:uppercase}
+.dch b{font-size:1rem}
+.dch i{display:flex;gap:2px;height:6px}.dch em{width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.dch.hoje{background:var(--blue);color:#fff}.dch.hoje small{color:rgba(255,255,255,.8)}
+.chero .av.big{width:64px;height:64px;font-size:1.4rem;border:3px solid rgba(255,255,255,.25);flex:none}
+.chero .oh-top{align-items:center}
+#v-cliente{gap:14px}
+
+.grp-l{font-size:.74rem;font-weight:800;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin:4px 6px -6px}
+.lst{padding-top:2px;padding-bottom:2px}
+.row-i[role=button]{cursor:pointer;transition:background-color .15s}
+.lst .row-i:last-child{border-bottom:0}
+.ic-call{width:40px;height:40px;border-radius:12px;background:var(--ok-bg);color:var(--ok);display:grid;place-items:center;flex:none;transition:transform .1s}
+.ic-call:active{transform:scale(.9)}.ic-call svg{width:18px;height:18px}
+.mi{width:13px;height:13px;vertical-align:-2px;margin-right:4px}
+.trunc{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:block}
+.ob-c{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:14px;font:inherit;color:inherit;cursor:pointer;transition:transform .1s}
+.ob-c:active{transform:scale(.985)}
+.ob-c .grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ob-h{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.ob-h b{font-size:1rem;line-height:1.25}.ob-h .pill{flex:none}
+.ob-f{display:flex;gap:4px 14px;flex-wrap:wrap;margin-top:4px}
+.eqs{display:flex;margin-top:8px}.av.mini{width:28px;height:28px;font-size:.62rem;border:2px solid var(--surface);margin-right:-7px;flex:none}
+.orc-r{display:flex;gap:12px;align-items:center;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:13px 0 13px 14px;font:inherit;color:inherit;cursor:pointer;position:relative;min-height:66px;transition:background-color .15s}
+.orc-r:active{background:var(--surface2)}
+.orc-r:last-child{border-bottom:0}
+.orc-r::before{content:"";position:absolute;left:0;top:13px;bottom:13px;width:4px;border-radius:4px;background:var(--line)}
+.orc-r.e-ok::before{background:#2b9a5a}.orc-r.e-warn::before{background:var(--accent)}.orc-r.e-no::before{background:#d64534}
+.orc-r .grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.orc-r .grow b{font-size:.98rem}
+.orc-r .end{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:none}.orc-r .end b{font-variant-numeric:tabular-nums}
+.warn-t{color:var(--accent-text)!important;font-weight:700}
+.orc-hd{display:flex;flex-direction:column;gap:2px;padding:2px 0 4px}.orc-tot{font-size:1.9rem;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.est-b{display:flex;flex-wrap:wrap;gap:6px}
+.est-b button{border:1.5px solid var(--line);background:var(--surface);color:var(--fg);font:inherit;font-weight:700;font-size:.85rem;border-radius:99px;padding:8px 13px;cursor:pointer;min-height:40px;transition:background-color .15s,color .15s,transform .1s}
+.est-b button:active{transform:scale(.95)}
+.est-b button[aria-pressed=true].e-neutro{background:var(--fg);color:var(--surface);border-color:var(--fg)}
+.est-b button[aria-pressed=true].e-warn{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.est-b button[aria-pressed=true].e-ok{background:#2b9a5a;border-color:#2b9a5a;color:#fff}
+.est-b button[aria-pressed=true].e-no{background:#d64534;border-color:#d64534;color:#fff}
+.qdel{color:var(--no)!important}.qdel svg{width:24px;height:24px}
+.qhero{gap:6px;padding-bottom:16px}
+.qh-l1{display:flex;align-items:center;gap:8px;font-size:.85rem}
+.qh-novo{margin-left:auto;border:0;background:rgba(255,255,255,.14);color:#fff;font:inherit;font-weight:700;font-size:.8rem;border-radius:10px;padding:8px 11px;cursor:pointer}
+.qhero h2{margin:6px 0 0;color:#fff;font-size:1.15rem}
+.qh-total{font-size:2.2rem;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.qh-sub{font-size:.85rem;opacity:.85;min-height:1em}
+.qhero .kt-bar{height:6px;margin-top:8px}
+.qh-l3{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.82rem;opacity:.95}
+.lnk-w{color:#fff;text-decoration:underline;flex:none;font-size:.82rem}
+.qok{width:22px;height:22px;border-radius:50%;flex:none;display:grid;place-items:center;box-sizing:border-box}
+.q-ok{background:#2b9a5a}.q-ok::after{content:"";width:5px;height:9px;border-right:2px solid #fff;border-bottom:2px solid #fff;transform:translateY(-1px) rotate(45deg)}
+.q-falta{background:var(--accent-soft);border:2px solid var(--accent)}
+.q-op{border:2px dashed var(--line)}
+#v-novo .sec-b>.card{box-shadow:none}
+.est-d{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:var(--line);vertical-align:1px}.d-warn{background:var(--accent)}.d-ok{background:#2b9a5a}.d-info{background:var(--blue-2)}.d-no{background:#d64534}
+.dia-ed{width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);font:inherit;color:inherit;cursor:pointer}
+.dia-ed:last-child{border-bottom:0}.dia-ed:active{background:var(--surface2)}
+.dia-ed .q small{color:var(--blue-t)!important}
+.ed-pess{display:flex;flex-direction:column;gap:6px}
+.ed-p{display:flex;gap:8px;align-items:center;background:var(--surface2);border-radius:12px;padding:6px 8px 6px 12px}
+.ed-p label{flex:1;flex-direction:row;align-items:center;gap:10px;color:var(--fg);font-size:.95rem;min-height:44px}
+.ed-p input{width:20px;height:20px;min-height:0;accent-color:var(--blue)}
+.ed-p select{width:auto;min-height:40px;padding:6px 10px;font-size:.9rem}
+.demo-bar{position:sticky;top:0;z-index:30;background:#e19442;color:#1b2b3a;font:700 .78rem/1.3 system-ui,sans-serif;text-align:center;padding:6px 10px}.demo-bar a{color:inherit}
+</style></head>
+<body>
+<div class="demo-bar">Versão de teste · dados de exemplo, só neste aparelho · <a href="?repor">repor</a></div>
+<div id="v-login" class="login" hidden>
+  <div class="logo"><img src="/visothermly-orcamentos/VisoThermLy_App_Orcamentos/app-orcamentos/logo-icone.png" alt="">VisoThermLy<small>Capoto &amp; isolamento térmico</small></div>
+  <section class="card">
+    <h2 id="l-titulo">Entrar</h2>
+    <label for="l_email">Email<input id="l_email" type="email" autocomplete="username" inputmode="email"></label>
+    <label for="l_pass">Palavra-passe<input id="l_pass" type="password" autocomplete="current-password"></label>
+    <div id="l-extra" hidden class="grid">
+      <label for="l_nome">O seu nome<input id="l_nome" type="text" autocomplete="name"></label>
+      <label for="l_codigo">Código da equipa<input id="l_codigo" type="text" autocapitalize="characters"></label>
+    </div>
+    <p class="err" id="l-err" hidden></p>
+    <button type="button" class="btn acc" id="l-ok">Entrar</button>
+    <div class="row">
+      <button type="button" class="btn ghost small" id="l-modo">Criar conta</button>
+      <button type="button" class="btn ghost small" id="l-reset">Esqueci-me da palavra-passe</button>
+    </div>
+  </section>
+</div>
+
+<div id="v-codigo" class="login" hidden>
+  <div class="logo"><img src="/visothermly-orcamentos/VisoThermLy_App_Orcamentos/app-orcamentos/logo-icone.png" alt="">VisoThermLy<small>Capoto &amp; isolamento térmico</small></div>
+  <section class="card">
+    <h2>Juntar-se à equipa</h2>
+    <p class="hint">A sua conta está criada. Para ver os clientes da equipa, escreva o código da equipa que o Daniel lhe deu.</p>
+    <label for="j_nome">O seu nome<input id="j_nome" type="text"></label>
+    <label for="j_codigo">Código da equipa<input id="j_codigo" type="text" autocapitalize="characters"></label>
+    <p class="err" id="j-err" hidden></p>
+    <div class="row"><button type="button" class="btn acc" id="j-ok">Entrar na equipa</button><button type="button" class="btn ghost" id="j-sair">Sair</button></div>
+  </section>
+</div>
+
+<div id="app" hidden>
+<header>
+  <div class="brand"><b><img src="/visothermly-orcamentos/VisoThermLy_App_Orcamentos/app-orcamentos/logo-icone.png" alt="">VisoThermLy</b><span id="quem" class="chip"></span></div>
+  <div class="hero"><div><h1 id="h-titulo">Clientes</h1><p id="h-sub">Capoto &amp; isolamento térmico</p></div></div>
+</header>
+<nav>
+  <button type="button" data-v="inicio" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2z"/></svg><span>Início</span></button>
+  <button type="button" data-v="clientes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Clientes</span></button>
+  <button type="button" data-v="obras"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/></svg><span>Obras</span></button>
+  <button type="button" data-v="orcs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg><span>Orçamentos</span></button>
+  <button type="button" data-v="mais"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span>Mais</span></button>
+</nav>
+
+<main id="v-clientes">
+  <div class="seg" role="tablist"><button type="button" role="tab" data-seg="cli" aria-selected="true">Clientes</button><button type="button" role="tab" data-seg="ped" aria-selected="false">Pedidos <span class="badge" id="ped-badge" hidden></span></button></div>
+  <div id="seg-cli">
+  <div class="row" style="flex-wrap:nowrap">
+    <label class="search" for="cli_filtro" style="flex:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="cli_filtro" type="search" placeholder="Procurar cliente" aria-label="Procurar cliente"></label>
+    <button type="button" class="btn acc" id="b-novocli"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Novo</button>
+  </div>
+  <div class="chips" id="cli-filtros"></div>
+  <div class="vcol" id="cli-lista"></div>
+  </div>
+  <div id="seg-ped" hidden>
+  <div class="row" style="justify-content:space-between;align-items:center"><p class="hint" style="flex:1">Contactos de quem pediu orçamento, antes de ser cliente.</p><button type="button" class="btn acc" id="b-novoped"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Novo pedido</button></div>
+  <div class="vcol" id="ped-lista"></div>
+  </div>
+</main>
+
+<main id="v-cliente" hidden>
+  <button type="button" class="back" id="b-voltar">‹ Voltar aos clientes</button>
+  <section class="ohero chero"><div class="oh-top"><span class="av big" id="cf-av">?</span><div class="oh-txt"><span class="oh-est" id="cf-est">Cliente</span><h2 id="cf-titulo">Cliente</h2><p id="cf-sub"></p></div></div><div class="oh-acts so-ex" id="cf-acts"></div></section>
+  <div id="cf-dyn" class="vcol so-ex"></div>
+  <input id="cf_cam" type="file" accept="image/*" capture="environment" hidden>
+<details class="sec so-ex" data-csec="orcs" open><summary><span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></span><span class="sec-t"><b>Orçamentos</b><span class="meta" id="cs-orcs"></span></span></summary><div class="sec-b"><button type="button" class="btn small" id="cf-novoorc" style="align-self:flex-start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Novo orçamento</button><div id="cf-orcs"></div></div></details>
+<details class="sec so-ex" data-csec="obras" open><summary><span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.7z"/><path d="M3.3 7L12 12l8.7-5M12 22V12"/></svg></span><span class="sec-t"><b>Obras</b><span class="meta" id="cs-obras"></span></span></summary><div class="sec-b"><button type="button" class="btn small" id="cf-novaobra" style="align-self:flex-start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Nova obra</button><div id="cf-obras"></div></div></details>
+<details class="sec so-ex" data-csec="pags"><summary><span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 7a7 7 0 1 0 0 10M4 10h9M4 14h9"/></svg></span><span class="sec-t"><b>Pagamentos</b><span class="meta" id="cs-pags"></span></span></summary><div class="sec-b"><div id="cf-pags"></div>
+    <div class="grid">
+      <label for="p_data">Data<input id="p_data" type="date"></label>
+      <label for="p_valor">Valor (€)<input id="p_valor" type="text" inputmode="decimal"></label>
+      <label for="p_desc">Descrição<input id="p_desc" type="text" placeholder="Ex.: adjudicação, 2.ª prestação"></label>
+    </div>
+    <button type="button" class="btn ghost small" id="p-add" style="align-self:flex-start">Registar pagamento</button></div></details>
+<details class="sec so-ex" data-csec="fotos"><summary><span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span><span class="sec-t"><b>Fotografias</b><span class="meta" id="cs-fotos"></span></span></summary><div class="sec-b"><div class="grid">
+      <label for="f_fase">Fase<select id="f_fase"><option>Visita</option><option>Antes</option><option>Durante</option><option>Depois</option><option>Problema</option></select></label>
+      <label class="btn" for="f_ficheiros" style="color:#fff;font-size:.95rem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Adicionar fotografias<input id="f_ficheiros" type="file" accept="image/*" multiple hidden></label>
+    </div>
+    <p class="hint" id="f-estado"></p>
+    <div class="fotos" id="cf-fotos"></div></div></details>
+<details class="sec" data-csec="dados" id="cf-det"><summary><span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span class="sec-t"><b>Dados do cliente</b><span class="meta" id="cs-dados"></span></span></summary><div class="sec-b"><div class="grid">
+      <label for="cf_nome">Nome<input id="cf_nome" type="text"></label>
+      <label for="cf_tel">Telefone<input id="cf_tel" type="tel"></label>
+      <label for="cf_email">Email<input id="cf_email" type="email"></label>
+      <label for="cf_nif">NIF<input id="cf_nif" type="text" inputmode="numeric"></label>
+      <label for="cf_morada">Morada da obra<input id="cf_morada" type="text"></label>
+    </div>
+    <label for="cf_notas">Notas<textarea id="cf_notas" placeholder="Medidas, o que foi combinado, o que falta fazer…"></textarea></label>
+    <div class="row">
+      <button type="button" class="btn acc" id="cf-guardar">Guardar dados</button>
+      <button type="button" class="btn danger" id="cf-apagar">Apagar cliente</button>
+    </div></div></details>
+  <button type="button" class="fab so-ex" id="cf-fab" aria-label="Adicionar ao cliente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>
+</main>
+<main id="v-novo" hidden>
+  <section class="ohero qhero">
+    <div class="qh-l1"><span class="oh-est" id="qh-est">Rascunho</span><span id="qh-num">Novo orçamento</span><button type="button" class="qh-novo" id="b-novo">Começar novo</button></div>
+    <h2 id="qh-cli">Cliente por escolher</h2>
+    <b class="qh-total" id="qh-total">0,00 €</b>
+    <span class="qh-sub" id="qh-sub"></span>
+    <span class="kt-bar"><i id="qh-prog" style="width:0"></i></span>
+    <div class="qh-l3"><span id="qh-falta"></span><button type="button" class="lnk lnk-w" id="qh-ver">Ver detalhe</button></div>
+    <span hidden id="q-num"></span><span hidden id="q-info"></span>
+  </section>
+
+  <details class="sec qs" data-qsec="cliente"><summary><span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="sec-t"><b>Cliente</b><span class="meta" id="qs-cliente"></span></span><span class="qok" id="qk-cliente"></span></summary><div class="sec-b">
+    <label for="c_sel">Cliente<select id="c_sel"><option value="">Novo cliente</option></select></label>
+    <div class="grid">
+      <label for="c_nome">Nome<input id="c_nome" type="text" autocomplete="off"></label>
+      <label for="c_tel">Telefone<input id="c_tel" type="tel" inputmode="tel"></label>
+      <label for="c_nif">NIF (opcional)<input id="c_nif" type="text" inputmode="numeric"></label>
+      <label for="o_morada">Morada da obra<input id="o_morada" type="text"></label>
+    </div>
+  </div></details>
+
+  <details class="sec qs" data-qsec="obra"><summary><span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span class="sec-t"><b>Obra</b><span class="meta" id="qs-obra"></span></span><span class="qok" id="qk-obra"></span></summary><div class="sec-b">
+    <div class="grid">
+      <label for="modo">Tipo de orçamento<select id="modo"><option value="mo">Só mão de obra</option><option value="completa">Obra completa (com material)</option></select></label>
+      <label for="o_area">Área de fachada (m²)<input id="o_area" type="text" inputmode="decimal"></label>
+      <label for="o_iso">Isolamento<select id="o_iso"><option value="">Não indicar</option><option>EPS branco</option><option>EPS grafite</option><option>Lã mineral</option><option>Cortiça (ICB)</option><option>XPS</option></select></label>
+      <label for="o_esp">Espessura (cm)<input id="o_esp" type="text" inputmode="decimal"></label>
+    </div>
+    <label for="o_desc">Descrição dos trabalhos<textarea id="o_desc"></textarea></label>
+  </div></details>
+
+  <details class="sec qs" data-qsec="med"><summary><span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3 8.7 2.7a1 1 0 0 0-1.4 0L2.7 7.3a1 1 0 0 0 0 1.4l12.6 12.6a1 1 0 0 0 1.4 0l4.6-4.6a1 1 0 0 0 0-1.4zM7.5 10.5l2-2M10.5 13.5l2-2M13.5 16.5l2-2"/></svg></span><span class="sec-t"><b>Medição da fachada</b><span class="meta" id="qs-med"></span></span><span class="qok" id="qk-med"></span></summary><div class="sec-b">
+    <p class="hint">Meça cada fachada (largura × altura) e os vãos a descontar (janelas, portas). A área calculada pode ir direta para o orçamento.</p>
+    <div id="med-fach"></div>
+    <button type="button" class="btn ghost small" id="b-fach" style="align-self:flex-start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Fachada</button>
+    <div id="med-vaos"></div>
+    <button type="button" class="btn ghost small" id="b-vao" style="align-self:flex-start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Janela ou porta</button>
+    <div class="medtot"><span>Área útil</span><b id="med-total">0 m²</b><button type="button" class="btn small" id="b-usar-med">Usar no orçamento</button></div>
+  </div></details>
+
+  <details class="sec qs" data-qsec="mo"><summary><span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="sec-t"><b>Mão de obra</b><span class="meta" id="qs-mo"></span></span><span class="qok" id="qk-mo"></span></summary><div class="sec-b">
+    <div class="grid">
+      <label for="mo_tipo">Cobrada<select id="mo_tipo"><option value="m2">Por m²</option><option value="dia">Por dia de equipa</option><option value="global">Valor total combinado</option></select></label>
+      <label for="mo_preco"><span id="l_mo">Preço por m² (€)</span><input id="mo_preco" type="text" inputmode="decimal"></label>
+      <label for="mo_rend">Rendimento (m² por dia)<input id="mo_rend" type="text" inputmode="decimal"></label>
+      <label for="mo_dias">Dias de trabalho<input id="mo_dias" type="text" inputmode="numeric"></label>
+    </div>
+    <p class="hint" id="h_dias">Se deixar os dias vazios, são calculados pela área e pelo rendimento.</p>
+  </div></details>
+
+  <details class="sec qs" data-qsec="mat" id="sec-mat" hidden><summary><span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span class="sec-t"><b>Material e andaime</b><span class="meta" id="qs-mat"></span></span><span class="qok" id="qk-mat"></span></summary><div class="sec-b">
+    <div class="grid">
+      <label for="m_mat">Material (€ por m²)<input id="m_mat" type="text" inputmode="decimal"></label>
+      <label for="m_and">Andaime (€ por m²)<input id="m_and" type="text" inputmode="decimal"></label>
+      <label for="m_margem">Margem sobre material e andaime (%)<input id="m_margem" type="text" inputmode="decimal"></label>
+    </div>
+    <p class="hint">Material inclui placas, cola, rede, buchas, perfis, primário e acabamento. Deixe o andaime vazio se não for preciso.</p>
+  </div></details>
+
+  <details class="sec qs" data-qsec="desl"><summary><span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></span><span class="sec-t"><b>Deslocações</b><span class="meta" id="qs-desl"></span></span><span class="qok" id="qk-desl"></span></summary><div class="sec-b">
+    <label for="d_tipo">Como cobrar<select id="d_tipo"><option value="calc">Calcular pelo combustível</option><option value="manual">Escrever o valor</option><option value="nao">Não cobrar</option></select></label>
+    <div class="grid" id="d_calc">
+      <label for="d_km">Km ida e volta (por viagem)<input id="d_km" type="text" inputmode="decimal"></label>
+      <label for="d_viagens">N.º de viagens<input id="d_viagens" type="text" inputmode="numeric"></label>
+      <label for="d_cons">Consumo da carrinha (L/100 km)<input id="d_cons" type="text" inputmode="decimal"></label>
+      <label for="d_comb">Preço do combustível hoje (€/L)<input id="d_comb" type="text" inputmode="decimal"></label>
+      <label for="d_port">Portagens por viagem (€)<input id="d_port" type="text" inputmode="decimal"></label>
+    </div>
+    <p class="hint" id="h_viagens">Se deixar as viagens vazias, conta uma por dia de trabalho.</p>
+    <div class="grid" id="d_man" hidden>
+      <label for="d_valor">Valor das deslocações (€)<input id="d_valor" type="text" inputmode="decimal"></label>
+    </div>
+  </div></details>
+
+  <details class="sec qs" data-qsec="extras"><summary><span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span><span class="sec-t"><b>Trabalhos extra</b><span class="meta" id="qs-extras"></span></span><span class="qok" id="qk-extras"></span></summary><div class="sec-b">
+    <div id="extras"></div>
+    <button type="button" class="btn ghost small" id="b-extra" style="align-self:flex-start">Adicionar trabalho extra</button>
+    <p class="hint">Por exemplo: reparação de fissuras, remoção de reboco, peitoris, limpeza da fachada.</p>
+  </div></details>
+
+  <details class="sec qs" data-qsec="iva"><summary><span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 7a7 7 0 1 0 0 10M4 10h10M4 14h10"/></svg></span><span class="sec-t"><b>IVA e condições</b><span class="meta" id="qs-iva"></span></span><span class="qok" id="qk-iva"></span></summary><div class="sec-b">
+    <div class="grid">
+      <label for="iva">IVA<select id="iva"><option value="0">Isento / sem IVA</option><option value="6">6 %</option><option value="23">23 %</option></select></label>
+      <label for="validade">Validade do orçamento (dias)<input id="validade" type="text" inputmode="numeric"></label>
+    </div>
+    <p class="hint">O regime de IVA depende da vossa situação nas Finanças. Confirme com o contabilista.</p>
+    <label for="condicoes">Condições de pagamento<textarea id="condicoes"></textarea></label>
+    <label for="notas">Observações para o cliente<textarea id="notas"></textarea></label>
+  </div></details>
+
+  <section class="card" id="resumo">
+    <h2>Orçamento</h2>
+    <div class="warn" id="falta" hidden></div>
+    <table><tbody id="linhas"></tbody></table>
+    <div class="total"><span id="t-lbl">Total</span><b id="t-val">0,00 €</b></div>
+    <div class="facts" id="facts"></div>
+    <div class="row">
+      <button type="button" class="btn acc" id="b-guardar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Guardar</button>
+      <button type="button" class="btn" id="b-pdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7M16 6l-4-4-4 4M12 2v13"/></svg>PDF para o cliente</button>
+      <button type="button" class="btn ghost" id="b-texto">Enviar resumo</button>
+    </div>
+  </section>
+  <div class="barra" id="barra"><div><small id="bt-lbl">Total</small><b id="bt-val">0,00 €</b></div><div class="row"><button type="button" class="btn acc small" id="bt-guardar">Guardar</button><button type="button" class="btn small" id="bt-pdf" style="background:rgba(255,255,255,.15)">PDF</button></div></div>
+</main>
+
+<main id="v-inicio" hidden>
+  <div id="ini-corpo" class="vcol"></div>
+</main>
+
+<main id="v-obras" hidden>
+  <div class="seg" role="tablist"><button type="button" role="tab" data-oseg="lista" aria-selected="true">Obras</button><button type="button" role="tab" data-oseg="agenda" aria-selected="false">Agenda</button></div>
+  <div id="oseg-lista">
+    <div class="chips" id="obra-filtros"></div>
+    <div class="vcol" id="obras-lista"></div>
+  </div>
+  <div id="oseg-agenda" hidden><div id="agenda"></div></div>
+</main>
+
+<main id="v-obra" hidden>
+  <button type="button" class="back" id="ob-voltar">‹ Voltar</button>
+  <div id="obra-corpo"></div>
+</main>
+
+<main id="v-orcs" hidden>
+  <div class="row" style="flex-wrap:nowrap">
+    <label class="search" for="orc_filtro" style="flex:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="orc_filtro" type="search" placeholder="Procurar orçamento" aria-label="Procurar orçamento"></label>
+    <button type="button" class="btn acc" id="b-novoorc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Novo</button>
+  </div>
+  <div class="kgrid" id="orc-resumo"></div>
+  <div class="chips" id="orc-filtros"></div>
+  <section class="card list lst" id="orc-todos-card"><div id="orc-todos"></div></section>
+</main>
+
+<main id="v-mais" hidden>
+  <section class="card list menu">
+    <button type="button" class="mrow" data-go="despesas"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 7a7 7 0 1 0 0 10M4 10h10M4 14h10"/></svg></span><span><b>Despesas</b><small>Combustível, material, refeições e outros gastos</small></span></button>
+    <button type="button" class="mrow" data-go="dias"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><span><b>Equipa e dias</b><small>Dias trabalhados por pessoa e por obra</small></span></button>
+    <button type="button" class="mrow" data-go="contas"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></span><span><b>Contas da empresa</b><small>Recebido, gasto e resultado por mês e por obra</small></span></button>
+    <button type="button" class="mrow" data-go="docs"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span><span><b>Documentos</b><small>Seguros, IMPIC e validades</small></span></button>
+    <button type="button" class="mrow" data-go="def"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></span><span><b>Definições</b><small>Perfil, empresa, consumos de material e equipa</small></span></button>
+  </section>
+</main>
+
+<main id="v-despesas" hidden>
+  <button type="button" class="back" data-back="mais">‹ Mais</button>
+  <div class="row" style="flex-wrap:nowrap;align-items:end"><label for="dsp_mes" style="flex:1">Mês<input id="dsp_mes" type="month"></label><button type="button" class="btn acc" id="b-novadsp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Despesa</button></div>
+  <section class="card"><h2>Resumo do mês</h2><div id="dsp-resumo"></div></section>
+  <section class="card list" id="dsp-lista"></section>
+</main>
+
+<main id="v-dias" hidden>
+  <button type="button" class="back" data-back="mais">‹ Mais</button>
+  <div class="row" style="flex-wrap:nowrap;align-items:end"><label for="dias_mes" style="flex:1">Mês<input id="dias_mes" type="month"></label><button type="button" class="btn acc" id="b-novodia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Registar</button></div>
+  <section class="card"><h2>Dias por pessoa</h2><div id="dias-resumo"></div></section>
+  <section class="card list" id="dias-lista"></section>
+</main>
+
+<main id="v-contas" hidden>
+  <button type="button" class="back" data-back="mais">‹ Mais</button>
+  <label for="ct_ano">Ano<select id="ct_ano"></select></label>
+  <section class="card"><h2>Por mês</h2><div id="ct-meses" class="scrollx"></div><p class="hint">Recebido: pagamentos registados nas pastas dos clientes. Gasto: despesas registadas.</p></section>
+  <section class="card"><h2>Por obra</h2><div id="ct-obras" class="scrollx"></div></section>
+</main>
+
+<main id="v-docs" hidden>
+  <button type="button" class="back" data-back="mais">‹ Mais</button>
+  <div class="row" style="justify-content:space-between;align-items:center"><p class="hint" style="flex:1">Documentos com validade. A app avisa 30 dias antes de caducarem.</p><button type="button" class="btn acc" id="b-novodoc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Documento</button></div>
+  <section class="card list" id="docs-lista"></section>
+</main>
+
+<main id="v-def" hidden>
+  <button type="button" class="back" data-back="mais">‹ Mais</button>
+  <section class="card">
+    <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>O meu perfil</h2>
+    <p class="hint">Aparece no PDF como responsável pelo orçamento.</p>
+    <div class="grid">
+      <label for="u_nome">Nome<input id="u_nome" type="text"></label>
+      <label for="u_tel">Telefone<input id="u_tel" type="tel"></label>
+    </div>
+    <button type="button" class="btn ghost small" id="u-guardar" style="align-self:flex-start">Guardar perfil</button>
+  </section>
+  <section class="card">
+    <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Dados da empresa</h2>
+    <p class="hint">Partilhados por toda a equipa.</p>
+    <div class="grid">
+      <label for="s_nome">Nome da empresa<input id="s_nome" type="text"></label>
+      <label for="s_nif">NIF<input id="s_nif" type="text" inputmode="numeric"></label>
+      <label for="s_tel">Telefone geral<input id="s_tel" type="tel"></label>
+      <label for="s_email">Email<input id="s_email" type="email"></label>
+      <label for="s_morada">Morada<input id="s_morada" type="text"></label>
+    </div>
+    <label for="s_isencao">Frase de isenção de IVA<input id="s_isencao" type="text" placeholder="Ex.: IVA – regime de isenção, art. 53.º do CIVA"></label>
+    <p class="hint">Confirme a frase certa com o contabilista.</p>
+    <h2 style="margin-top:6px">Valores sugeridos em orçamentos novos</h2>
+    <div class="grid">
+      <label for="s_rend">Rendimento (m² por dia)<input id="s_rend" type="text" inputmode="decimal"></label>
+      <label for="s_cons">Consumo da carrinha (L/100 km)<input id="s_cons" type="text" inputmode="decimal"></label>
+      <label for="s_validade">Validade (dias)<input id="s_validade" type="text" inputmode="numeric"></label>
+      <label for="s_iva">IVA habitual<select id="s_iva"><option value="0">Isento / sem IVA</option><option value="6">6 %</option><option value="23">23 %</option></select></label>
+    </div>
+    <label for="s_desc">Descrição dos trabalhos habitual<textarea id="s_desc"></textarea></label>
+    <label for="s_cond">Condições de pagamento habituais<textarea id="s_cond"></textarea></label>
+    <button type="button" class="btn acc" id="s-guardar" style="align-self:flex-start">Guardar dados da empresa</button>
+  </section>
+  <section class="card">
+    <h2>Consumos de material</h2>
+    <p class="hint">Usados para calcular o material de cada obra. Ajustem à ficha técnica do sistema que usam; os valores de partida são apenas referência.</p>
+    <div class="grid">
+      <label for="k_placa">Placas: desperdício (%)<input id="k_placa" type="text" inputmode="decimal"></label>
+      <label for="k_cola">Cola de colagem (kg/m²)<input id="k_cola" type="text" inputmode="decimal"></label>
+      <label for="k_barr">Argamassa de barramento (kg/m²)<input id="k_barr" type="text" inputmode="decimal"></label>
+      <label for="k_rede">Rede (m² por m², com sobreposição)<input id="k_rede" type="text" inputmode="decimal"></label>
+      <label for="k_buch">Buchas (unidades/m²)<input id="k_buch" type="text" inputmode="decimal"></label>
+      <label for="k_prim">Primário (L/m²)<input id="k_prim" type="text" inputmode="decimal"></label>
+      <label for="k_acab">Acabamento (kg/m²)<input id="k_acab" type="text" inputmode="decimal"></label>
+      <label for="k_saco">Saco de cola/argamassa (kg)<input id="k_saco" type="text" inputmode="decimal"></label>
+      <label for="k_rolo">Rolo de rede (m²)<input id="k_rolo" type="text" inputmode="decimal"></label>
+      <label for="k_balde">Balde de acabamento (kg)<input id="k_balde" type="text" inputmode="decimal"></label>
+    </div>
+    <button type="button" class="btn ghost small" id="k-guardar" style="align-self:flex-start">Guardar consumos</button>
+  </section>
+  <section class="card">
+    <h2>Cópia de segurança</h2>
+    <p class="hint">Descarrega um ficheiro com todos os clientes, orçamentos, pagamentos, obras, despesas e dias (sem as fotografias). Guardem uma cópia de vez em quando, por exemplo no fim de cada mês.</p>
+    <button type="button" class="btn ghost small" id="b-backup" style="align-self:flex-start">Descarregar cópia de segurança</button>
+  </section>
+  <section class="card" id="sec-import" hidden>
+    <h2>Orçamentos antigos neste telemóvel</h2>
+    <p class="hint" id="imp-txt"></p>
+    <button type="button" class="btn ghost small" id="b-import" style="align-self:flex-start">Passar para a equipa</button>
+  </section>
+  <section class="card">
+    <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Equipa</h2>
+    <div id="equipa"></div>
+    <button type="button" class="btn ghost small" id="b-sair" style="align-self:flex-start">Terminar sessão</button>
+  </section>
+</main>
+</div>
+
+<dialog id="dlg"><form method="dialog" id="dlg-form"><div class="dlg-h"><b id="dlg-t"></b><button type="button" class="dlg-x" id="dlg-x" aria-label="Fechar">✕</button></div><div id="dlg-b" class="dlg-b"></div><div class="dlg-f" id="dlg-f"></div></form></dialog>
+<div class="toast" id="toast" hidden></div>
+<script>window.VT_FIREBASE={};</script>
+<script src="/visothermly-orcamentos/VisoThermLy_App_Orcamentos/app-orcamentos/pdf-lib.min.js"></script>
+<script type="importmap">{"imports":{"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js":"/visothermly-orcamentos/demo/fb-demo.js","https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js":"/visothermly-orcamentos/demo/fb-demo.js","https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js":"/visothermly-orcamentos/demo/fb-demo.js","https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js":"/visothermly-orcamentos/demo/fb-demo.js"}}</script>
+<script type="module" src="/visothermly-orcamentos/demo/app.js?v=1"></script>
+</body>
+</html>
