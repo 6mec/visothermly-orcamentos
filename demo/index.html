@@ -558,6 +558,94 @@ nav.nav2 .nav-c svg{width:24px;height:24px;stroke-width:2.4}
 .tl-dot{width:22px;height:22px}.tl li::before{left:10px;width:1.5px}
 .toast{border-radius:10px;background:#14202c;font-weight:500}
 .empty{font-size:.88rem}
+
+/* ===== estrutura com menu lateral ===== */
+:root{--side:#0c2135;--side-2:#11304b;--side-w:268px}
+body{background:var(--side)}
+.back[data-back="mais"]{display:none!important}
+.side{position:fixed;top:0;bottom:0;left:0;width:var(--side-w);background:var(--side);background-image:radial-gradient(140% 60% at 0% 0%,#163d5e 0%,transparent 60%);color:#c3d0de;display:flex;flex-direction:column;padding:calc(18px + env(safe-area-inset-top,0px)) 14px calc(12px + env(safe-area-inset-bottom,0px));overflow-y:auto;z-index:0;scrollbar-width:none}
+.side::-webkit-scrollbar{display:none}
+body:has(.demo-bar) .side{top:27px}
+.sd-brand{display:flex;gap:11px;align-items:center;padding:2px 8px 18px}
+.sd-brand img{width:38px;height:38px;border-radius:10px;background:#fff;padding:4px;flex:none}
+.sd-brand b{color:#fff;font-size:1.02rem;font-weight:700;display:block;letter-spacing:-.01em}
+.sd-brand small{display:block;font-size:.72rem;color:#8095ab}
+.sd-criar{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--accent);color:#fff;border:0;border-radius:11px;min-height:44px;font:inherit;font-weight:650;font-size:.92rem;margin:0 4px 8px;cursor:pointer;box-shadow:0 8px 20px rgba(223,143,60,.28);transition:transform .1s,filter .15s}
+.sd-criar:hover{filter:brightness(1.05)}.sd-criar:active{transform:scale(.97)}
+.sd-criar svg{width:18px;height:18px;stroke-width:2.4}
+nav.sd-nav{position:static;display:flex;flex-direction:column;gap:2px;flex:1;background:none;border:0;box-shadow:none;padding:0;justify-content:flex-start}
+.sd-nav small{font-size:.63rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:#6a8199;padding:16px 12px 6px}
+nav.sd-nav button{flex:none;max-width:none;flex-direction:row;display:flex;align-items:center;gap:12px;min-height:42px;padding:0 10px 0 12px;border-radius:10px;color:#bfcddb;font-size:.9rem;font-weight:550;text-align:left;position:relative;background:none;transition:background-color .15s,color .15s}
+nav.sd-nav button span{flex:1}
+nav.sd-nav button svg{width:19px;height:19px;opacity:.8;flex:none}
+nav.sd-nav button:hover{background:rgba(255,255,255,.05);color:#fff}
+nav.sd-nav button[aria-current="page"]{background:rgba(255,255,255,.09);color:#fff}
+nav.sd-nav button[aria-current="page"] svg{opacity:1;color:#f1b373}
+nav.sd-nav button[aria-current="page"]::before{content:"";position:absolute;left:-14px;top:10px;bottom:10px;width:3px;border-radius:0 3px 3px 0;background:var(--accent)}
+.sd-n{font-style:normal;font-size:.7rem;font-weight:700;background:rgba(255,255,255,.1);color:#dbe5ef;border-radius:6px;padding:2px 7px;min-width:22px;text-align:center}
+.sd-n.acc{background:var(--accent);color:#fff}
+.sd-sp{flex:1;min-height:14px}
+.sd-user{display:flex;gap:10px;align-items:center;padding:12px 8px 4px;margin-top:8px;border-top:1px solid rgba(255,255,255,.08)}
+.sd-user .av{width:36px;height:36px;border-radius:50%;font-size:.76rem}
+.sd-user b{color:#fff;font-size:.88rem;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px}
+.sd-user small{display:block;color:#8095ab;font-size:.72rem}
+.shell{position:relative;z-index:1;background:var(--bg);min-height:100vh;transition:transform .42s cubic-bezier(.22,.8,.2,1),border-radius .42s}
+.top{position:sticky;top:0;z-index:8;display:flex;align-items:center;gap:10px;padding:calc(8px + env(safe-area-inset-top,0px)) 14px 8px;background:color-mix(in srgb,var(--bg) 85%,transparent);-webkit-backdrop-filter:blur(16px) saturate(1.4);backdrop-filter:blur(16px) saturate(1.4);border-bottom:1px solid var(--line)}
+body:has(.demo-bar) .top{top:27px}
+.tb-i{width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--fg);display:grid;place-items:center;cursor:pointer;flex:none;box-shadow:var(--shadow);transition:transform .1s}
+.tb-i:active{transform:scale(.93)}
+.tb-i svg{width:20px;height:20px}
+.tb-plus{background:var(--blue);border-color:var(--blue);color:#fff}
+.tb-plus svg{stroke-width:2.4}
+.tb-t{flex:1;min-width:0}
+.tb-t small{display:none;font-size:.66rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.tb-t h1{margin:0;font-size:1.08rem;font-weight:700;letter-spacing:-.015em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25}
+.tb-t p{margin:0;font-size:.75rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+main{padding-bottom:calc(40px + env(safe-area-inset-bottom,0px))}
+.toast{bottom:calc(22px + env(safe-area-inset-bottom,0px))}
+.barra{bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+.scrim{display:none}
+@media (max-width:959px){
+ .side{width:min(80vw,300px);opacity:0;transform:translateX(-24px);transition:opacity .3s,transform .42s cubic-bezier(.22,.8,.2,1)}
+ body.menu .side{opacity:1;transform:none}
+ body.menu{overflow:hidden}
+ body.menu .shell{transform:translateX(min(80vw,300px)) scale(.86);border-radius:26px;overflow:hidden;box-shadow:-24px 0 60px rgba(0,0,0,.4);pointer-events:none}
+ body.menu .scrim{display:block;position:fixed;inset:0;left:min(74vw,276px);z-index:40}
+}
+@media (min-width:960px){
+ .shell{margin-left:var(--side-w);border-radius:0}
+ #b-menu,.tb-plus{display:none}
+ .top{padding:16px 36px 14px;gap:16px}
+ .tb-t small{display:block}
+ .tb-t h1{font-size:1.45rem}
+ .tb-t p{font-size:.82rem}
+ main{max-width:1120px;padding:26px 36px 56px;margin:0}
+ .ohero{padding:22px 22px 16px}
+}
+@media (max-width:959px){
+ nav.sd-nav button{min-height:40px}
+ .sd-nav small{padding:12px 12px 4px}
+ .sd-brand{padding-bottom:14px}
+}
+@media (min-width:960px){
+ #v-obra,#v-cliente,#v-novo{max-width:900px}
+ .kgrid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+ /* Hoje em painel de duas colunas */
+ #ini-corpo{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px 22px;align-items:start;grid-auto-flow:row dense}
+ #ini-corpo>*{grid-column:1}
+ #ini-corpo>.agora{grid-column:2;grid-row:1 / span 8;position:sticky;top:110px}
+ #ini-corpo .carr{margin:0;padding:2px 0 8px;flex-wrap:wrap;overflow:visible}
+ #ini-corpo .ocard{width:calc(50% - 5px)}
+ #ini-corpo .kgrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ /* Trabalhos em quadro (colunas por etapa) */
+ #trab-lista{display:grid;grid-template-rows:auto 1fr;grid-auto-flow:column;grid-auto-columns:minmax(205px,1fr);gap:0 14px;overflow-x:auto;padding-bottom:8px;align-items:stretch}
+ #trab-lista .et-h{margin:0;padding:12px 12px 10px;background:var(--surface2);border:1px solid var(--line);border-bottom:0;border-radius:14px 14px 0 0}
+ #trab-lista .tl-list{margin:0;padding:0 10px 12px;border:1px solid var(--line);border-top:0;border-left:1px solid var(--line);border-radius:0 0 14px 14px;background:var(--surface2);gap:10px;align-content:start}
+ #trab-lista .tcard{flex-wrap:wrap;align-items:flex-start}
+ #trab-lista .tcard.urg::before{display:none}
+ #trab-lista .tc-a{width:100%}#trab-lista .tc-a .btn{width:100%}
+ #trab-lista .tcard .grow .meta{white-space:normal}
+}
 .demo-bar{position:sticky;top:0;z-index:30;background:#e19442;color:#1b2b3a;font:700 .78rem/1.3 system-ui,sans-serif;text-align:center;padding:6px 10px}.demo-bar a{color:inherit}
 </style></head>
 <body>
@@ -594,17 +682,22 @@ nav.nav2 .nav-c svg{width:24px;height:24px;stroke-width:2.4}
 </div>
 
 <div id="app" hidden>
-<header>
-  <div class="brand"><b><img src="/visothermly-orcamentos/VisoThermLy_App_Orcamentos/app-orcamentos/logo-icone.png" alt="">VisoThermLy</b><span id="quem" class="chip"></span></div>
-  <div class="hero"><div><h1 id="h-titulo">Clientes</h1><p id="h-sub">Capoto &amp; isolamento térmico</p></div></div>
-</header>
-<nav class="nav2">
-  <button type="button" data-v="inicio" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2z"/></svg><span>Hoje</span></button>
-  <button type="button" data-v="trab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/></svg><span>Trabalhos</span></button>
-  <button type="button" class="nav-c" id="nav-criar" aria-label="Criar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>
-  <button type="button" data-v="cal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h3M8 18h6"/></svg><span>Agenda</span></button>
-  <button type="button" data-v="mais"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span>Mais</span></button>
+<aside class="side" id="side" aria-label="Menu">
+<div class="sd-brand"><img src="/visothermly-orcamentos/VisoThermLy_App_Orcamentos/app-orcamentos/logo-icone.png" alt=""><span><b>VisoThermLy</b><small>Capoto &amp; isolamento térmico</small></span></div>
+<button type="button" class="sd-criar" id="nav-criar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>Criar</button>
+<nav class="sd-nav">
+<small>Visão geral</small><button type="button" data-v="inicio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2z"/></svg><span>Hoje</span></button><button type="button" data-v="cal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg><span>Agenda</span></button>
+<small>Comercial</small><button type="button" data-v="trab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h4v16H4z"/><path d="M10 4h4v11h-4z"/><path d="M16 4h4v7h-4z"/></svg><span>Trabalhos</span><i class="sd-n" id="sn-trab" hidden></i></button><button type="button" data-v="clientes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M9 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8z"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Clientes e pedidos</span><i class="sd-n" id="sn-clientes" hidden></i></button><button type="button" data-v="orcs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/></svg><span>Orçamentos</span></button>
+<small>Produção</small><button type="button" data-v="obras"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg><span>Obras</span><i class="sd-n" id="sn-obras" hidden></i></button><button type="button" data-v="dias"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z"/><path d="M12 6v6l4 2"/></svg><span>Equipa e dias</span></button>
+<small>Finanças</small><button type="button" data-v="contas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16v-4"/><path d="M12 16V8"/><path d="M17 16v-7"/></svg><span>Contas</span></button><button type="button" data-v="despesas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"/><path d="M16 8H8"/><path d="M16 12H8"/><path d="M13 16H8"/></svg><span>Despesas</span></button><button type="button" data-v="docs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9l-.8-1.2A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z"/></svg><span>Documentos</span><i class="sd-n" id="sn-docs" hidden></i></button>
+<span class="sd-sp"></span><button type="button" data-v="def"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M1 14h6"/><path d="M9 8h6"/><path d="M17 16h6"/></svg><span>Definições</span></button>
 </nav>
+<div class="sd-user"><span class="av" id="sd-av">?</span><span><b id="quem"></b><small>Sócio · VisoThermLy</small></span></div>
+</aside>
+<div class="scrim" id="scrim"></div>
+<div class="shell" id="shell">
+<div class="top"><button type="button" class="tb-i" id="b-menu" aria-label="Abrir menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button><div class="tb-t"><small id="h-sec">Visão geral</small><h1 id="h-titulo">Hoje</h1><p id="h-sub"></p></div><button type="button" class="tb-i tb-plus" id="tb-criar" aria-label="Criar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></button></div>
+
 
 <main id="v-clientes">
   <button type="button" class="back" data-back="mais">‹ Mais</button>
@@ -911,12 +1004,13 @@ nav.nav2 .nav-c svg{width:24px;height:24px;stroke-width:2.4}
   </section>
 </main>
 </div>
+</div>
 
 <dialog id="dlg"><form method="dialog" id="dlg-form"><div class="dlg-h"><b id="dlg-t"></b><button type="button" class="dlg-x" id="dlg-x" aria-label="Fechar">✕</button></div><div id="dlg-b" class="dlg-b"></div><div class="dlg-f" id="dlg-f"></div></form></dialog>
 <div class="toast" id="toast" hidden></div>
 <script>window.VT_FIREBASE={};</script>
 <script src="/visothermly-orcamentos/VisoThermLy_App_Orcamentos/app-orcamentos/pdf-lib.min.js"></script>
 <script type="importmap">{"imports":{"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js":"/visothermly-orcamentos/demo/fb-demo.js","https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js":"/visothermly-orcamentos/demo/fb-demo.js","https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js":"/visothermly-orcamentos/demo/fb-demo.js","https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js":"/visothermly-orcamentos/demo/fb-demo.js"}}</script>
-<script type="module" src="/visothermly-orcamentos/demo/app.js?v=3"></script>
+<script type="module" src="/visothermly-orcamentos/demo/app.js?v=4"></script>
 </body>
 </html>
