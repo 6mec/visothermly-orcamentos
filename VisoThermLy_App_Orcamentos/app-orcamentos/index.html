@@ -331,6 +331,53 @@ dialog.fecha::backdrop{animation:vtFo .15s ease-in forwards}
 .chero .av.big{width:64px;height:64px;font-size:1.4rem;border:3px solid rgba(255,255,255,.25);flex:none}
 .chero .oh-top{align-items:center}
 #v-cliente{gap:14px}
+
+.grp-l{font-size:.74rem;font-weight:800;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin:4px 6px -6px}
+.lst{padding-top:2px;padding-bottom:2px}
+.row-i[role=button]{cursor:pointer;transition:background-color .15s}
+.lst .row-i:last-child{border-bottom:0}
+.ic-call{width:40px;height:40px;border-radius:12px;background:var(--ok-bg);color:var(--ok);display:grid;place-items:center;flex:none;transition:transform .1s}
+.ic-call:active{transform:scale(.9)}.ic-call svg{width:18px;height:18px}
+.mi{width:13px;height:13px;vertical-align:-2px;margin-right:4px}
+.trunc{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:block}
+.ob-c{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:14px;font:inherit;color:inherit;cursor:pointer;transition:transform .1s}
+.ob-c:active{transform:scale(.985)}
+.ob-c .grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ob-h{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.ob-h b{font-size:1rem;line-height:1.25}.ob-h .pill{flex:none}
+.ob-f{display:flex;gap:4px 14px;flex-wrap:wrap;margin-top:4px}
+.eqs{display:flex;margin-top:8px}.av.mini{width:28px;height:28px;font-size:.62rem;border:2px solid var(--surface);margin-right:-7px;flex:none}
+.orc-r{display:flex;gap:12px;align-items:center;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:13px 0 13px 14px;font:inherit;color:inherit;cursor:pointer;position:relative;min-height:66px;transition:background-color .15s}
+.orc-r:active{background:var(--surface2)}
+.orc-r:last-child{border-bottom:0}
+.orc-r::before{content:"";position:absolute;left:0;top:13px;bottom:13px;width:4px;border-radius:4px;background:var(--line)}
+.orc-r.e-ok::before{background:#2b9a5a}.orc-r.e-warn::before{background:var(--accent)}.orc-r.e-no::before{background:#d64534}
+.orc-r .grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.orc-r .grow b{font-size:.98rem}
+.orc-r .end{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:none}.orc-r .end b{font-variant-numeric:tabular-nums}
+.warn-t{color:var(--accent-text)!important;font-weight:700}
+.orc-hd{display:flex;flex-direction:column;gap:2px;padding:2px 0 4px}.orc-tot{font-size:1.9rem;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.est-b{display:flex;flex-wrap:wrap;gap:6px}
+.est-b button{border:1.5px solid var(--line);background:var(--surface);color:var(--fg);font:inherit;font-weight:700;font-size:.85rem;border-radius:99px;padding:8px 13px;cursor:pointer;min-height:40px;transition:background-color .15s,color .15s,transform .1s}
+.est-b button:active{transform:scale(.95)}
+.est-b button[aria-pressed=true].e-neutro{background:var(--fg);color:var(--surface);border-color:var(--fg)}
+.est-b button[aria-pressed=true].e-warn{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.est-b button[aria-pressed=true].e-ok{background:#2b9a5a;border-color:#2b9a5a;color:#fff}
+.est-b button[aria-pressed=true].e-no{background:#d64534;border-color:#d64534;color:#fff}
+.qdel{color:var(--no)!important}.qdel svg{width:24px;height:24px}
+.qhero{gap:6px;padding-bottom:16px}
+.qh-l1{display:flex;align-items:center;gap:8px;font-size:.85rem}
+.qh-novo{margin-left:auto;border:0;background:rgba(255,255,255,.14);color:#fff;font:inherit;font-weight:700;font-size:.8rem;border-radius:10px;padding:8px 11px;cursor:pointer}
+.qhero h2{margin:6px 0 0;color:#fff;font-size:1.15rem}
+.qh-total{font-size:2.2rem;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.qh-sub{font-size:.85rem;opacity:.85;min-height:1em}
+.qhero .kt-bar{height:6px;margin-top:8px}
+.qh-l3{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.82rem;opacity:.95}
+.lnk-w{color:#fff;text-decoration:underline;flex:none;font-size:.82rem}
+.qok{width:22px;height:22px;border-radius:50%;flex:none;display:grid;place-items:center;box-sizing:border-box}
+.q-ok{background:#2b9a5a}.q-ok::after{content:"";width:5px;height:9px;border-right:2px solid #fff;border-bottom:2px solid #fff;transform:translateY(-1px) rotate(45deg)}
+.q-falta{background:var(--accent-soft);border:2px solid var(--accent)}
+.q-op{border:2px dashed var(--line)}
+#v-novo .sec-b>.card{box-shadow:none}
+.est-d{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:var(--line);vertical-align:1px}.d-warn{background:var(--accent)}.d-ok{background:#2b9a5a}.d-info{background:var(--blue-2)}.d-no{background:#d64534}
 </style></head>
 <body>
 <div id="v-login" class="login" hidden>
@@ -384,11 +431,12 @@ dialog.fecha::backdrop{animation:vtFo .15s ease-in forwards}
     <label class="search" for="cli_filtro" style="flex:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="cli_filtro" type="search" placeholder="Procurar cliente" aria-label="Procurar cliente"></label>
     <button type="button" class="btn acc" id="b-novocli"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Novo</button>
   </div>
-  <section class="card list" id="cli-lista"></section>
+  <div class="chips" id="cli-filtros"></div>
+  <div class="vcol" id="cli-lista"></div>
   </div>
   <div id="seg-ped" hidden>
   <div class="row" style="justify-content:space-between;align-items:center"><p class="hint" style="flex:1">Contactos de quem pediu orçamento, antes de ser cliente.</p><button type="button" class="btn acc" id="b-novoped"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Novo pedido</button></div>
-  <section class="card list" id="ped-lista"></section>
+  <div class="vcol" id="ped-lista"></div>
   </div>
 </main>
 
@@ -427,13 +475,17 @@ dialog.fecha::backdrop{animation:vtFo .15s ease-in forwards}
   <button type="button" class="fab so-ex" id="cf-fab" aria-label="Adicionar ao cliente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>
 </main>
 <main id="v-novo" hidden>
-  <div class="row" style="justify-content:space-between;align-items:center">
-    <div><b id="q-num">Novo orçamento</b><div class="meta" id="q-info"></div></div>
-    <button type="button" class="btn ghost small" id="b-novo">Começar novo</button>
-  </div>
+  <section class="ohero qhero">
+    <div class="qh-l1"><span class="oh-est" id="qh-est">Rascunho</span><span id="qh-num">Novo orçamento</span><button type="button" class="qh-novo" id="b-novo">Começar novo</button></div>
+    <h2 id="qh-cli">Cliente por escolher</h2>
+    <b class="qh-total" id="qh-total">0,00 €</b>
+    <span class="qh-sub" id="qh-sub"></span>
+    <span class="kt-bar"><i id="qh-prog" style="width:0"></i></span>
+    <div class="qh-l3"><span id="qh-falta"></span><button type="button" class="lnk lnk-w" id="qh-ver">Ver detalhe</button></div>
+    <span hidden id="q-num"></span><span hidden id="q-info"></span>
+  </section>
 
-  <section class="card">
-    <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Cliente</h2>
+  <details class="sec qs" data-qsec="cliente"><summary><span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="sec-t"><b>Cliente</b><span class="meta" id="qs-cliente"></span></span><span class="qok" id="qk-cliente"></span></summary><div class="sec-b">
     <label for="c_sel">Cliente<select id="c_sel"><option value="">Novo cliente</option></select></label>
     <div class="grid">
       <label for="c_nome">Nome<input id="c_nome" type="text" autocomplete="off"></label>
@@ -441,10 +493,9 @@ dialog.fecha::backdrop{animation:vtFo .15s ease-in forwards}
       <label for="c_nif">NIF (opcional)<input id="c_nif" type="text" inputmode="numeric"></label>
       <label for="o_morada">Morada da obra<input id="o_morada" type="text"></label>
     </div>
-  </section>
+  </div></details>
 
-  <section class="card">
-    <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Obra</h2>
+  <details class="sec qs" data-qsec="obra"><summary><span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span class="sec-t"><b>Obra</b><span class="meta" id="qs-obra"></span></span><span class="qok" id="qk-obra"></span></summary><div class="sec-b">
     <div class="grid">
       <label for="modo">Tipo de orçamento<select id="modo"><option value="mo">Só mão de obra</option><option value="completa">Obra completa (com material)</option></select></label>
       <label for="o_area">Área de fachada (m²)<input id="o_area" type="text" inputmode="decimal"></label>
@@ -452,20 +503,18 @@ dialog.fecha::backdrop{animation:vtFo .15s ease-in forwards}
       <label for="o_esp">Espessura (cm)<input id="o_esp" type="text" inputmode="decimal"></label>
     </div>
     <label for="o_desc">Descrição dos trabalhos<textarea id="o_desc"></textarea></label>
-  </section>
+  </div></details>
 
-  <section class="card">
-    <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3 8.7 2.7a1 1 0 0 0-1.4 0L2.7 7.3a1 1 0 0 0 0 1.4l12.6 12.6a1 1 0 0 0 1.4 0l4.6-4.6a1 1 0 0 0 0-1.4zM7.5 10.5l2-2M10.5 13.5l2-2M13.5 16.5l2-2"/></svg></span>Medição da fachada</h2>
+  <details class="sec qs" data-qsec="med"><summary><span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3 8.7 2.7a1 1 0 0 0-1.4 0L2.7 7.3a1 1 0 0 0 0 1.4l12.6 12.6a1 1 0 0 0 1.4 0l4.6-4.6a1 1 0 0 0 0-1.4zM7.5 10.5l2-2M10.5 13.5l2-2M13.5 16.5l2-2"/></svg></span><span class="sec-t"><b>Medição da fachada</b><span class="meta" id="qs-med"></span></span><span class="qok" id="qk-med"></span></summary><div class="sec-b">
     <p class="hint">Meça cada fachada (largura × altura) e os vãos a descontar (janelas, portas). A área calculada pode ir direta para o orçamento.</p>
     <div id="med-fach"></div>
     <button type="button" class="btn ghost small" id="b-fach" style="align-self:flex-start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Fachada</button>
     <div id="med-vaos"></div>
     <button type="button" class="btn ghost small" id="b-vao" style="align-self:flex-start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Janela ou porta</button>
     <div class="medtot"><span>Área útil</span><b id="med-total">0 m²</b><button type="button" class="btn small" id="b-usar-med">Usar no orçamento</button></div>
-  </section>
+  </div></details>
 
-  <section class="card">
-    <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Mão de obra</h2>
+  <details class="sec qs" data-qsec="mo"><summary><span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="sec-t"><b>Mão de obra</b><span class="meta" id="qs-mo"></span></span><span class="qok" id="qk-mo"></span></summary><div class="sec-b">
     <div class="grid">
       <label for="mo_tipo">Cobrada<select id="mo_tipo"><option value="m2">Por m²</option><option value="dia">Por dia de equipa</option><option value="global">Valor total combinado</option></select></label>
       <label for="mo_preco"><span id="l_mo">Preço por m² (€)</span><input id="mo_preco" type="text" inputmode="decimal"></label>
@@ -473,20 +522,18 @@ dialog.fecha::backdrop{animation:vtFo .15s ease-in forwards}
       <label for="mo_dias">Dias de trabalho<input id="mo_dias" type="text" inputmode="numeric"></label>
     </div>
     <p class="hint" id="h_dias">Se deixar os dias vazios, são calculados pela área e pelo rendimento.</p>
-  </section>
+  </div></details>
 
-  <section class="card" id="sec-mat" hidden>
-    <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Material e andaime</h2>
+  <details class="sec qs" data-qsec="mat" id="sec-mat" hidden><summary><span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span class="sec-t"><b>Material e andaime</b><span class="meta" id="qs-mat"></span></span><span class="qok" id="qk-mat"></span></summary><div class="sec-b">
     <div class="grid">
       <label for="m_mat">Material (€ por m²)<input id="m_mat" type="text" inputmode="decimal"></label>
       <label for="m_and">Andaime (€ por m²)<input id="m_and" type="text" inputmode="decimal"></label>
       <label for="m_margem">Margem sobre material e andaime (%)<input id="m_margem" type="text" inputmode="decimal"></label>
     </div>
     <p class="hint">Material inclui placas, cola, rede, buchas, perfis, primário e acabamento. Deixe o andaime vazio se não for preciso.</p>
-  </section>
+  </div></details>
 
-  <section class="card">
-    <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></span>Deslocações</h2>
+  <details class="sec qs" data-qsec="desl"><summary><span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></span><span class="sec-t"><b>Deslocações</b><span class="meta" id="qs-desl"></span></span><span class="qok" id="qk-desl"></span></summary><div class="sec-b">
     <label for="d_tipo">Como cobrar<select id="d_tipo"><option value="calc">Calcular pelo combustível</option><option value="manual">Escrever o valor</option><option value="nao">Não cobrar</option></select></label>
     <div class="grid" id="d_calc">
       <label for="d_km">Km ida e volta (por viagem)<input id="d_km" type="text" inputmode="decimal"></label>
@@ -499,17 +546,15 @@ dialog.fecha::backdrop{animation:vtFo .15s ease-in forwards}
     <div class="grid" id="d_man" hidden>
       <label for="d_valor">Valor das deslocações (€)<input id="d_valor" type="text" inputmode="decimal"></label>
     </div>
-  </section>
+  </div></details>
 
-  <section class="card">
-    <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span>Trabalhos extra</h2>
+  <details class="sec qs" data-qsec="extras"><summary><span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span><span class="sec-t"><b>Trabalhos extra</b><span class="meta" id="qs-extras"></span></span><span class="qok" id="qk-extras"></span></summary><div class="sec-b">
     <div id="extras"></div>
     <button type="button" class="btn ghost small" id="b-extra" style="align-self:flex-start">Adicionar trabalho extra</button>
     <p class="hint">Por exemplo: reparação de fissuras, remoção de reboco, peitoris, limpeza da fachada.</p>
-  </section>
+  </div></details>
 
-  <section class="card">
-    <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 7a7 7 0 1 0 0 10M4 10h10M4 14h10"/></svg></span>IVA e condições</h2>
+  <details class="sec qs" data-qsec="iva"><summary><span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 7a7 7 0 1 0 0 10M4 10h10M4 14h10"/></svg></span><span class="sec-t"><b>IVA e condições</b><span class="meta" id="qs-iva"></span></span><span class="qok" id="qk-iva"></span></summary><div class="sec-b">
     <div class="grid">
       <label for="iva">IVA<select id="iva"><option value="0">Isento / sem IVA</option><option value="6">6 %</option><option value="23">23 %</option></select></label>
       <label for="validade">Validade do orçamento (dias)<input id="validade" type="text" inputmode="numeric"></label>
@@ -517,7 +562,7 @@ dialog.fecha::backdrop{animation:vtFo .15s ease-in forwards}
     <p class="hint">O regime de IVA depende da vossa situação nas Finanças. Confirme com o contabilista.</p>
     <label for="condicoes">Condições de pagamento<textarea id="condicoes"></textarea></label>
     <label for="notas">Observações para o cliente<textarea id="notas"></textarea></label>
-  </section>
+  </div></details>
 
   <section class="card" id="resumo">
     <h2>Orçamento</h2>
@@ -542,7 +587,7 @@ dialog.fecha::backdrop{animation:vtFo .15s ease-in forwards}
   <div class="seg" role="tablist"><button type="button" role="tab" data-oseg="lista" aria-selected="true">Obras</button><button type="button" role="tab" data-oseg="agenda" aria-selected="false">Agenda</button></div>
   <div id="oseg-lista">
     <div class="chips" id="obra-filtros"></div>
-    <section class="card list" id="obras-lista"></section>
+    <div class="vcol" id="obras-lista"></div>
   </div>
   <div id="oseg-agenda" hidden><div id="agenda"></div></div>
 </main>
@@ -557,8 +602,9 @@ dialog.fecha::backdrop{animation:vtFo .15s ease-in forwards}
     <label class="search" for="orc_filtro" style="flex:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="orc_filtro" type="search" placeholder="Procurar orçamento" aria-label="Procurar orçamento"></label>
     <button type="button" class="btn acc" id="b-novoorc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Novo</button>
   </div>
+  <div class="kgrid" id="orc-resumo"></div>
   <div class="chips" id="orc-filtros"></div>
-  <section class="card" id="orc-todos-card"><div id="orc-todos"></div></section>
+  <section class="card list lst" id="orc-todos-card"><div id="orc-todos"></div></section>
 </main>
 
 <main id="v-mais" hidden>
