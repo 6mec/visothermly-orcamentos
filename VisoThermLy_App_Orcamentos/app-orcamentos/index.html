@@ -129,6 +129,73 @@ details[open] summary::after{transform:rotate(-135deg)}
 .barra .btn{flex:none}
 #resumo .row .btn{flex:1 1 140px}
 
+
+.seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px;box-shadow:var(--shadow)}
+.seg button{flex:1;border:0;background:none;font:inherit;font-weight:700;font-size:.9rem;color:var(--muted);padding:9px 6px;border-radius:9px;min-height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.seg button[aria-selected="true"]{background:var(--blue);color:#fff}
+.badge{background:var(--accent);color:var(--on-accent);border-radius:99px;font-size:.7rem;padding:1px 7px;font-weight:800}
+.card.list{padding:6px 16px;gap:0}
+.row-i{display:flex;align-items:center;gap:12px;padding:13px 0;border:0;border-bottom:1px solid var(--line);background:none;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;min-height:64px}
+.row-i:last-child{border-bottom:0}
+.row-i .grow{flex:1;min-width:0}
+.row-i b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-i .end{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
+.chev{width:8px;height:8px;border-right:2px solid var(--muted);border-top:2px solid var(--muted);transform:rotate(45deg);flex:none;opacity:.6}
+.kgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ktile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:4px;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.ktile small{color:var(--muted);font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+.ktile b{font-size:1.35rem;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.ktile.dest{background:linear-gradient(140deg,var(--blue),var(--deep));color:#fff;border-color:transparent}
+.ktile.dest small{color:rgba(255,255,255,.8)}
+.qa{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.qbtn{border:0;background:var(--surface2);border-radius:14px;padding:12px 4px;display:flex;flex-direction:column;align-items:center;gap:6px;font:inherit;font-size:.72rem;font-weight:700;color:var(--fg);cursor:pointer;min-height:76px;text-align:center}
+.qbtn svg{width:24px;height:24px;color:var(--blue-t)}
+.aviso{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.aviso:last-child{border-bottom:0}
+.dot{width:10px;height:10px;border-radius:50%!important;padding:0!important;margin-top:6px;flex:none;background:var(--muted)}
+.dot.warn{background:#e0a100}.dot.no{background:#d64534}.dot.ok{background:#2b9a5a}.dot.info{background:var(--blue-2)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.chip-f{border:1.5px solid var(--line);background:var(--surface);color:var(--fg);border-radius:99px;padding:7px 13px;font:inherit;font-size:.82rem;font-weight:700;white-space:nowrap;cursor:pointer;min-height:38px}
+.chip-f[aria-pressed="true"]{background:var(--fg);color:var(--surface);border-color:var(--fg)}
+.menu .mrow{display:flex;align-items:center;gap:14px;padding:14px 0;border:0;border-bottom:1px solid var(--line);background:none;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;min-height:64px}
+.menu .mrow:last-child{border-bottom:0}
+.mrow small{display:block;color:var(--muted);font-size:.8rem}
+.medrow{display:grid;grid-template-columns:minmax(0,1.4fr) repeat(2,minmax(0,1fr)) 46px;gap:8px;align-items:end}
+.medrow.vao{grid-template-columns:minmax(0,1.2fr) repeat(3,minmax(0,.8fr)) 46px}
+.medrow .btn{padding:0;min-width:46px}
+.medtot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--surface2);border-radius:12px;padding:12px 14px}
+.medtot span{color:var(--muted);font-weight:700;font-size:.85rem}
+.medtot b{font-size:1.2rem;font-variant-numeric:tabular-nums;flex:1}
+.fase{display:flex;flex-direction:row;text-align:left;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.fase:last-child{border-bottom:0}
+.fase input{width:24px;height:24px;min-height:0;accent-color:var(--blue);flex:none}
+.fase small{display:block;color:var(--muted);font-size:.76rem}
+.prog{height:8px;background:var(--surface2);border-radius:99px;overflow:hidden}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--blue-2),var(--blue))}
+.tbl{width:100%;border-collapse:collapse;font-size:.9rem;font-variant-numeric:tabular-nums}
+.tbl th{text-align:left;font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;padding:6px 8px 6px 0;border-bottom:1px solid var(--line)}
+.tbl td{padding:9px 8px 9px 0}
+.tbl th:not(:first-child),.tbl td:not(:first-child){text-align:right}
+.scrollx{overflow-x:auto}
+.wk{font-size:.75rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 6px}
+.wk:first-child{margin-top:0}
+.ag{display:flex;gap:12px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:8px;box-shadow:var(--shadow);cursor:pointer;width:100%;text-align:left;font:inherit;color:inherit}
+.ag .bar{width:4px;border-radius:4px;background:var(--blue);flex:none}
+.ag.visita .bar{background:var(--accent)}
+.checks{display:flex;flex-wrap:wrap;gap:8px}
+.checks label{flex-direction:row;align-items:center;gap:8px;background:var(--surface2);border-radius:10px;padding:8px 12px;color:var(--fg);font-size:.9rem;min-height:44px}
+.checks input{width:20px;height:20px;min-height:0;accent-color:var(--blue)}
+dialog{border:0;border-radius:20px;padding:0;width:min(560px,calc(100vw - 24px));max-height:calc(100vh - 40px);background:var(--surface);color:var(--fg);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(10,20,30,.5)}
+dialog form{display:flex;flex-direction:column;max-height:calc(100vh - 40px)}
+.dlg-h{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border-bottom:1px solid var(--line)}
+.dlg-h b{font-size:1.1rem}
+.dlg-x{border:0;background:var(--surface2);color:var(--fg);width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:1rem}
+.dlg-b{padding:16px 18px;overflow:auto;display:flex;flex-direction:column;gap:12px}
+.dlg-f{padding:12px 18px 16px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.estsel{font-weight:700}
+.mat td:first-child{font-weight:600}
+.mrow2{display:flex;justify-content:space-between;align-items:baseline;gap:4px 12px;flex-wrap:wrap;padding:9px 0;border-bottom:1px solid var(--line)}.mrow2:last-child{border-bottom:0}.mrow2 b{font-size:.93rem}.mrow2 .q{font-weight:800;font-variant-numeric:tabular-nums;text-align:right}.mrow2 .q small{display:block;font-weight:600;color:var(--muted);font-size:.76rem}
 </style></head>
 <body>
 <div id="v-login" class="login" hidden>
@@ -168,21 +235,26 @@ details[open] summary::after{transform:rotate(-135deg)}
   <div class="hero"><div><h1 id="h-titulo">Clientes</h1><p id="h-sub">Capoto &amp; isolamento térmico</p></div></div>
 </header>
 <nav>
-  <button type="button" data-v="clientes" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Clientes</span></button>
-  <button type="button" data-v="novo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg><span>Orçamento</span></button>
-  <button type="button" data-v="def"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg><span>Definições</span></button>
+  <button type="button" data-v="inicio" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2z"/></svg><span>Início</span></button>
+  <button type="button" data-v="clientes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Clientes</span></button>
+  <button type="button" data-v="obras"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/></svg><span>Obras</span></button>
+  <button type="button" data-v="orcs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg><span>Orçamentos</span></button>
+  <button type="button" data-v="mais"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span>Mais</span></button>
 </nav>
 
 <main id="v-clientes">
+  <div class="seg" role="tablist"><button type="button" role="tab" data-seg="cli" aria-selected="true">Clientes</button><button type="button" role="tab" data-seg="ped" aria-selected="false">Pedidos <span class="badge" id="ped-badge" hidden></span></button></div>
+  <div id="seg-cli">
   <div class="row" style="flex-wrap:nowrap">
     <label class="search" for="cli_filtro" style="flex:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="cli_filtro" type="search" placeholder="Procurar cliente" aria-label="Procurar cliente"></label>
     <button type="button" class="btn acc" id="b-novocli"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Novo</button>
   </div>
-  <section class="card" id="cli-lista"></section>
-  <section class="card">
-    <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></span>Orçamentos recentes</h2>
-    <div id="orc-todos"></div>
-  </section>
+  <section class="card list" id="cli-lista"></section>
+  </div>
+  <div id="seg-ped" hidden>
+  <div class="row" style="justify-content:space-between;align-items:center"><p class="hint" style="flex:1">Contactos de quem pediu orçamento, antes de ser cliente.</p><button type="button" class="btn acc" id="b-novoped"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Novo pedido</button></div>
+  <section class="card list" id="ped-lista"></section>
+  </div>
 </main>
 
 <main id="v-cliente" hidden>
@@ -216,6 +288,10 @@ details[open] summary::after{transform:rotate(-135deg)}
   <section class="card">
     <div class="titulo"><h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></span>Orçamentos</h2><button type="button" class="btn small" id="cf-novoorc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Novo</button></div>
     <div id="cf-orcs"></div>
+  </section>
+  <section class="card">
+    <div class="titulo"><h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/></svg></span>Obras</h2><button type="button" class="btn small" id="cf-novaobra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Nova</button></div>
+    <div id="cf-obras"></div>
   </section>
   <section class="card">
     <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 7a7 7 0 1 0 0 10M4 10h10M4 14h10"/></svg></span>Pagamentos</h2>
@@ -263,6 +339,16 @@ details[open] summary::after{transform:rotate(-135deg)}
       <label for="o_esp">Espessura (cm)<input id="o_esp" type="text" inputmode="decimal"></label>
     </div>
     <label for="o_desc">Descrição dos trabalhos<textarea id="o_desc"></textarea></label>
+  </section>
+
+  <section class="card">
+    <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3 8.7 2.7a1 1 0 0 0-1.4 0L2.7 7.3a1 1 0 0 0 0 1.4l12.6 12.6a1 1 0 0 0 1.4 0l4.6-4.6a1 1 0 0 0 0-1.4zM7.5 10.5l2-2M10.5 13.5l2-2M13.5 16.5l2-2"/></svg></span>Medição da fachada</h2>
+    <p class="hint">Meça cada fachada (largura × altura) e os vãos a descontar (janelas, portas). A área calculada pode ir direta para o orçamento.</p>
+    <div id="med-fach"></div>
+    <button type="button" class="btn ghost small" id="b-fach" style="align-self:flex-start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Fachada</button>
+    <div id="med-vaos"></div>
+    <button type="button" class="btn ghost small" id="b-vao" style="align-self:flex-start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Janela ou porta</button>
+    <div class="medtot"><span>Área útil</span><b id="med-total">0 m²</b><button type="button" class="btn small" id="b-usar-med">Usar no orçamento</button></div>
   </section>
 
   <section class="card">
@@ -335,7 +421,81 @@ details[open] summary::after{transform:rotate(-135deg)}
   <div class="barra" id="barra"><div><small id="bt-lbl">Total</small><b id="bt-val">0,00 €</b></div><div class="row"><button type="button" class="btn acc small" id="bt-guardar">Guardar</button><button type="button" class="btn small" id="bt-pdf" style="background:rgba(255,255,255,.15)">PDF</button></div></div>
 </main>
 
+<main id="v-inicio" hidden>
+  <div class="kgrid" id="ini-kpis"></div>
+  <section class="card"><h2>Ações rápidas</h2><div class="qa" id="ini-qa">
+    <button type="button" class="qbtn" data-qa="pedido"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Novo pedido</span></button>
+    <button type="button" class="qbtn" data-qa="orc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg><span>Novo orçamento</span></button>
+    <button type="button" class="qbtn" data-qa="despesa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 7a7 7 0 1 0 0 10M4 10h10M4 14h10"/></svg><span>Despesa</span></button>
+    <button type="button" class="qbtn" data-qa="dia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M9 16l2 2 4-4"/></svg><span>Dia de trabalho</span></button>
+  </div></section>
+  <section class="card"><h2>Avisos</h2><div id="ini-avisos"></div></section>
+  <section class="card"><h2>Obras em curso</h2><div id="ini-obras"></div></section>
+  <section class="card"><h2>Próximos dias</h2><div id="ini-agenda"></div></section>
+</main>
+
+<main id="v-obras" hidden>
+  <div class="seg" role="tablist"><button type="button" role="tab" data-oseg="lista" aria-selected="true">Obras</button><button type="button" role="tab" data-oseg="agenda" aria-selected="false">Agenda</button></div>
+  <div id="oseg-lista">
+    <div class="chips" id="obra-filtros"></div>
+    <section class="card list" id="obras-lista"></section>
+  </div>
+  <div id="oseg-agenda" hidden><div id="agenda"></div></div>
+</main>
+
+<main id="v-obra" hidden>
+  <button type="button" class="back" id="ob-voltar">‹ Voltar</button>
+  <div id="obra-corpo"></div>
+</main>
+
+<main id="v-orcs" hidden>
+  <div class="row" style="flex-wrap:nowrap">
+    <label class="search" for="orc_filtro" style="flex:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="orc_filtro" type="search" placeholder="Procurar orçamento" aria-label="Procurar orçamento"></label>
+    <button type="button" class="btn acc" id="b-novoorc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Novo</button>
+  </div>
+  <div class="chips" id="orc-filtros"></div>
+  <section class="card" id="orc-todos-card"><div id="orc-todos"></div></section>
+</main>
+
+<main id="v-mais" hidden>
+  <section class="card list menu">
+    <button type="button" class="mrow" data-go="despesas"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 7a7 7 0 1 0 0 10M4 10h10M4 14h10"/></svg></span><span><b>Despesas</b><small>Combustível, material, refeições e outros gastos</small></span></button>
+    <button type="button" class="mrow" data-go="dias"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><span><b>Equipa e dias</b><small>Dias trabalhados por pessoa e por obra</small></span></button>
+    <button type="button" class="mrow" data-go="contas"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></span><span><b>Contas da empresa</b><small>Recebido, gasto e resultado por mês e por obra</small></span></button>
+    <button type="button" class="mrow" data-go="docs"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span><span><b>Documentos</b><small>Seguros, IMPIC e validades</small></span></button>
+    <button type="button" class="mrow" data-go="def"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></span><span><b>Definições</b><small>Perfil, empresa, consumos de material e equipa</small></span></button>
+  </section>
+</main>
+
+<main id="v-despesas" hidden>
+  <button type="button" class="back" data-back="mais">‹ Mais</button>
+  <div class="row" style="flex-wrap:nowrap;align-items:end"><label for="dsp_mes" style="flex:1">Mês<input id="dsp_mes" type="month"></label><button type="button" class="btn acc" id="b-novadsp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Despesa</button></div>
+  <section class="card"><h2>Resumo do mês</h2><div id="dsp-resumo"></div></section>
+  <section class="card list" id="dsp-lista"></section>
+</main>
+
+<main id="v-dias" hidden>
+  <button type="button" class="back" data-back="mais">‹ Mais</button>
+  <div class="row" style="flex-wrap:nowrap;align-items:end"><label for="dias_mes" style="flex:1">Mês<input id="dias_mes" type="month"></label><button type="button" class="btn acc" id="b-novodia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Registar</button></div>
+  <section class="card"><h2>Dias por pessoa</h2><div id="dias-resumo"></div></section>
+  <section class="card list" id="dias-lista"></section>
+</main>
+
+<main id="v-contas" hidden>
+  <button type="button" class="back" data-back="mais">‹ Mais</button>
+  <label for="ct_ano">Ano<select id="ct_ano"></select></label>
+  <section class="card"><h2>Por mês</h2><div id="ct-meses" class="scrollx"></div><p class="hint">Recebido: pagamentos registados nas pastas dos clientes. Gasto: despesas registadas.</p></section>
+  <section class="card"><h2>Por obra</h2><div id="ct-obras" class="scrollx"></div></section>
+</main>
+
+<main id="v-docs" hidden>
+  <button type="button" class="back" data-back="mais">‹ Mais</button>
+  <div class="row" style="justify-content:space-between;align-items:center"><p class="hint" style="flex:1">Documentos com validade. A app avisa 30 dias antes de caducarem.</p><button type="button" class="btn acc" id="b-novodoc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Documento</button></div>
+  <section class="card list" id="docs-lista"></section>
+</main>
+
 <main id="v-def" hidden>
+  <button type="button" class="back" data-back="mais">‹ Mais</button>
   <section class="card">
     <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>O meu perfil</h2>
     <p class="hint">Aparece no PDF como responsável pelo orçamento.</p>
@@ -368,6 +528,23 @@ details[open] summary::after{transform:rotate(-135deg)}
     <label for="s_cond">Condições de pagamento habituais<textarea id="s_cond"></textarea></label>
     <button type="button" class="btn acc" id="s-guardar" style="align-self:flex-start">Guardar dados da empresa</button>
   </section>
+  <section class="card">
+    <h2>Consumos de material</h2>
+    <p class="hint">Usados para calcular o material de cada obra. Ajustem à ficha técnica do sistema que usam; os valores de partida são apenas referência.</p>
+    <div class="grid">
+      <label for="k_placa">Placas: desperdício (%)<input id="k_placa" type="text" inputmode="decimal"></label>
+      <label for="k_cola">Cola de colagem (kg/m²)<input id="k_cola" type="text" inputmode="decimal"></label>
+      <label for="k_barr">Argamassa de barramento (kg/m²)<input id="k_barr" type="text" inputmode="decimal"></label>
+      <label for="k_rede">Rede (m² por m², com sobreposição)<input id="k_rede" type="text" inputmode="decimal"></label>
+      <label for="k_buch">Buchas (unidades/m²)<input id="k_buch" type="text" inputmode="decimal"></label>
+      <label for="k_prim">Primário (L/m²)<input id="k_prim" type="text" inputmode="decimal"></label>
+      <label for="k_acab">Acabamento (kg/m²)<input id="k_acab" type="text" inputmode="decimal"></label>
+      <label for="k_saco">Saco de cola/argamassa (kg)<input id="k_saco" type="text" inputmode="decimal"></label>
+      <label for="k_rolo">Rolo de rede (m²)<input id="k_rolo" type="text" inputmode="decimal"></label>
+      <label for="k_balde">Balde de acabamento (kg)<input id="k_balde" type="text" inputmode="decimal"></label>
+    </div>
+    <button type="button" class="btn ghost small" id="k-guardar" style="align-self:flex-start">Guardar consumos</button>
+  </section>
   <section class="card" id="sec-import" hidden>
     <h2>Orçamentos antigos neste telemóvel</h2>
     <p class="hint" id="imp-txt"></p>
@@ -381,6 +558,7 @@ details[open] summary::after{transform:rotate(-135deg)}
 </main>
 </div>
 
+<dialog id="dlg"><form method="dialog" id="dlg-form"><div class="dlg-h"><b id="dlg-t"></b><button type="button" class="dlg-x" id="dlg-x" aria-label="Fechar">✕</button></div><div id="dlg-b" class="dlg-b"></div><div class="dlg-f" id="dlg-f"></div></form></dialog>
 <div class="toast" id="toast" hidden></div>
 <script src="config.js"></script>
 <script src="pdf-lib.min.js"></script>
