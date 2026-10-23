@@ -306,7 +306,7 @@ dialog form{display:flex;flex-direction:column;max-height:calc(100vh - 40px)}
   <section class="card">
     <h2><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>Fotografias</h2>
     <div class="grid">
-      <label for="f_fase">Fase<select id="f_fase"><option>Antes</option><option>Durante</option><option>Depois</option></select></label>
+      <label for="f_fase">Fase<select id="f_fase"><option>Visita</option><option>Antes</option><option>Durante</option><option>Depois</option><option>Problema</option></select></label>
       <label class="btn" for="f_ficheiros" style="color:#fff;font-size:.95rem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Adicionar fotografias<input id="f_ficheiros" type="file" accept="image/*" multiple hidden></label>
     </div>
     <p class="hint" id="f-estado"></p>
@@ -544,6 +544,11 @@ dialog form{display:flex;flex-direction:column;max-height:calc(100vh - 40px)}
       <label for="k_balde">Balde de acabamento (kg)<input id="k_balde" type="text" inputmode="decimal"></label>
     </div>
     <button type="button" class="btn ghost small" id="k-guardar" style="align-self:flex-start">Guardar consumos</button>
+  </section>
+  <section class="card">
+    <h2>Cópia de segurança</h2>
+    <p class="hint">Descarrega um ficheiro com todos os clientes, orçamentos, pagamentos, obras, despesas e dias (sem as fotografias). Guardem uma cópia de vez em quando, por exemplo no fim de cada mês.</p>
+    <button type="button" class="btn ghost small" id="b-backup" style="align-self:flex-start">Descarregar cópia de segurança</button>
   </section>
   <section class="card" id="sec-import" hidden>
     <h2>Orçamentos antigos neste telemóvel</h2>
