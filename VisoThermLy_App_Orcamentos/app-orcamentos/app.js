@@ -1,14 +1,12 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, getDoc, getDocs, runTransaction, query, orderBy, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 
 const fbApp = initializeApp(window.VT_FIREBASE);
 const auth = getAuth(fbApp);
 let db;
 try { db = initializeFirestore(fbApp, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }); }
 catch (e) { db = initializeFirestore(fbApp, {}); }
-const storage = getStorage(fbApp);
 
 // ---------- utilitários ----------
 function $(id) { return document.getElementById(id); }
@@ -611,7 +609,7 @@ $('cf-apagar').addEventListener('click', async function () {
   var id = c.id, fs = fotos.slice(), ps = pagamentos.slice();
   fecharCliente(); show('clientes');
   try {
-    for (var f of fs) { try { await deleteObject(sRef(storage, f.path)); } catch (e) {} await deleteDoc(doc(db, 'clientes', id, 'fotos', f.id)); }
+    for (var f of fs) { try { await deleteDoc(doc(db, 'clientes', id, 'fotosFull', f.id)); } catch (e) {} await deleteDoc(doc(db, 'clientes', id, 'fotos', f.id)); }
     for (var p of ps) await deleteDoc(doc(db, 'clientes', id, 'pagamentos', p.id));
     for (var o of os) await deleteDoc(doc(db, 'orcamentos', o.id));
     await deleteDoc(doc(db, 'clientes', id));
@@ -644,17 +642,39 @@ $('p-add').addEventListener('click', function () {
 // fotografias
 function renderFotos() {
   $('cf-fotos').innerHTML = fotos.length ? fotos.map(function (f) {
-    return '<div class="foto"><a href="' + esc(f.url) + '" target="_blank" rel="noopener"><img src="' + esc(f.url) + '" alt="Fotografia ' + esc(f.fase || '') + '" loading="lazy"></a><span>' + esc(f.fase || '') + '</span><button type="button" data-rmf="' + f.id + '" aria-label="Apagar fotografia">✕</button></div>';
+    return '<div class="foto"><a href="#" data-verf="' + f.id + '"><img src="' + esc(f.thumb || f.url || '') + '" alt="Fotografia ' + esc(f.fase || '') + '" loading="lazy" style="pointer-events:none"></a><span>' + esc(f.fase || '') + '</span><button type="button" data-rmf="' + f.id + '" aria-label="Apagar fotografia">✕</button></div>';
   }).join('') : '<p class="hint">Ainda não há fotografias.</p>';
 }
 $('cf-fotos').addEventListener('click', async function (e) {
+  var vf = e.target.closest('[data-verf]');
+  if (vf) { e.preventDefault(); verFoto(vf.dataset.verf); return; }
   var id = e.target.dataset.rmf; if (!id) return;
   e.preventDefault();
   if (!confirm('Apagar esta fotografia?')) return;
   var f = fotos.find(function (x) { return x.id === id; });
-  try { if (f && f.path) await deleteObject(sRef(storage, f.path)); } catch (er) { console.warn(er); }
+  deleteDoc(doc(db, 'clientes', clienteAberto, 'fotosFull', id)).catch(function () {});
   deleteDoc(doc(db, 'clientes', clienteAberto, 'fotos', id)).catch(function (er) { falhou(er, 'apagar a fotografia'); });
 });
+async function verFoto(id) {
+  var f = fotos.find(function (x) { return x.id === id; }); if (!f) return;
+  abrirDlg((f.fase || 'Fotografia') + (f.por ? ' · ' + f.por : ''), '<p class="hint">A abrir…</p>', []);
+  var src = f.url || '';
+  try { var d = await getDoc(doc(db, 'clientes', clienteAberto, 'fotosFull', id)); if (d.exists() && d.data().img) src = d.data().img; } catch (e) { console.warn(e); }
+  if (!src) src = f.thumb || '';
+  $('dlg-b').innerHTML = '<img src="' + esc(src) + '" alt="Fotografia" style="width:100%;border-radius:12px;display:block">' + (f.criadoEm ? '<p class="hint">' + esc(String(f.criadoEm.toDate ? f.criadoEm.toDate().toLocaleString('pt-PT') : '')) + '</p>' : '');
+}
+async function imgData(img, max, q0, limite) {
+  var w = img.width, h = img.height, k = Math.min(1, max / Math.max(w, h));
+  var c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  var q = q0, u = c.toDataURL('image/jpeg', q);
+  while (u.length > limite && q > 0.35) { q -= 0.1; u = c.toDataURL('image/jpeg', q); }
+  return u;
+}
+async function abrirImg(file) {
+  try { return await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+  catch (e) { return await new Promise(function (ok, ko) { var i = new Image(); i.onload = function () { ok(i); }; i.onerror = ko; i.src = URL.createObjectURL(file); }); }
+}
 async function comprimir(file) {
   var max = 1600, img;
   try { img = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
@@ -671,19 +691,15 @@ $('f_ficheiros').addEventListener('change', async function (e) {
   for (var i = 0; i < files.length; i++) {
     est.textContent = 'A enviar fotografia ' + (i + 1) + ' de ' + files.length + '…';
     try {
-      var blob = await comprimir(files[i]);
-      var path = 'clientes/' + id + '/' + Date.now() + '_' + Math.random().toString(36).slice(2, 7) + '.jpg';
-      var task = uploadBytesResumable(sRef(storage, path), blob, { contentType: 'image/jpeg' });
-      await new Promise(function (ok, ko) {
-        task.on('state_changed', function (s) { est.textContent = 'A enviar fotografia ' + (i + 1) + ' de ' + files.length + ' (' + Math.round(s.bytesTransferred / s.totalBytes * 100) + ' %)…'; }, ko, ok);
-      });
-      var url = await getDownloadURL(task.snapshot.ref);
-      await setDoc(doc(collection(db, 'clientes', id, 'fotos')), { path: path, url: url, fase: fase, por: perfil.nome || user.email, criadoEm: serverTimestamp() });
+      var img = await abrirImg(files[i]);
+      var full = await imgData(img, 1280, 0.72, 700000);
+      var thumb = await imgData(img, 360, 0.7, 60000);
+      var fref = doc(collection(db, 'clientes', id, 'fotos'));
+      await setDoc(doc(db, 'clientes', id, 'fotosFull', fref.id), { img: full });
+      await setDoc(fref, { thumb: thumb, fase: fase, por: perfil.nome || user.email, criadoEm: serverTimestamp() });
     } catch (er) {
       console.error(er);
-      est.textContent = er && (er.code === 'storage/unknown' || er.code === 'storage/bucket-not-found' || er.code === 'storage/project-not-found' || er.code === 'storage/unauthorized')
-        ? 'As fotografias ainda não estão ativas. Falta ativar o armazenamento de ficheiros no Firebase.'
-        : 'Não foi possível enviar a fotografia. Verifique a internet e tente outra vez.';
+      est.textContent = 'Não foi possível enviar a fotografia. Verifique a internet e tente outra vez.';
       return;
     }
   }
@@ -707,6 +723,19 @@ $('s-guardar').addEventListener('click', function () {
 $('u-guardar').addEventListener('click', function () {
   updateDoc(doc(db, 'membros', user.uid), { nome: $('u_nome').value.trim(), telefone: $('u_tel').value.trim() }).catch(function (e) { falhou(e, 'guardar o perfil'); });
   toast('Perfil guardado.');
+});
+$('b-backup').addEventListener('click', async function () {
+  var b = $('b-backup'); b.disabled = true; b.textContent = 'A preparar…';
+  try {
+    var out = { app: 'VisoThermLy', exportadoEm: new Date().toISOString(), por: porQuem(), config: config, clientes: [], orcamentos: orcs, pedidos: pedidos, obras: [], despesas: despesas, dias: dias, documentos: documentos };
+    for (var c of clientes) { var ps = await getDocs(collection(db, 'clientes', c.id, 'pagamentos')); out.clientes.push(Object.assign({}, c, { pagamentos: ps.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); }) })); }
+    for (var o of obras) { var di = await getDocs(collection(db, 'obras', o.id, 'diario')); out.obras.push(Object.assign({}, o, { diario: di.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); }) })); }
+    var txt = JSON.stringify(out, function (k, v) { return v && typeof v.toDate === 'function' ? v.toDate().toISOString() : v; }, 1);
+    var blob = new Blob([txt], { type: 'application/json' }), nome = 'VisoThermLy_copia_' + hoje() + '.json';
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nome; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+    toast('Cópia de segurança descarregada.');
+  } catch (e) { falhou(e, 'fazer a cópia'); }
+  finally { b.disabled = false; b.textContent = 'Descarregar cópia de segurança'; }
 });
 $('b-sair').addEventListener('click', function () { if (confirm('Terminar a sessão neste telemóvel?')) signOut(auth); });
 
