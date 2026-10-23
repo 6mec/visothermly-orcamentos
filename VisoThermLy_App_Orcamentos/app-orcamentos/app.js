@@ -1082,10 +1082,10 @@ function renderDias() {
   var por = {}; it.forEach(function (d) { por[d.pessoa] = (por[d.pessoa] || 0) + (d.fracao || 1); });
   $('dias-resumo').innerHTML = Object.keys(por).length ? '<table class="tbl"><thead><tr><th>Pessoa</th><th>Dias em ' + nomeMes(m) + '</th></tr></thead><tbody>' + Object.keys(por).sort().map(function (k) { return '<tr><td>' + esc(k) + '</td><td>' + fmtN(por[k]) + '</td></tr>'; }).join('') + '</tbody></table>' : '<p class="hint">Sem dias registados em ' + nomeMes(m) + '.</p>';
   var g = agrupaDias(it);
-  $('dias-lista').innerHTML = g.length ? g.map(function (x) { return '<div class="row-i" style="cursor:default"><span class="grow"><b>' + dataPT(x.data) + ' · ' + esc(x.obra || 'Sem obra') + '</b><span class="meta">' + esc(x.pessoas.join(', ')) + '</span></span><span class="end"><b>' + fmtN(x.total) + '</b><button type="button" class="btn danger small ico" data-rmdias="' + x.ids.join(',') + '" aria-label="Apagar registo">' + IC_DEL + '</button></span></div>'; }).join('') : '<p class="empty">Sem registos.</p>';
+  $('dias-lista').innerHTML = g.length ? g.map(function (x) { return '<div class="row-i" role="button" tabindex="0" data-eddias="' + x.ids.join(',') + '"><span class="grow"><b>' + dataPT(x.data) + ' · ' + esc(x.obra || 'Sem obra') + '</b><span class="meta">' + esc(x.pessoas.join(', ')) + '</span></span><span class="end"><b>' + fmtN(x.total) + '</b><button type="button" class="btn danger small ico" data-rmdias="' + x.ids.join(',') + '" aria-label="Apagar registo">' + IC_DEL + '</button></span></div>'; }).join('') : '<p class="empty">Sem registos.</p>';
 }
 $('dias_mes').addEventListener('change', renderDias);
-$('dias-lista').addEventListener('click', function (e) { var b = e.target.closest('[data-rmdias]'); if (!b || !confirm('Apagar este registo de dias?')) return; b.dataset.rmdias.split(',').forEach(function (id) { deleteDoc(doc(db, 'dias', id)).catch(function (er) { falhou(er, 'apagar'); }); }); });
+$('dias-lista').addEventListener('click', function (e) { var ed = e.target.closest('[data-eddias]'); if (ed && !e.target.closest('[data-rmdias]')) { dlgEditDias(ed.dataset.eddias.split(',')); return; } var b = e.target.closest('[data-rmdias]'); if (!b || !confirm('Apagar este registo de dias?')) return; b.dataset.rmdias.split(',').forEach(function (id) { deleteDoc(doc(db, 'dias', id)).catch(function (er) { falhou(er, 'apagar'); }); }); });
 $('b-novodia').addEventListener('click', function () { dlgDia(null); });
 function dlgDia(obraId) {
   var o = obraId && obras.find(function (x) { return x.id === obraId; });
@@ -1723,7 +1723,7 @@ function renderObra() {
   h += sec('diario', ICO.livro, 'Diário de obra', diario.length ? diario.length + (diario.length === 1 ? ' registo' : ' registos') + ' · último a ' + dataPT(diario[0].data) + (parados ? ' · ' + parados + ' parado' + (parados === 1 ? '' : 's') : '') : 'Sem registos', dc);
 
   // dias
-  var dd = '<button type="button" class="btn small" data-oa="dia" style="align-self:flex-start">Registar dia</button>' + (ds.length ? '<div>' + agrupaDias(ds).slice(0, 20).map(function (g) { return '<div class="mrow2"><span style="flex:1;min-width:0"><b>' + dataPT(g.data) + '</b><span class="meta">' + esc(g.pessoas.join(', ')) + '</span></span><span class="q">' + fmtN(g.total) + (g.total === 1 ? ' dia' : ' dias') + '</span></div>'; }).join('') + '</div>' : '<p class="hint">Ainda sem dias registados.</p>');
+  var dd = '<button type="button" class="btn small" data-oa="dia" style="align-self:flex-start">Registar dia</button>' + (ds.length ? '<div>' + agrupaDias(ds).slice(0, 20).map(function (g) { return '<button type="button" class="mrow2 dia-ed" data-eddias="' + g.ids.join(',') + '"><span style="flex:1;min-width:0"><b>' + dataPT(g.data) + '</b><span class="meta">' + esc(g.pessoas.join(', ')) + '</span></span><span class="q">' + fmtN(g.total) + (g.total === 1 ? ' dia' : ' dias') + '<small>Alterar</small></span></button>'; }).join('') + '</div>' : '<p class="hint">Ainda sem dias registados.</p>');
   h += sec('dias', ICO.equipa, 'Equipa e dias', fmtN(nd) + (nd === 1 ? ' dia' : ' dias') + ' de trabalho', dd);
 
   // despesas
@@ -2153,6 +2153,39 @@ calc = function () { calcBase(); resumoQ(); };
 var toFormBase = toForm;
 toForm = function (q) { toFormBase(q); abrirSecsQ(); resumoQ(); };
 $('qh-ver').addEventListener('click', function () { $('resumo').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+
+
+// ---------- alterar um registo de dias ----------
+function dlgEditDias(ids) {
+  var regs = dias.filter(function (d) { return ids.indexOf(d.id) >= 0; });
+  if (!regs.length) return;
+  var r0 = regs[0], porPessoa = {};
+  regs.forEach(function (d) { porPessoa[d.pessoa] = d; });
+  var nomes = pessoas().slice(); Object.keys(porPessoa).forEach(function (n) { if (nomes.indexOf(n) < 0) nomes.push(n); });
+  var corpo = '<div class="grid">' + campo('ed_data', 'Dia', r0.data, 'date') + campoSel('ed_obra', 'Obra', obrasOpts(r0.obraId || ''), r0.obraId || '') + '</div>' +
+    '<label>Quem trabalhou</label><div class="ed-pess">' + nomes.map(function (n, i) {
+      var d = porPessoa[n];
+      return '<div class="ed-p"><label for="ep' + i + '"><input type="checkbox" id="ep' + i + '" data-ep="' + esc(n) + '"' + (d ? ' checked' : '') + '>' + esc(n) + '</label><select id="ef' + i + '" data-ef="' + esc(n) + '" aria-label="Tempo de ' + esc(n) + '">' + opts([['1', 'Dia inteiro'], ['0.5', 'Meio dia']], d && d.fracao === 0.5 ? '0.5' : '1') + '</select></div>';
+    }).join('') + '</div>' + campo('ed_outro', 'Juntar outra pessoa (opcional)', '', 'text', ' placeholder="Nome de um ajudante"');
+  abrirDlg('Alterar dia de trabalho', corpo, [
+    { txt: 'Apagar registo', cls: 'danger', fn: function () { if (!confirm('Apagar este registo de dias?')) return false; regs.forEach(function (d) { deleteDoc(doc(db, 'dias', d.id)).catch(function (er) { falhou(er, 'apagar'); }); }); toast('Registo apagado.'); } },
+    { txt: 'Guardar', cls: 'acc', fn: function () {
+      var dt = val('ed_data') || r0.data, oid = val('ed_obra') || null, ob = oid && obras.find(function (x) { return x.id === oid; });
+      var marc = {};
+      document.querySelectorAll('#dlg-b [data-ep]').forEach(function (c) { if (c.checked) { var f = document.querySelector('#dlg-b [data-ef="' + CSS.escape(c.dataset.ep) + '"]'); marc[c.dataset.ep] = num(f.value) || 1; } });
+      if (val('ed_outro')) marc[val('ed_outro')] = 1;
+      if (!Object.keys(marc).length) { toast('Escolha quem trabalhou, ou apague o registo.'); return false; }
+      var base = { data: dt, obraId: oid, obra: ob ? ob.nome : '', atualizadoEm: serverTimestamp(), atualizadoPor: porQuem() };
+      regs.forEach(function (d) {
+        if (marc[d.pessoa] == null) deleteDoc(doc(db, 'dias', d.id)).catch(function (er) { falhou(er, 'apagar'); });
+        else updateDoc(doc(db, 'dias', d.id), Object.assign({ fracao: marc[d.pessoa] }, base)).catch(function (er) { falhou(er, 'guardar'); });
+      });
+      Object.keys(marc).forEach(function (n) { if (!porPessoa[n]) setDoc(doc(collection(db, 'dias')), Object.assign({ pessoa: n, fracao: marc[n], por: porQuem(), criadoEm: serverTimestamp() }, base)).catch(function (er) { falhou(er, 'guardar'); }); });
+      toast('Dia de trabalho alterado.');
+    } }
+  ]);
+}
+$('obra-corpo').addEventListener('click', function (e) { var b = e.target.closest('[data-eddias]'); if (b) dlgEditDias(b.dataset.eddias.split(',')); });
 
 $('dlg-form').addEventListener('submit', function (e) { e.preventDefault(); });
 
