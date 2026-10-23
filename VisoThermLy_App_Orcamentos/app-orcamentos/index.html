@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Orçamentos VisoThermLy</title>
+<meta name="theme-color" content="#215b87">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Orçamentos">
+<style>
+[hidden]{display:none!important}
+:root{--bg:#f1f4f8;--surface:#fff;--fg:#2b3440;--muted:#5b6573;--line:#d5dce5;--accent:#e19442;--on-accent:#173f5f;--accent-soft:#fbeedd;--accent-text:#a35d17;--dark:#215b87;--deep:#173f5f;--on-dark:#fff;--warn-bg:#fff4d6;--warn-fg:#6b4a00;--ok:#1d7a45;
+--font:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+@media (prefers-color-scheme: dark){:root{--bg:#15181b;--surface:#212529;--fg:#eceef0;--muted:#a6adb5;--line:#3a4047;--accent:#e19442;--on-accent:#173f5f;--accent-soft:#33281c;--accent-text:#f0b06a;--dark:#1d5079;--deep:#10293f;--warn-bg:#3a3118;--warn-fg:#f3dc9a;--ok:#5fd18f;color-scheme:dark}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:16px;line-height:1.45}
+header{background:var(--dark);color:var(--on-dark);padding:calc(12px + env(safe-area-inset-top,0px)) 16px 0;position:sticky;top:0;z-index:5}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:8px;max-width:760px;margin:0 auto}
+.brand b{font-size:1.15rem;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+.brand img{width:34px;height:34px;background:#fff;border-radius:8px;padding:3px}
+.brand span{font-size:.8rem;opacity:.75}
+nav{display:flex;gap:4px;max-width:760px;margin:10px auto 0}
+nav button{flex:1;background:none;border:0;color:var(--on-dark);opacity:.7;font:inherit;font-size:.92rem;font-weight:600;padding:10px 4px 12px;border-bottom:3px solid transparent;cursor:pointer;min-height:44px}
+nav button[aria-current="page"]{opacity:1;border-bottom-color:var(--accent)}
+main{max-width:760px;margin:0 auto;padding:16px 16px calc(32px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.card h2{margin:0;font-size:1rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+label{display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:var(--muted);font-weight:600;min-width:0}
+input,select,textarea{font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:10px;width:100%;min-width:0;min-height:44px}
+textarea{min-height:70px;resize:vertical}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.hint{font-size:.8rem;color:var(--muted);margin:0;font-weight:400}
+.row{display:flex;flex-wrap:wrap;gap:10px}
+.btn{font:inherit;font-weight:600;font-size:.95rem;border:0;border-radius:8px;padding:11px 16px;min-height:44px;cursor:pointer;background:var(--dark);color:var(--on-dark)}
+.btn.acc{background:var(--accent);color:var(--on-accent)}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.btn.small{padding:7px 12px;min-height:38px;font-size:.88rem}
+.btn.danger{background:transparent;color:#c0392b;border:1px solid var(--line)}
+.extra{display:grid;grid-template-columns:1fr 110px 44px;gap:8px;align-items:end}
+.extra .btn{padding:0;min-width:44px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+td{padding:8px 0;border-bottom:1px solid var(--line);vertical-align:top}
+td:last-child{text-align:right;white-space:nowrap;padding-left:10px}
+tr.sum td{font-weight:700}
+.total{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;background:var(--accent-soft);border-radius:8px;padding:14px}
+.total b{font-size:1.6rem;color:var(--accent-text);font-variant-numeric:tabular-nums}
+.warn{background:var(--warn-bg);color:var(--warn-fg);border-radius:8px;padding:10px 12px;font-size:.9rem}
+.warn ul{margin:4px 0 0;padding-left:18px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--deep);color:#fff;padding:10px 16px;border-radius:8px;font-size:.9rem;z-index:20;max-width:90vw}
+.item{display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--line);padding-bottom:12px}
+.item:last-child{border-bottom:0;padding-bottom:0}
+.item-top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.item-top b{font-size:1rem}
+.item-top span{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+.meta{font-size:.82rem;color:var(--muted)}
+.empty{color:var(--muted);text-align:center;padding:20px 0}
+.facts{display:flex;flex-wrap:wrap;gap:6px 20px;font-size:.9rem;color:var(--muted)}
+.facts strong{color:var(--fg)}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><b><img src="logo-icone.png" alt="">VisoThermLy</b><span>Orçamentos</span></div>
+  <nav>
+    <button type="button" data-v="novo" aria-current="page">Orçamento</button>
+    <button type="button" data-v="lista">Guardados</button>
+    <button type="button" data-v="def">Definições</button>
+  </nav>
+</header>
+
+<main id="v-novo">
+  <div class="row" style="justify-content:space-between;align-items:center">
+    <div><b id="q-num">Novo orçamento</b><div class="meta" id="q-info"></div></div>
+    <button type="button" class="btn ghost small" id="b-novo">Começar novo</button>
+  </div>
+
+  <section class="card">
+    <h2>Cliente</h2>
+    <div class="grid">
+      <label for="c_nome">Nome<input id="c_nome" type="text" autocomplete="off"></label>
+      <label for="c_tel">Telefone<input id="c_tel" type="tel" inputmode="tel"></label>
+      <label for="c_nif">NIF (opcional)<input id="c_nif" type="text" inputmode="numeric"></label>
+      <label for="o_morada">Morada da obra<input id="o_morada" type="text"></label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Obra</h2>
+    <div class="grid">
+      <label for="modo">Tipo de orçamento<select id="modo"><option value="mo">Só mão de obra</option><option value="completa">Obra completa (com material)</option></select></label>
+      <label for="o_area">Área de fachada (m²)<input id="o_area" type="text" inputmode="decimal"></label>
+      <label for="o_iso">Isolamento<select id="o_iso"><option value="">Não indicar</option><option>EPS branco</option><option>EPS grafite</option><option>Lã mineral</option><option>Cortiça (ICB)</option><option>XPS</option></select></label>
+      <label for="o_esp">Espessura (cm)<input id="o_esp" type="text" inputmode="decimal"></label>
+    </div>
+    <label for="o_desc">Descrição dos trabalhos<textarea id="o_desc"></textarea></label>
+  </section>
+
+  <section class="card">
+    <h2>Mão de obra</h2>
+    <div class="grid">
+      <label for="mo_tipo">Cobrada<select id="mo_tipo"><option value="m2">Por m²</option><option value="dia">Por dia de equipa</option><option value="global">Valor total combinado</option></select></label>
+      <label for="mo_preco"><span id="l_mo">Preço por m² (€)</span><input id="mo_preco" type="text" inputmode="decimal"></label>
+      <label for="mo_rend">Rendimento (m² por dia)<input id="mo_rend" type="text" inputmode="decimal"></label>
+      <label for="mo_dias">Dias de trabalho<input id="mo_dias" type="text" inputmode="numeric"></label>
+    </div>
+    <p class="hint" id="h_dias">Se deixar os dias vazios, são calculados pela área e pelo rendimento.</p>
+  </section>
+
+  <section class="card" id="sec-mat" hidden>
+    <h2>Material e andaime</h2>
+    <div class="grid">
+      <label for="m_mat">Material (€ por m²)<input id="m_mat" type="text" inputmode="decimal"></label>
+      <label for="m_and">Andaime (€ por m²)<input id="m_and" type="text" inputmode="decimal"></label>
+      <label for="m_margem">Margem sobre material e andaime (%)<input id="m_margem" type="text" inputmode="decimal"></label>
+    </div>
+    <p class="hint">Material inclui placas, cola, rede, buchas, perfis, primário e acabamento. Deixe o andaime vazio se não for preciso.</p>
+  </section>
+
+  <section class="card">
+    <h2>Deslocações</h2>
+    <label for="d_tipo">Como cobrar<select id="d_tipo"><option value="calc">Calcular pelo combustível</option><option value="manual">Escrever o valor</option><option value="nao">Não cobrar</option></select></label>
+    <div class="grid" id="d_calc">
+      <label for="d_km">Km ida e volta (por viagem)<input id="d_km" type="text" inputmode="decimal"></label>
+      <label for="d_viagens">N.º de viagens<input id="d_viagens" type="text" inputmode="numeric"></label>
+      <label for="d_cons">Consumo da carrinha (L/100 km)<input id="d_cons" type="text" inputmode="decimal"></label>
+      <label for="d_comb">Preço do combustível hoje (€/L)<input id="d_comb" type="text" inputmode="decimal"></label>
+      <label for="d_port">Portagens por viagem (€)<input id="d_port" type="text" inputmode="decimal"></label>
+    </div>
+    <p class="hint" id="h_viagens">Se deixar as viagens vazias, conta uma por dia de trabalho.</p>
+    <div class="grid" id="d_man" hidden>
+      <label for="d_valor">Valor das deslocações (€)<input id="d_valor" type="text" inputmode="decimal"></label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Trabalhos extra</h2>
+    <div id="extras"></div>
+    <button type="button" class="btn ghost small" id="b-extra" style="align-self:flex-start">Adicionar trabalho extra</button>
+    <p class="hint">Por exemplo: reparação de fissuras, remoção de reboco, peitoris, limpeza da fachada.</p>
+  </section>
+
+  <section class="card">
+    <h2>IVA e condições</h2>
+    <div class="grid">
+      <label for="iva">IVA<select id="iva"><option value="0">Isento / sem IVA</option><option value="6">6 %</option><option value="23">23 %</option></select></label>
+      <label for="validade">Validade do orçamento (dias)<input id="validade" type="text" inputmode="numeric"></label>
+    </div>
+    <p class="hint">O regime de IVA depende da vossa situação nas Finanças. Confirme com o contabilista.</p>
+    <label for="condicoes">Condições de pagamento<textarea id="condicoes"></textarea></label>
+    <label for="notas">Observações para o cliente<textarea id="notas"></textarea></label>
+  </section>
+
+  <section class="card" id="resumo">
+    <h2>Orçamento</h2>
+    <div class="warn" id="falta" hidden></div>
+    <table><tbody id="linhas"></tbody></table>
+    <div class="total"><span id="t-lbl">Total</span><b id="t-val">0,00 €</b></div>
+    <div class="facts" id="facts"></div>
+    <div class="row">
+      <button type="button" class="btn acc" id="b-guardar">Guardar</button>
+      <button type="button" class="btn" id="b-pdf">PDF para o cliente</button>
+      <button type="button" class="btn ghost" id="b-texto">Enviar resumo</button>
+    </div>
+  </section>
+</main>
+
+<main id="v-lista" hidden>
+  <section class="card">
+    <h2>Orçamentos guardados</h2>
+    <label for="filtro">Procurar<input id="filtro" type="search" placeholder="Nome do cliente ou morada"></label>
+    <div id="lista"></div>
+  </section>
+</main>
+
+<main id="v-def" hidden>
+  <section class="card">
+    <h2>Dados que aparecem no PDF</h2>
+    <div class="grid">
+      <label for="s_nome">Nome da empresa ou equipa<input id="s_nome" type="text"></label>
+      <label for="s_resp">Responsável<input id="s_resp" type="text"></label>
+      <label for="s_nif">NIF<input id="s_nif" type="text" inputmode="numeric"></label>
+      <label for="s_tel">Telefone<input id="s_tel" type="tel"></label>
+      <label for="s_email">Email<input id="s_email" type="email"></label>
+      <label for="s_morada">Morada<input id="s_morada" type="text"></label>
+    </div>
+    <label for="s_isencao">Frase de isenção de IVA (aparece quando o orçamento é sem IVA)<input id="s_isencao" type="text" placeholder="Ex.: IVA – regime de isenção, art. 53.º do CIVA"></label>
+    <p class="hint">Confirme a frase certa com o contabilista.</p>
+  </section>
+  <section class="card">
+    <h2>Valores sugeridos em cada orçamento novo</h2>
+    <p class="hint">São só sugestões que aparecem já escritas. Pode mudá-las em cada orçamento. Deixe vazio o que preferir escrever sempre à mão.</p>
+    <div class="grid">
+      <label for="s_rend">Rendimento da equipa (m² por dia)<input id="s_rend" type="text" inputmode="decimal"></label>
+      <label for="s_cons">Consumo da carrinha (L/100 km)<input id="s_cons" type="text" inputmode="decimal"></label>
+      <label for="s_validade">Validade do orçamento (dias)<input id="s_validade" type="text" inputmode="numeric"></label>
+      <label for="s_iva">IVA habitual<select id="s_iva"><option value="0">Isento / sem IVA</option><option value="6">6 %</option><option value="23">23 %</option></select></label>
+      <label for="s_num">Próximo número de orçamento<input id="s_num" type="text" inputmode="numeric"></label>
+    </div>
+    <label for="s_desc">Descrição dos trabalhos habitual<textarea id="s_desc"></textarea></label>
+    <label for="s_cond">Condições de pagamento habituais<textarea id="s_cond"></textarea></label>
+  </section>
+  <section class="card">
+    <h2>Cópia de segurança</h2>
+    <p class="hint">Os orçamentos ficam guardados só neste telemóvel. Faça uma cópia de vez em quando, ou para passar tudo para outro telemóvel.</p>
+    <div class="row">
+      <button type="button" class="btn ghost" id="b-export">Fazer cópia de segurança</button>
+      <label class="btn ghost" for="f-import" style="display:inline-flex;align-items:center;color:var(--fg);font-size:.95rem">Recuperar cópia<input id="f-import" type="file" accept=".json,application/json" hidden></label>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast" hidden></div>
+<script src="pdf-lib.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
