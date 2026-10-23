@@ -1,70 +1,100 @@
-(function () {
-  'use strict';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, getDoc, getDocs, runTransaction, query, orderBy, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 
-  // ---------- armazenamento ----------
-  var K_SET = 'vt-definicoes', K_LIST = 'vt-orcamentos', K_DRAFT = 'vt-rascunho';
-  function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
-  function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { toast('Não foi possível guardar neste telemóvel.'); return false; } }
+const fbApp = initializeApp(window.VT_FIREBASE);
+const auth = getAuth(fbApp);
+let db;
+try { db = initializeFirestore(fbApp, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }); }
+catch (e) { db = initializeFirestore(fbApp, {}); }
+const storage = getStorage(fbApp);
 
-  var SET_FIELDS = ['s_nome', 's_resp', 's_nif', 's_tel', 's_email', 's_morada', 's_isencao', 's_rend', 's_cons', 's_validade', 's_iva', 's_num', 's_desc', 's_cond'];
-  var DEF_SET = { s_nome: 'VisoThermLy', s_num: '1', s_iva: '0', s_desc: 'Aplicação de sistema de isolamento térmico pelo exterior (capoto / ETICS) na fachada.' };
-  var Q_FIELDS = ['c_nome', 'c_tel', 'c_nif', 'o_morada', 'modo', 'o_area', 'o_iso', 'o_esp', 'o_desc', 'mo_tipo', 'mo_preco', 'mo_rend', 'mo_dias', 'm_mat', 'm_and', 'm_margem', 'd_tipo', 'd_km', 'd_viagens', 'd_cons', 'd_comb', 'd_port', 'd_valor', 'iva', 'validade', 'condicoes', 'notas'];
+// ---------- utilitários ----------
+function $(id) { return document.getElementById(id); }
+var eurF = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' });
+function eur(v) { return eurF.format(v || 0).replace(/ /g, ' '); }
+function num(v) {
+  if (v == null) return null;
+  var s = String(v).replace(/\s/g, '').replace(',', '.');
+  if (s === '') return null;
+  var n = parseFloat(s);
+  return isFinite(n) && n >= 0 ? n : null;
+}
+function fmtN(n) { return String(Math.round(n * 100) / 100).replace('.', ','); }
+function hoje() { return new Date().toISOString().slice(0, 10); }
+function dataPT(iso) { if (!iso) return ''; var p = iso.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
+function addDias(iso, d) { var t = new Date(iso + 'T12:00:00'); t.setDate(t.getDate() + d); return t.toISOString().slice(0, 10); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function lsGet(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+var toastT;
+function toast(msg) { var t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; }, 3000); }
+function falhou(e, oque) { console.error(e); toast('Não foi possível ' + oque + '. ' + (e && e.code === 'permission-denied' ? 'Sem permissão.' : 'Verifique a internet.')); }
 
-  var settings = Object.assign({}, DEF_SET, load(K_SET, {}));
-  var list = load(K_LIST, []);
-  var cur = null; // orçamento aberto
-  var dirty = false;
+// ---------- estado ----------
+var user = null, perfil = {}, config = {}, clientes = [], orcs = [], membros = [];
+var settings = {};
+var cur = null, dirty = false, clienteAberto = null;
+var subs = [], subsCli = [];
+var pagamentos = [], fotos = [];
+var K_DRAFT = 'vt-rascunho-v2';
+var ESTADOS = ['Por enviar', 'Enviado', 'Aceite', 'Recusado', 'Concluído'];
+var Q_FIELDS = ['c_nome', 'c_tel', 'c_nif', 'o_morada', 'modo', 'o_area', 'o_iso', 'o_esp', 'o_desc', 'mo_tipo', 'mo_preco', 'mo_rend', 'mo_dias', 'm_mat', 'm_and', 'm_margem', 'd_tipo', 'd_km', 'd_viagens', 'd_cons', 'd_comb', 'd_port', 'd_valor', 'iva', 'validade', 'condicoes', 'notas'];
+var CFG_FIELDS = ['s_nome', 's_nif', 's_tel', 's_email', 's_morada', 's_isencao', 's_rend', 's_cons', 's_validade', 's_iva', 's_desc', 's_cond'];
 
-  function $(id) { return document.getElementById(id); }
-  var eurF = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' });
-  function eur(v) { return eurF.format(v || 0).replace(/ /g, ' '); }
-  function num(v) {
-    if (v == null) return null;
-    var s = String(v).replace(/\s/g, '').replace(',', '.');
-    if (s === '') return null;
-    var n = parseFloat(s);
-    return isFinite(n) && n >= 0 ? n : null;
-  }
-  function fmtN(n) { return String(Math.round(n * 100) / 100).replace('.', ','); }
-  function hoje() { return new Date().toISOString().slice(0, 10); }
-  function dataPT(iso) { if (!iso) return ''; var p = iso.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
-  function addDias(iso, d) { var t = new Date(iso + 'T12:00:00'); t.setDate(t.getDate() + d); return t.toISOString().slice(0, 10); }
-  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function recalcSettings() {
+  settings = Object.assign({ s_nome: 'VisoThermLy' }, config);
+  if (!settings.s_nome) settings.s_nome = 'VisoThermLy';
+  settings.s_resp = perfil.nome || '';
+  settings.s_tel = perfil.telefone || config.s_tel || '';
+}
 
-  var toastT;
-  function toast(msg) { var t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; }, 2600); }
+// ---------- navegação ----------
+function show(v) {
+  ['clientes', 'cliente', 'novo', 'def'].forEach(function (x) { $('v-' + x).hidden = x !== v; });
+  var navV = v === 'cliente' ? 'clientes' : v;
+  document.querySelectorAll('nav button').forEach(function (b) { if (b.dataset.v === navV) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('nav button').forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.v); }); });
 
-  // ---------- navegação ----------
-  function show(v) {
-    ['novo', 'lista', 'def'].forEach(function (x) { $('v-' + x).hidden = x !== v; });
-    document.querySelectorAll('nav button').forEach(function (b) { if (b.dataset.v === v) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
-    if (v === 'lista') renderList();
-    window.scrollTo(0, 0);
-  }
-  document.querySelectorAll('nav button').forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.v); }); });
-
-  // ---------- orçamento ----------
-  function blankQuote() {
-    var f = {};
-    Q_FIELDS.forEach(function (k) { f[k] = ''; });
-    f.modo = 'mo'; f.mo_tipo = 'm2'; f.d_tipo = 'calc'; f.o_iso = '';
-    f.o_desc = settings.s_desc || '';
-    f.mo_rend = settings.s_rend || '';
-    f.d_cons = settings.s_cons || '';
-    f.iva = settings.s_iva || '0';
-    f.validade = settings.s_validade || '';
-    f.condicoes = settings.s_cond || '';
-    return { id: null, num: null, data: null, estado: 'Por enviar', f: f, extras: [] };
-  }
-
-  function toForm(q) {
-    Q_FIELDS.forEach(function (k) { $(k).value = q.f[k] == null ? '' : q.f[k]; });
-    renderExtras();
-    $('q-num').textContent = q.num ? 'Orçamento n.º ' + q.num : 'Novo orçamento';
-    $('q-info').textContent = q.num ? (q.estado + ' · criado a ' + dataPT(q.data)) : 'Ainda não guardado';
-    calc();
-  }
-  function fromForm() { Q_FIELDS.forEach(function (k) { cur.f[k] = $(k).value; }); }
+// ---------- orçamento ----------
+function blankQuote(clienteId) {
+  var f = {};
+  Q_FIELDS.forEach(function (k) { f[k] = ''; });
+  f.modo = 'mo'; f.mo_tipo = 'm2'; f.d_tipo = 'calc'; f.o_iso = '';
+  f.o_desc = settings.s_desc || 'Aplicação de sistema de isolamento térmico pelo exterior (capoto / ETICS) na fachada.';
+  f.mo_rend = settings.s_rend || '';
+  f.d_cons = settings.s_cons || '';
+  f.iva = settings.s_iva || '0';
+  f.validade = settings.s_validade || '';
+  f.condicoes = settings.s_cond || '';
+  var c = clienteId && clientes.find(function (x) { return x.id === clienteId; });
+  if (c) { f.c_nome = c.nome || ''; f.c_tel = c.telefone || ''; f.c_nif = c.nif || ''; f.o_morada = c.morada || ''; }
+  return { id: null, num: null, data: null, estado: 'Por enviar', f: f, extras: [], clienteId: c ? c.id : null };
+}
+function renderClienteSelect() {
+  var sel = $('c_sel'), v = cur && cur.clienteId || '';
+  sel.innerHTML = '<option value="">Novo cliente</option>' + clientes.map(function (c) { return '<option value="' + c.id + '">' + esc(c.nome || 'Sem nome') + '</option>'; }).join('');
+  sel.value = v;
+}
+function toForm(q) {
+  Q_FIELDS.forEach(function (k) { $(k).value = q.f[k] == null ? '' : q.f[k]; });
+  renderClienteSelect();
+  renderExtras();
+  $('q-num').textContent = q.num ? 'Orçamento n.º ' + q.num : 'Novo orçamento';
+  $('q-info').textContent = q.num ? (q.estado + ' · criado a ' + dataPT(q.data)) : 'Ainda não guardado';
+  calc();
+}
+function fromForm() { Q_FIELDS.forEach(function (k) { cur.f[k] = $(k).value; }); }
+$('c_sel').addEventListener('change', function () {
+  var id = $('c_sel').value;
+  cur.clienteId = id || null;
+  var c = id && clientes.find(function (x) { return x.id === id; });
+  if (c) { $('c_nome').value = c.nome || ''; $('c_tel').value = c.telefone || ''; $('c_nif').value = c.nif || ''; $('o_morada').value = c.morada || ''; }
+  changed();
+});
 
   function renderExtras() {
     var box = $('extras');
@@ -179,31 +209,57 @@
     return r;
   }
 
-  function changed() { dirty = true; fromForm(); calc(); save(K_DRAFT, { q: cur, dirty: dirty }); }
-  Q_FIELDS.forEach(function (k) { $(k).addEventListener('input', changed); $(k).addEventListener('change', changed); });
+function changed() { dirty = true; fromForm(); calc(); lsSet(K_DRAFT, { q: cur, dirty: dirty }); }
+Q_FIELDS.forEach(function (k) { $(k).addEventListener('input', changed); $(k).addEventListener('change', changed); });
 
-  function guardar() {
-    fromForm();
-    var r = compute(cur);
-    if (!cur.id) {
-      var n = parseInt(settings.s_num, 10) || 1;
-      cur.id = String(Date.now());
-      cur.num = new Date().getFullYear() + '/' + String(n).padStart(3, '0');
-      cur.data = hoje();
-      settings.s_num = String(n + 1); save(K_SET, settings); $('s_num').value = settings.s_num;
-    }
-    cur.total = r.total; cur.cliente = cur.f.c_nome; cur.morada = cur.f.o_morada; cur.atualizado = hoje();
-    var copy = JSON.parse(JSON.stringify(cur));
-    var i = list.findIndex(function (x) { return x.id === cur.id; });
-    if (i >= 0) list[i] = copy; else list.unshift(copy);
-    if (save(K_LIST, list)) { dirty = false; save(K_DRAFT, { q: cur, dirty: false }); toForm(cur); toast('Orçamento ' + cur.num + ' guardado.'); }
+async function proximoNumero() {
+  var ano = new Date().getFullYear();
+  if (navigator.onLine) {
+    try {
+      var n = await runTransaction(db, async function (tx) {
+        var ref = doc(db, 'config', 'geral');
+        var s = await tx.get(ref);
+        var v = (s.exists() && s.data().proximoNumero) || 1;
+        tx.set(ref, { proximoNumero: v + 1 }, { merge: true });
+        return v;
+      });
+      return ano + '/' + String(n).padStart(3, '0');
+    } catch (e) { console.warn(e); }
   }
-  $('b-guardar').addEventListener('click', guardar);
+  return ano + '/T' + String(Date.now()).slice(-5);
+}
 
-  $('b-novo').addEventListener('click', function () {
-    if (dirty && !confirm('Este orçamento tem alterações por guardar. Começar um novo na mesma?')) return;
-    cur = blankQuote(); dirty = false; save(K_DRAFT, { q: cur, dirty: false }); toForm(cur); window.scrollTo(0, 0);
-  });
+async function guardar() {
+  fromForm();
+  var f = cur.f, r = compute(cur);
+  if (!(f.c_nome || '').trim()) { toast('Escreva o nome do cliente.'); $('c_nome').focus(); return false; }
+  var btn = $('b-guardar'); btn.disabled = true;
+  try {
+    if (!cur.clienteId) {
+      var cref = doc(collection(db, 'clientes'));
+      setDoc(cref, { nome: f.c_nome.trim(), telefone: f.c_tel || '', nif: f.c_nif || '', morada: f.o_morada || '', email: '', notas: '', criadoEm: serverTimestamp(), criadoPor: perfil.nome || user.email }).catch(function (e) { falhou(e, 'criar o cliente'); });
+      cur.clienteId = cref.id;
+    }
+    if (!cur.id) {
+      cur.num = await proximoNumero();
+      cur.data = hoje();
+      cur.id = doc(collection(db, 'orcamentos')).id;
+    }
+    setDoc(doc(db, 'orcamentos', cur.id), {
+      num: cur.num, data: cur.data, estado: cur.estado || 'Por enviar', f: cur.f, extras: cur.extras,
+      clienteId: cur.clienteId, cliente: f.c_nome.trim(), morada: f.o_morada || '', total: r.total,
+      atualizadoEm: serverTimestamp(), atualizadoPor: perfil.nome || user.email
+    }).catch(function (e) { falhou(e, 'guardar o orçamento'); });
+    dirty = false; lsSet(K_DRAFT, { q: cur, dirty: false }); toForm(cur);
+    toast('Orçamento ' + cur.num + ' guardado' + (navigator.onLine ? '.' : '. Será enviado para a equipa quando houver internet.'));
+    return true;
+  } finally { btn.disabled = false; }
+}
+$('b-guardar').addEventListener('click', function () { guardar(); });
+$('b-novo').addEventListener('click', function () {
+  if (dirty && !confirm('Este orçamento tem alterações por guardar. Começar um novo na mesma?')) return;
+  cur = blankQuote(); dirty = false; lsSet(K_DRAFT, { q: cur, dirty: false }); toForm(cur); window.scrollTo(0, 0);
+});
 
   function resumoTexto() {
     var r = compute(cur), f = cur.f;
@@ -233,6 +289,7 @@
     if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () { toast('Resumo copiado. Cole-o na mensagem.'); }, function () { toast('Não foi possível copiar.'); });
   });
 
+
   // ---------- PDF ----------
   function safe(s) { return String(s == null ? '' : s).replace(/ /g, ' ').replace(/\t/g, ' ').replace(/[^\n\x20-\x7E\xA0-\xFF€–—‘’“”•…×]/g, ''); }
 
@@ -240,7 +297,7 @@
     fromForm();
     var r = compute(cur);
     if (!r.lines.length) { toast('Preencha o orçamento antes de gerar o PDF.'); return; }
-    if (!cur.id) guardar();
+    if (!cur.id) { if (!(await guardar())) return; }
     var L = window.PDFLib, f = cur.f, S = settings;
     var doc = await L.PDFDocument.create();
     var reg = await doc.embedFont(L.StandardFonts.Helvetica), bold = await doc.embedFont(L.StandardFonts.HelveticaBold);
@@ -376,84 +433,359 @@
     a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
   }
-  $('b-pdf').addEventListener('click', function () { gerarPDF().catch(function (e) { console.error(e); toast('Não foi possível gerar o PDF.'); }); });
 
-  // ---------- lista ----------
-  var ESTADOS = ['Por enviar', 'Enviado', 'Aceite', 'Recusado', 'Concluído'];
-  function renderList() {
-    var q = ($('filtro').value || '').toLowerCase();
-    var items = list.filter(function (x) { return !q || ((x.cliente || '') + ' ' + (x.morada || '') + ' ' + x.num).toLowerCase().indexOf(q) >= 0; });
-    if (!items.length) { $('lista').innerHTML = '<p class="empty">' + (list.length ? 'Nenhum orçamento encontrado.' : 'Ainda não há orçamentos guardados. Preencha um no separador Orçamento e carregue em Guardar.') + '</p>'; return; }
-    $('lista').innerHTML = items.map(function (x) {
-      return '<div class="item"><div class="item-top"><b>' + esc(x.cliente || 'Sem nome') + '</b><span>' + eur(x.total) + '</span></div>' +
-        '<div class="meta">N.º ' + esc(x.num) + ' · ' + dataPT(x.data) + (x.morada ? ' · ' + esc(x.morada) : '') + '</div>' +
-        '<div class="row" style="align-items:center"><label for="st' + x.id + '" style="flex:1 1 140px">Estado<select id="st' + x.id + '" data-st="' + x.id + '">' +
-        ESTADOS.map(function (e) { return '<option' + (e === x.estado ? ' selected' : '') + '>' + e + '</option>'; }).join('') + '</select></label>' +
-        '<button type="button" class="btn small" data-open="' + x.id + '">Abrir</button>' +
-        '<button type="button" class="btn ghost small" data-dup="' + x.id + '">Duplicar</button>' +
-        '<button type="button" class="btn danger small" data-rm="' + x.id + '">Apagar</button></div></div>';
-    }).join('');
-  }
-  $('filtro').addEventListener('input', renderList);
-  function byId(id) { return list.find(function (x) { return x.id === id; }); }
-  $('lista').addEventListener('change', function (e) {
+// ---------- listas de orçamentos ----------
+function pillEstado(e) {
+  var cls = e === 'Aceite' || e === 'Concluído' ? 'ok' : e === 'Recusado' ? 'no' : e === 'Enviado' ? 'warn' : '';
+  return '<span class="pill ' + cls + '">' + esc(e || 'Por enviar') + '</span>';
+}
+function orcHTML(items, mostrarCliente) {
+  if (!items.length) return '<p class="empty">Ainda não há orçamentos.</p>';
+  return items.map(function (x) {
+    return '<div class="item"><div class="item-top"><b>' + esc(mostrarCliente ? (x.cliente || 'Sem nome') : 'N.º ' + x.num) + '</b><span>' + eur(x.total) + '</span></div>' +
+      '<div class="meta">' + (mostrarCliente ? 'N.º ' + esc(x.num) + ' · ' : '') + dataPT(x.data) + (x.morada ? ' · ' + esc(x.morada) : '') + (x.atualizadoPor ? ' · por ' + esc(x.atualizadoPor) : '') + '</div>' +
+      '<div class="row" style="align-items:center"><label for="st' + x.id + '" style="flex:1 1 140px">Estado<select id="st' + x.id + '" data-st="' + x.id + '">' +
+      ESTADOS.map(function (e) { return '<option' + (e === (x.estado || 'Por enviar') ? ' selected' : '') + '>' + e + '</option>'; }).join('') + '</select></label>' +
+      '<button type="button" class="btn small" data-open="' + x.id + '">Abrir</button>' +
+      '<button type="button" class="btn ghost small" data-dup="' + x.id + '">Duplicar</button>' +
+      '<button type="button" class="btn danger small" data-rm="' + x.id + '">Apagar</button></div></div>';
+  }).join('');
+}
+function ligarListaOrc(box) {
+  box.addEventListener('change', function (e) {
     var id = e.target.dataset.st; if (!id) return;
-    var x = byId(id); x.estado = e.target.value; save(K_LIST, list);
-    if (cur.id === id) { cur.estado = x.estado; toForm(cur); }
+    updateDoc(doc(db, 'orcamentos', id), { estado: e.target.value, atualizadoEm: serverTimestamp(), atualizadoPor: perfil.nome || user.email }).catch(function (er) { falhou(er, 'mudar o estado'); });
+    if (cur && cur.id === id) cur.estado = e.target.value;
     toast('Estado atualizado.');
   });
-  $('lista').addEventListener('click', function (e) {
+  box.addEventListener('click', function (e) {
     var d = e.target.dataset, x;
     if (d.open || d.dup) {
       if (dirty && !confirm('O orçamento aberto tem alterações por guardar. Continuar na mesma?')) return;
-      x = JSON.parse(JSON.stringify(byId(d.open || d.dup)));
-      if (d.dup) { x.id = null; x.num = null; x.data = null; x.estado = 'Por enviar'; }
-      cur = x; dirty = !!d.dup; save(K_DRAFT, { q: cur, dirty: dirty }); toForm(cur); show('novo');
+      x = orcs.find(function (o) { return o.id === (d.open || d.dup); }); if (!x) return;
+      cur = { id: x.id, num: x.num, data: x.data, estado: x.estado || 'Por enviar', f: JSON.parse(JSON.stringify(x.f || {})), extras: JSON.parse(JSON.stringify(x.extras || [])), clienteId: x.clienteId || null };
+      if (d.dup) { cur.id = null; cur.num = null; cur.data = null; cur.estado = 'Por enviar'; }
+      dirty = !!d.dup; lsSet(K_DRAFT, { q: cur, dirty: dirty }); toForm(cur); show('novo');
       if (d.dup) toast('Cópia criada. Altere o que precisar e guarde.');
     } else if (d.rm) {
-      x = byId(d.rm);
+      x = orcs.find(function (o) { return o.id === d.rm; }); if (!x) return;
       if (!confirm('Apagar o orçamento ' + x.num + (x.cliente ? ' de ' + x.cliente : '') + '? Não dá para desfazer.')) return;
-      list = list.filter(function (y) { return y.id !== d.rm; }); save(K_LIST, list);
-      if (cur.id === d.rm) { cur.id = null; cur.num = null; toForm(cur); }
-      renderList(); toast('Orçamento apagado.');
+      deleteDoc(doc(db, 'orcamentos', d.rm)).catch(function (er) { falhou(er, 'apagar o orçamento'); });
+      if (cur && cur.id === d.rm) { cur.id = null; cur.num = null; toForm(cur); }
+      toast('Orçamento apagado.');
     }
   });
+}
+ligarListaOrc($('orc-todos'));
+ligarListaOrc($('cf-orcs'));
 
-  // ---------- definições ----------
-  SET_FIELDS.forEach(function (k) {
-    $(k).value = settings[k] == null ? '' : settings[k];
-    $(k).addEventListener('input', function () { settings[k] = $(k).value; save(K_SET, settings); });
-    $(k).addEventListener('change', function () { settings[k] = $(k).value; save(K_SET, settings); });
-  });
+// ---------- clientes ----------
+function renderClientes() {
+  var q = ($('cli_filtro').value || '').toLowerCase();
+  var items = clientes.filter(function (c) { return !q || ((c.nome || '') + ' ' + (c.telefone || '') + ' ' + (c.morada || '')).toLowerCase().indexOf(q) >= 0; });
+  $('cli-lista').innerHTML = items.length ? items.map(function (c) {
+    var os = orcs.filter(function (o) { return o.clienteId === c.id; });
+    return '<button type="button" class="cli" data-cli="' + c.id + '"><span><b>' + esc(c.nome || 'Sem nome') + '</b><span class="meta">' + esc([c.telefone, c.morada].filter(Boolean).join(' · ') || 'Sem contactos') + '</span></span>' +
+      '<span style="text-align:right">' + (os.length ? pillEstado(os[0].estado) : '<span class="pill">Sem orçamentos</span>') + '</span></button>';
+  }).join('') : '<p class="empty">' + (clientes.length ? 'Nenhum cliente encontrado.' : 'Ainda não há clientes. Carregue em "Novo cliente" ou guarde um orçamento.') + '</p>';
+  $('orc-todos').innerHTML = orcHTML(orcs.slice(0, 40), true);
+}
+$('cli_filtro').addEventListener('input', renderClientes);
+$('cli-lista').addEventListener('click', function (e) { var b = e.target.closest('[data-cli]'); if (b) abrirCliente(b.dataset.cli); });
+$('b-novocli').addEventListener('click', function () { abrirCliente(null); });
+$('b-voltar').addEventListener('click', function () { fecharCliente(); show('clientes'); });
 
-  $('b-export').addEventListener('click', function () {
-    var data = JSON.stringify({ app: 'visothermly-orcamentos', versao: 1, data: hoje(), definicoes: settings, orcamentos: list }, null, 1);
-    entregar(new Blob([data], { type: 'application/json' }), 'copia-orcamentos-' + hoje() + '.json');
-  });
-  $('f-import').addEventListener('change', function (e) {
-    var file = e.target.files[0]; if (!file) return;
-    var rd = new FileReader();
-    rd.onload = function () {
-      try {
-        var d = JSON.parse(rd.result);
-        if (d.app !== 'visothermly-orcamentos' || !Array.isArray(d.orcamentos)) throw new Error('formato');
-        if (!confirm('Recuperar ' + d.orcamentos.length + ' orçamentos desta cópia? Os orçamentos com o mesmo número são substituídos, os outros ficam.')) return;
-        d.orcamentos.forEach(function (o) { var i = list.findIndex(function (x) { return x.id === o.id; }); if (i >= 0) list[i] = o; else list.push(o); });
-        list.sort(function (a, b) { return (b.id || '').localeCompare(a.id || ''); });
-        save(K_LIST, list);
-        if (d.definicoes) { settings = Object.assign({}, settings, d.definicoes); save(K_SET, settings); SET_FIELDS.forEach(function (k) { $(k).value = settings[k] == null ? '' : settings[k]; }); }
-        toast('Cópia recuperada.');
-      } catch (err) { toast('Este ficheiro não é uma cópia de segurança desta app.'); }
-      e.target.value = '';
-    };
-    rd.readAsText(file);
-  });
+function fecharCliente() { subsCli.forEach(function (u) { u(); }); subsCli = []; clienteAberto = null; pagamentos = []; fotos = []; }
+function abrirCliente(id) {
+  fecharCliente();
+  clienteAberto = id;
+  var c = id ? clientes.find(function (x) { return x.id === id; }) || {} : {};
+  $('cf-titulo').textContent = id ? (c.nome || 'Cliente') : 'Novo cliente';
+  $('cf_nome').value = c.nome || ''; $('cf_tel').value = c.telefone || ''; $('cf_email').value = c.email || '';
+  $('cf_nif').value = c.nif || ''; $('cf_morada').value = c.morada || ''; $('cf_notas').value = c.notas || '';
+  $('cf-apagar').hidden = !id;
+  ['cf-resumo'].forEach(function (s) { $(s).hidden = !id; });
+  document.querySelectorAll('#v-cliente > section.card').forEach(function (s, i) { if (i > 0) s.hidden = !id; });
+  $('cf-pags').innerHTML = ''; $('cf-fotos').innerHTML = ''; $('f-estado').textContent = '';
+  $('p_data').value = hoje();
+  if (id) {
+    renderCliente();
+    subsCli.push(onSnapshot(query(collection(db, 'clientes', id, 'pagamentos'), orderBy('data', 'desc')), function (s) {
+      pagamentos = s.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); }); renderPagamentos(); renderKpis();
+    }, function (e) { console.warn(e); }));
+    subsCli.push(onSnapshot(query(collection(db, 'clientes', id, 'fotos'), orderBy('criadoEm', 'desc')), function (s) {
+      fotos = s.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); }); renderFotos();
+    }, function (e) { console.warn(e); }));
+  }
+  show('cliente');
+  if (!id) $('cf_nome').focus();
+}
+function renderCliente() {
+  if (!clienteAberto) return;
+  var c = clientes.find(function (x) { return x.id === clienteAberto; });
+  if (c) $('cf-titulo').textContent = c.nome || 'Cliente';
+  $('cf-orcs').innerHTML = orcHTML(orcs.filter(function (o) { return o.clienteId === clienteAberto; }), false);
+  renderKpis();
+}
+function renderKpis() {
+  var aceite = orcs.filter(function (o) { return o.clienteId === clienteAberto && (o.estado === 'Aceite' || o.estado === 'Concluído'); }).reduce(function (a, o) { return a + (o.total || 0); }, 0);
+  var pago = pagamentos.reduce(function (a, p) { return a + (p.valor || 0); }, 0);
+  $('k-aceite').textContent = eur(aceite); $('k-pago').textContent = eur(pago); $('k-falta').textContent = eur(Math.max(aceite - pago, 0));
+}
+$('cf-guardar').addEventListener('click', function () {
+  var nome = $('cf_nome').value.trim();
+  if (!nome) { toast('Escreva o nome do cliente.'); $('cf_nome').focus(); return; }
+  var dados = { nome: nome, telefone: $('cf_tel').value.trim(), email: $('cf_email').value.trim(), nif: $('cf_nif').value.trim(), morada: $('cf_morada').value.trim(), notas: $('cf_notas').value, atualizadoEm: serverTimestamp() };
+  if (clienteAberto) {
+    updateDoc(doc(db, 'clientes', clienteAberto), dados).catch(function (e) { falhou(e, 'guardar o cliente'); });
+    toast('Dados guardados.');
+  } else {
+    var ref = doc(collection(db, 'clientes'));
+    dados.criadoEm = serverTimestamp(); dados.criadoPor = perfil.nome || user.email;
+    setDoc(ref, dados).catch(function (e) { falhou(e, 'criar o cliente'); });
+    clientes.push(Object.assign({ id: ref.id }, dados));
+    toast('Cliente criado.'); abrirCliente(ref.id);
+  }
+});
+$('cf-apagar').addEventListener('click', async function () {
+  var c = clientes.find(function (x) { return x.id === clienteAberto; }); if (!c) return;
+  var os = orcs.filter(function (o) { return o.clienteId === c.id; });
+  if (!confirm('Apagar o cliente ' + (c.nome || '') + ' com ' + os.length + ' orçamento(s), ' + pagamentos.length + ' pagamento(s) e ' + fotos.length + ' fotografia(s)? Não dá para desfazer.')) return;
+  var id = c.id, fs = fotos.slice(), ps = pagamentos.slice();
+  fecharCliente(); show('clientes');
+  try {
+    for (var f of fs) { try { await deleteObject(sRef(storage, f.path)); } catch (e) {} await deleteDoc(doc(db, 'clientes', id, 'fotos', f.id)); }
+    for (var p of ps) await deleteDoc(doc(db, 'clientes', id, 'pagamentos', p.id));
+    for (var o of os) await deleteDoc(doc(db, 'orcamentos', o.id));
+    await deleteDoc(doc(db, 'clientes', id));
+    toast('Cliente apagado.');
+  } catch (e) { falhou(e, 'apagar tudo'); }
+});
+$('cf-novoorc').addEventListener('click', function () {
+  if (dirty && !confirm('O orçamento aberto tem alterações por guardar. Começar um novo na mesma?')) return;
+  cur = blankQuote(clienteAberto); dirty = false; lsSet(K_DRAFT, { q: cur, dirty: false }); toForm(cur); show('novo');
+});
 
-  // ---------- arranque ----------
-  var draft = load(K_DRAFT, null);
+// pagamentos
+function renderPagamentos() {
+  $('cf-pags').innerHTML = pagamentos.length ? pagamentos.map(function (p) {
+    return '<div class="pag"><span>' + dataPT(p.data) + (p.descricao ? ' · ' + esc(p.descricao) : '') + '<span class="meta">' + (p.por ? ' por ' + esc(p.por) : '') + '</span></span>' +
+      '<span>' + eur(p.valor) + ' <button type="button" class="btn danger small" data-rmp="' + p.id + '" aria-label="Apagar pagamento">✕</button></span></div>';
+  }).join('') : '<p class="hint">Ainda não há pagamentos registados.</p>';
+}
+$('cf-pags').addEventListener('click', function (e) {
+  var id = e.target.dataset.rmp; if (!id || !confirm('Apagar este pagamento?')) return;
+  deleteDoc(doc(db, 'clientes', clienteAberto, 'pagamentos', id)).catch(function (er) { falhou(er, 'apagar o pagamento'); });
+});
+$('p-add').addEventListener('click', function () {
+  var v = num($('p_valor').value);
+  if (!v) { toast('Escreva o valor do pagamento.'); $('p_valor').focus(); return; }
+  setDoc(doc(collection(db, 'clientes', clienteAberto, 'pagamentos')), { data: $('p_data').value || hoje(), valor: v, descricao: $('p_desc').value.trim(), por: perfil.nome || user.email, criadoEm: serverTimestamp() }).catch(function (er) { falhou(er, 'registar o pagamento'); });
+  $('p_valor').value = ''; $('p_desc').value = ''; toast('Pagamento registado.');
+});
+
+// fotografias
+function renderFotos() {
+  $('cf-fotos').innerHTML = fotos.length ? fotos.map(function (f) {
+    return '<div class="foto"><a href="' + esc(f.url) + '" target="_blank" rel="noopener"><img src="' + esc(f.url) + '" alt="Fotografia ' + esc(f.fase || '') + '" loading="lazy"></a><span>' + esc(f.fase || '') + '</span><button type="button" data-rmf="' + f.id + '" aria-label="Apagar fotografia">✕</button></div>';
+  }).join('') : '<p class="hint">Ainda não há fotografias.</p>';
+}
+$('cf-fotos').addEventListener('click', async function (e) {
+  var id = e.target.dataset.rmf; if (!id) return;
+  e.preventDefault();
+  if (!confirm('Apagar esta fotografia?')) return;
+  var f = fotos.find(function (x) { return x.id === id; });
+  try { if (f && f.path) await deleteObject(sRef(storage, f.path)); } catch (er) { console.warn(er); }
+  deleteDoc(doc(db, 'clientes', clienteAberto, 'fotos', id)).catch(function (er) { falhou(er, 'apagar a fotografia'); });
+});
+async function comprimir(file) {
+  var max = 1600, img;
+  try { img = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+  catch (e) { img = await new Promise(function (ok, ko) { var i = new Image(); i.onload = function () { ok(i); }; i.onerror = ko; i.src = URL.createObjectURL(file); }); }
+  var w = img.width, h = img.height, k = Math.min(1, max / Math.max(w, h));
+  var c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return await new Promise(function (ok) { c.toBlob(ok, 'image/jpeg', 0.8); });
+}
+$('f_ficheiros').addEventListener('change', async function (e) {
+  var files = [].slice.call(e.target.files || []); e.target.value = '';
+  if (!files.length || !clienteAberto) return;
+  var id = clienteAberto, fase = $('f_fase').value, est = $('f-estado');
+  for (var i = 0; i < files.length; i++) {
+    est.textContent = 'A enviar fotografia ' + (i + 1) + ' de ' + files.length + '…';
+    try {
+      var blob = await comprimir(files[i]);
+      var path = 'clientes/' + id + '/' + Date.now() + '_' + Math.random().toString(36).slice(2, 7) + '.jpg';
+      var task = uploadBytesResumable(sRef(storage, path), blob, { contentType: 'image/jpeg' });
+      await new Promise(function (ok, ko) {
+        task.on('state_changed', function (s) { est.textContent = 'A enviar fotografia ' + (i + 1) + ' de ' + files.length + ' (' + Math.round(s.bytesTransferred / s.totalBytes * 100) + ' %)…'; }, ko, ok);
+      });
+      var url = await getDownloadURL(task.snapshot.ref);
+      await setDoc(doc(collection(db, 'clientes', id, 'fotos')), { path: path, url: url, fase: fase, por: perfil.nome || user.email, criadoEm: serverTimestamp() });
+    } catch (er) {
+      console.error(er);
+      est.textContent = er && (er.code === 'storage/unknown' || er.code === 'storage/bucket-not-found' || er.code === 'storage/project-not-found' || er.code === 'storage/unauthorized')
+        ? 'As fotografias ainda não estão ativas. Falta ativar o armazenamento de ficheiros no Firebase.'
+        : 'Não foi possível enviar a fotografia. Verifique a internet e tente outra vez.';
+      return;
+    }
+  }
+  est.textContent = files.length === 1 ? 'Fotografia enviada.' : files.length + ' fotografias enviadas.';
+});
+
+// ---------- definições ----------
+function preencherDef() {
+  CFG_FIELDS.forEach(function (k) { if (document.activeElement !== $(k)) $(k).value = config[k] == null ? (k === 's_iva' ? '0' : '') : config[k]; });
+  if (!$('s_nome').value) $('s_nome').value = 'VisoThermLy';
+  if (document.activeElement !== $('u_nome')) $('u_nome').value = perfil.nome || '';
+  if (document.activeElement !== $('u_tel')) $('u_tel').value = perfil.telefone || '';
+  $('equipa').innerHTML = membros.map(function (m) { return '<div class="item-top" style="padding:6px 0"><span><b>' + esc(m.nome || 'Sem nome') + '</b> <span class="meta">' + esc(m.email || '') + '</span></span></div>'; }).join('');
+}
+$('s-guardar').addEventListener('click', function () {
+  var d = {}; CFG_FIELDS.forEach(function (k) { d[k] = $(k).value; });
+  setDoc(doc(db, 'config', 'geral'), d, { merge: true }).catch(function (e) { falhou(e, 'guardar os dados da empresa'); });
+  toast('Dados da empresa guardados para toda a equipa.');
+});
+$('u-guardar').addEventListener('click', function () {
+  updateDoc(doc(db, 'membros', user.uid), { nome: $('u_nome').value.trim(), telefone: $('u_tel').value.trim() }).catch(function (e) { falhou(e, 'guardar o perfil'); });
+  toast('Perfil guardado.');
+});
+$('b-sair').addEventListener('click', function () { if (confirm('Terminar a sessão neste telemóvel?')) signOut(auth); });
+
+// importar orçamentos da versão anterior (guardados só neste telemóvel)
+function verImport() {
+  var old = lsGet('vt-orcamentos', []);
+  var ja = lsGet('vt-importado', false);
+  $('sec-import').hidden = !(old.length && !ja);
+  $('imp-txt').textContent = old.length + ' orçamento(s) da versão anterior estão guardados só neste telemóvel. Passe-os para a equipa para ficarem nas pastas dos clientes.';
+}
+$('b-import').addEventListener('click', async function () {
+  var old = lsGet('vt-orcamentos', []); if (!old.length) return;
+  var b = $('b-import'); b.disabled = true;
+  try {
+    var mapa = {};
+    clientes.forEach(function (c) { mapa[(c.nome || '').trim().toLowerCase()] = c.id; });
+    for (var o of old) {
+      var nome = ((o.f && o.f.c_nome) || o.cliente || 'Sem nome').trim(), key = nome.toLowerCase();
+      if (!mapa[key]) {
+        var cref = doc(collection(db, 'clientes'));
+        await setDoc(cref, { nome: nome, telefone: (o.f && o.f.c_tel) || '', nif: (o.f && o.f.c_nif) || '', morada: (o.f && o.f.o_morada) || '', email: '', notas: '', criadoEm: serverTimestamp(), criadoPor: perfil.nome || user.email });
+        mapa[key] = cref.id;
+      }
+      await setDoc(doc(collection(db, 'orcamentos')), { num: o.num, data: o.data || hoje(), estado: o.estado || 'Por enviar', f: o.f || {}, extras: o.extras || [], clienteId: mapa[key], cliente: nome, morada: (o.f && o.f.o_morada) || '', total: o.total || 0, atualizadoEm: serverTimestamp(), atualizadoPor: perfil.nome || user.email });
+    }
+    var oldSet = lsGet('vt-definicoes', {});
+    if (!config.s_nif && !config.s_isencao && Object.keys(oldSet).length) {
+      var d = {}; CFG_FIELDS.forEach(function (k) { if (oldSet[k]) d[k] = oldSet[k]; });
+      await setDoc(doc(db, 'config', 'geral'), d, { merge: true });
+    }
+    lsSet('vt-importado', true); verImport();
+    toast(old.length + ' orçamento(s) passados para a equipa.');
+  } catch (e) { falhou(e, 'passar os orçamentos'); }
+  b.disabled = false;
+});
+
+// ---------- entrar ----------
+var modoCriar = false;
+function msgErro(e) {
+  var c = e && e.code || '';
+  if (c === 'auth/invalid-credential' || c === 'auth/wrong-password' || c === 'auth/user-not-found' || c === 'auth/invalid-login-credentials') return 'Email ou palavra-passe errados.';
+  if (c === 'auth/email-already-in-use') return 'Já existe uma conta com este email. Escolha "Entrar".';
+  if (c === 'auth/weak-password') return 'A palavra-passe tem de ter pelo menos 6 caracteres.';
+  if (c === 'auth/invalid-email') return 'O email não está bem escrito.';
+  if (c === 'auth/network-request-failed') return 'Sem internet. Ligue-se e tente outra vez.';
+  if (c === 'auth/too-many-requests') return 'Demasiadas tentativas. Espere uns minutos.';
+  if (c === 'permission-denied') return 'Código da equipa errado.';
+  return 'Não foi possível continuar (' + (c || 'erro') + ').';
+}
+function erro(id, txt) { var el = $(id); el.textContent = txt || ''; el.hidden = !txt; }
+$('l-modo').addEventListener('click', function () {
+  modoCriar = !modoCriar;
+  $('l-titulo').textContent = modoCriar ? 'Criar conta' : 'Entrar';
+  $('l-ok').textContent = modoCriar ? 'Criar conta' : 'Entrar';
+  $('l-modo').textContent = modoCriar ? 'Já tenho conta' : 'Criar conta';
+  $('l-extra').hidden = !modoCriar; $('l_pass').autocomplete = modoCriar ? 'new-password' : 'current-password';
+  erro('l-err', '');
+});
+$('l-ok').addEventListener('click', async function () {
+  var email = $('l_email').value.trim(), pass = $('l_pass').value;
+  if (!email || !pass) { erro('l-err', 'Escreva o email e a palavra-passe.'); return; }
+  if (modoCriar && !$('l_codigo').value.trim()) { erro('l-err', 'Escreva o código da equipa.'); return; }
+  erro('l-err', ''); $('l-ok').disabled = true;
+  try {
+    if (modoCriar) {
+      sessionStorage.setItem('vt-junta', JSON.stringify({ nome: $('l_nome').value.trim(), codigo: $('l_codigo').value.trim().toUpperCase() }));
+      await createUserWithEmailAndPassword(auth, email, pass);
+    } else await signInWithEmailAndPassword(auth, email, pass);
+  } catch (e) { erro('l-err', msgErro(e)); }
+  $('l-ok').disabled = false;
+});
+$('l-reset').addEventListener('click', async function () {
+  var email = $('l_email').value.trim();
+  if (!email) { erro('l-err', 'Escreva primeiro o seu email.'); return; }
+  try { await sendPasswordResetEmail(auth, email); toast('Enviámos um email para mudar a palavra-passe.'); }
+  catch (e) { erro('l-err', msgErro(e)); }
+});
+async function juntar(nome, codigo) {
+  await setDoc(doc(db, 'membros', user.uid), { codigo: codigo, nome: nome || user.email.split('@')[0], email: user.email, telefone: '', criadoEm: serverTimestamp() });
+}
+$('j-ok').addEventListener('click', async function () {
+  var codigo = $('j_codigo').value.trim().toUpperCase();
+  if (!codigo) { erro('j-err', 'Escreva o código da equipa.'); return; }
+  erro('j-err', ''); $('j-ok').disabled = true;
+  try { await juntar($('j_nome').value.trim(), codigo); await arrancar(); }
+  catch (e) { erro('j-err', msgErro(e)); }
+  $('j-ok').disabled = false;
+});
+$('j-sair').addEventListener('click', function () { signOut(auth); });
+
+function ecran(qual) {
+  $('v-login').hidden = qual !== 'login'; $('v-codigo').hidden = qual !== 'codigo'; $('app').hidden = qual !== 'app';
+}
+function parar() { subs.forEach(function (u) { u(); }); subs = []; fecharCliente(); }
+
+onAuthStateChanged(auth, async function (u) {
+  parar();
+  user = u;
+  if (!u) { ecran('login'); return; }
+  var pend = null; try { pend = JSON.parse(sessionStorage.getItem('vt-junta')); } catch (e) {}
+  sessionStorage.removeItem('vt-junta');
+  if (pend && pend.codigo) {
+    try { await juntar(pend.nome, pend.codigo); }
+    catch (e) { ecran('codigo'); $('j_nome').value = pend.nome || ''; erro('j-err', msgErro(e)); return; }
+  }
+  try {
+    var m = await getDoc(doc(db, 'membros', u.uid));
+    if (!m.exists()) { ecran('codigo'); return; }
+  } catch (e) {
+    if (e.code === 'permission-denied') { ecran('codigo'); return; }
+    // sem internet: confiar na sessão guardada
+  }
+  await arrancar();
+});
+
+async function arrancar() {
+  ecran('app');
+  subs.push(onSnapshot(doc(db, 'membros', user.uid), function (s) { perfil = s.exists() ? s.data() : {}; $('quem').textContent = perfil.nome || user.email; recalcSettings(); preencherDef(); }, function (e) { console.warn(e); }));
+  subs.push(onSnapshot(doc(db, 'config', 'geral'), function (s) { config = s.exists() ? s.data() : {}; recalcSettings(); preencherDef(); }, function (e) { console.warn(e); }));
+  subs.push(onSnapshot(collection(db, 'membros'), function (s) { membros = s.docs.map(function (d) { return d.data(); }); preencherDef(); }, function (e) { console.warn(e); }));
+  subs.push(onSnapshot(query(collection(db, 'clientes'), orderBy('nome')), function (s) {
+    clientes = s.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
+    renderClientes(); renderClienteSelect(); renderCliente();
+  }, function (e) { console.warn(e); }));
+  subs.push(onSnapshot(query(collection(db, 'orcamentos'), orderBy('data', 'desc')), function (s) {
+    orcs = s.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
+    orcs.sort(function (a, b) { return (b.data || '').localeCompare(a.data || '') || (b.num || '').localeCompare(a.num || ''); });
+    renderClientes(); renderCliente();
+  }, function (e) { console.warn(e); }));
+  recalcSettings();
+  var draft = lsGet(K_DRAFT, null);
   if (draft && draft.q && draft.q.f) { cur = draft.q; if (!cur.extras) cur.extras = []; dirty = !!draft.dirty; }
   else cur = blankQuote();
   toForm(cur);
+  verImport();
+  show('clientes');
+}
 
-  if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
-})();
+if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+$('b-pdf').addEventListener('click', function () { gerarPDF().catch(function (e) { console.error(e); toast('Não foi possível gerar o PDF.'); }); });
