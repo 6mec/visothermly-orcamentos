@@ -51,7 +51,7 @@ function recalcSettings() {
 // ---------- navegação ----------
 var vistaAtual = 'inicio';
 var VISTAS = ['inicio', 'trab', 'cal', 'clientes', 'cliente', 'obras', 'obra', 'orcs', 'novo', 'mais', 'despesas', 'dias', 'contas', 'docs', 'def'];
-var NAV_DE = { cliente: 'trab', obra: 'trab', novo: 'trab', clientes: 'mais', obras: 'mais', orcs: 'mais', despesas: 'mais', dias: 'mais', contas: 'mais', docs: 'mais', def: 'mais' };
+var NAV_DE = { cliente: 'clientes', obra: 'obras', novo: 'orcs', mais: 'def' };
 function iniciais(n) { var p = String(n || '?').trim().split(/\s+/); return ((p[0] || '?')[0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase(); }
 function corDe(s) { var h = 0; s = String(s || ''); for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360; return 'hsl(' + h + ',45%,42%)'; }
 function avatar(nome, big) { return '<span class="av' + (big ? ' big' : '') + '" style="background:' + corDe(nome) + '">' + esc(iniciais(nome)) + '</span>'; }
@@ -1229,7 +1229,7 @@ $('cf-obras').addEventListener('click', function (e) { var b = e.target.closest(
 // =====================================================================
 // FLUIDEZ: transições, voltar do telemóvel, posição de leitura
 // =====================================================================
-var PROF = { inicio: 0, trab: 0, cal: 0, mais: 0, clientes: 1, obras: 1, orcs: 1, despesas: 1, dias: 1, contas: 1, docs: 1, def: 1, cliente: 2, novo: 2, obra: 3 };
+var PROF = { inicio: 0, trab: 0, cal: 0, mais: 0, clientes: 0, obras: 0, orcs: 0, despesas: 0, dias: 0, contas: 0, docs: 0, def: 0, cliente: 2, novo: 2, obra: 3 };
 var posScroll = {}, hDepth = 0, ignorePop = false, dlgPushed = false, voltarNovo = 'orcs';
 var GUARD = {};
 ['cli-lista', 'ped-lista', 'obras-lista', 'orc-todos', 'cf-orcs', 'cf-obras', 'cf-pags', 'cf-fotos', 'ini-corpo', 'cf-dyn', 'cf-acts', 'agenda', 'dsp-lista', 'dsp-resumo', 'dias-lista', 'dias-resumo', 'ct-meses', 'ct-obras', 'docs-lista', 'obra-filtros', 'orc-filtros', 'equipa', 'obra-corpo'].forEach(function (k) { GUARD[k] = 1; });
@@ -2433,3 +2433,39 @@ async function arrancar() {
 
 
 $('b-pdf').addEventListener('click', function () { gerarPDF().catch(function (e) { console.error(e); toast('Não foi possível gerar o PDF.'); }); });
+
+// =====================================================================
+// MENU LATERAL
+// =====================================================================
+var SEC_DE = { inicio: 'Visão geral', cal: 'Visão geral', trab: 'Comercial', clientes: 'Comercial', cliente: 'Comercial · Cliente', orcs: 'Comercial', novo: 'Comercial · Orçamento', obras: 'Produção', obra: 'Produção · Obra', dias: 'Produção', contas: 'Finanças', despesas: 'Finanças', docs: 'Finanças', def: 'Empresa', mais: 'Empresa' };
+function menuAbrir(on) {
+  if (on) $('shell').style.transformOrigin = '0 ' + Math.round(window.scrollY + window.innerHeight / 2) + 'px';
+  document.body.classList.toggle('menu', !!on);
+  $('b-menu').setAttribute('aria-expanded', on ? 'true' : 'false');
+}
+$('b-menu').addEventListener('click', function () { menuAbrir(!document.body.classList.contains('menu')); });
+$('scrim').addEventListener('click', function () { menuAbrir(false); });
+$('tb-criar').addEventListener('click', function () { $('nav-criar').click(); });
+$('nav-criar').addEventListener('click', function () { menuAbrir(false); });
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.body.classList.contains('menu')) menuAbrir(false); });
+(function () {
+  var x0 = null, y0 = 0;
+  document.addEventListener('touchstart', function (e) { var t = e.touches[0]; x0 = (t.clientX < 24 || document.body.classList.contains('menu')) ? t.clientX : null; y0 = t.clientY; }, { passive: true });
+  document.addEventListener('touchend', function (e) { if (x0 == null) return; var t = e.changedTouches[0], dx = t.clientX - x0; if (Math.abs(t.clientY - y0) > 60) return; if (dx > 60) menuAbrir(true); else if (dx < -60) menuAbrir(false); x0 = null; }, { passive: true });
+})();
+function setBadge(id, n, cls) { var el = $(id); if (!el) return; el.textContent = n || ''; el.hidden = !n; el.className = 'sd-n' + (cls ? ' ' + cls : ''); }
+function navBadges() {
+  try {
+    var T = trabalhos();
+    setBadge('sn-trab', T.filter(function (t) { return t.urg && t.k !== 'perdido'; }).length, 'acc');
+    setBadge('sn-clientes', T.filter(function (t) { return t.k === 'pedido'; }).length);
+    setBadge('sn-obras', obras.filter(function (o) { return o.estado === 'Em curso'; }).length);
+  } catch (e) {}
+  try { var av = (typeof avisos === 'function') ? avisos().filter(function (x) { return /document|seguro|valid|alvar|impic/i.test(JSON.stringify(x)); }).length : 0; setBadge('sn-docs', av, 'acc'); } catch (e) {}
+  var nm = $('quem').textContent; $('sd-av').textContent = iniciais(nm); $('sd-av').style.background = corDe(nm);
+}
+var _showBase = show;
+show = function (v, dePop) { menuAbrir(false); _showBase(v, dePop); $('h-sec').textContent = SEC_DE[v] || ''; navBadges(); };
+var _renderTudoBase = renderTudo;
+renderTudo = function () { _renderTudoBase.apply(this, arguments); navBadges(); };
+$('h-sec').textContent = SEC_DE[vistaAtual] || '';
