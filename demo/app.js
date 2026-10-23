@@ -50,8 +50,8 @@ function recalcSettings() {
 
 // ---------- navegação ----------
 var vistaAtual = 'inicio';
-var VISTAS = ['inicio', 'clientes', 'cliente', 'obras', 'obra', 'orcs', 'novo', 'mais', 'despesas', 'dias', 'contas', 'docs', 'def'];
-var NAV_DE = { cliente: 'clientes', obra: 'obras', novo: 'orcs', despesas: 'mais', dias: 'mais', contas: 'mais', docs: 'mais', def: 'mais' };
+var VISTAS = ['inicio', 'trab', 'cal', 'clientes', 'cliente', 'obras', 'obra', 'orcs', 'novo', 'mais', 'despesas', 'dias', 'contas', 'docs', 'def'];
+var NAV_DE = { cliente: 'trab', obra: 'trab', novo: 'trab', clientes: 'mais', obras: 'mais', orcs: 'mais', despesas: 'mais', dias: 'mais', contas: 'mais', docs: 'mais', def: 'mais' };
 function iniciais(n) { var p = String(n || '?').trim().split(/\s+/); return ((p[0] || '?')[0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase(); }
 function corDe(s) { var h = 0; s = String(s || ''); for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360; return 'hsl(' + h + ',45%,42%)'; }
 function avatar(nome, big) { return '<span class="av' + (big ? ' big' : '') + '" style="background:' + corDe(nome) + '">' + esc(iniciais(nome)) + '</span>'; }
@@ -65,6 +65,8 @@ function cabecalho() {
   else if (vistaAtual === 'obra') { var ob = obras.find(function (x) { return x.id === obraAberta; }); t = 'Obra'; s = ob ? (ob.estado || 'Planeada') + (ob.cliente ? ' · ' + ob.cliente : '') : ''; }
   else if (vistaAtual === 'orcs') { t = 'Orçamentos'; s = orcs.length + (orcs.length === 1 ? ' orçamento' : ' orçamentos'); }
   else if (vistaAtual === 'mais') { t = 'Mais'; s = 'Gestão da empresa'; }
+  else if (vistaAtual === 'trab') { var nt = trabalhos().filter(function (x) { return x.k !== 'perdido' && x.k !== 'fim'; }).length; t = 'Trabalhos'; s = nt + (nt === 1 ? ' trabalho em andamento' : ' trabalhos em andamento'); }
+  else if (vistaAtual === 'cal') { t = 'Agenda'; s = 'Obras e visitas por dia'; }
   else if (vistaAtual === 'despesas') { t = 'Despesas'; s = 'Combustível, material e outros gastos'; }
   else if (vistaAtual === 'dias') { t = 'Equipa e dias'; s = 'Quem trabalhou, onde e quanto'; }
   else if (vistaAtual === 'contas') { t = 'Contas'; s = 'Recebido, gasto e resultado'; }
@@ -78,6 +80,7 @@ function show(v, dePop) {
   vistaAtual = v;
   if (v !== 'obra' && obraAberta) fecharObra();
   VISTAS.forEach(function (x) { $('v-' + x).hidden = x !== v; });
+  if (v === 'trab') renderTrab(); else if (v === 'cal') renderCal();
   if (v === 'inicio') renderInicio(); else if (v === 'obras') renderObras(); else if (v === 'orcs') renderOrcs();
   else if (v === 'despesas') { if (!$('dsp_mes').value) $('dsp_mes').value = mesAtual(); renderDespesas(); }
   else if (v === 'dias') { if (!$('dias_mes').value) $('dias_mes').value = mesAtual(); renderDias(); }
@@ -89,7 +92,7 @@ function show(v, dePop) {
   historico(v, de, dePop);
   window.scrollTo(0, (PROF[v] || 0) > (PROF[de] || 0) ? 0 : (posScroll[v] || 0));
 }
-document.querySelectorAll('nav button').forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.v); }); });
+document.querySelectorAll('nav button[data-v]').forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.v); }); });
 
 // ---------- orçamento ----------
 function blankQuote(clienteId) {
@@ -512,10 +515,12 @@ function ligarListaOrc(box) {
 
 // ---------- clientes ----------
 $('b-novocli').addEventListener('click', function () { abrirCliente(null); });
-$('b-voltar').addEventListener('click', function () { fecharCliente(); show('clientes'); });
+var voltarCli = 'trab';
+$('b-voltar').addEventListener('click', function () { fecharCliente(); show(voltarCli); });
 
 function fecharCliente() { subsCli.forEach(function (u) { u(); }); subsCli = []; clienteAberto = null; pagamentos = []; fotos = []; }
 function abrirCliente(id) {
+  if (vistaAtual !== 'cliente') voltarCli = ['trab', 'clientes', 'inicio', 'cal'].indexOf(vistaAtual) >= 0 ? vistaAtual : 'trab';
   fecharCliente();
   clienteAberto = id;
   var c = id ? clientes.find(function (x) { return x.id === id; }) || {} : {};
@@ -959,7 +964,7 @@ $('cf-novaobra').addEventListener('click', function () { dlgNovaObra(clienteAber
 function fecharObra() { subsObra.forEach(function (u) { u(); }); subsObra = []; obraAberta = null; diario = []; fotosObra = []; estadoFotoObra = ''; vistaFotoObra = 'todas'; }
 var voltarObra = 'obras';
 function abrirObra(id) {
-  if (vistaAtual !== 'obra') voltarObra = ['cliente', 'inicio', 'orcs', 'obras', 'contas'].indexOf(vistaAtual) >= 0 ? vistaAtual : 'obras';
+  if (vistaAtual !== 'obra') voltarObra = ['cliente', 'inicio', 'orcs', 'obras', 'contas', 'trab', 'cal'].indexOf(vistaAtual) >= 0 ? vistaAtual : 'obras';
   fecharObra(); obraAberta = id;
   subsObra.push(onSnapshot(query(collection(db, 'obras', id, 'diario'), orderBy('data', 'desc')), function (s) { diario = s.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); }); renderObra(); }, function (e) { console.warn(e); }));
   subFotosObra(id);
@@ -1203,6 +1208,7 @@ $('orc_filtro').addEventListener('input', renderOrcs);
 $('b-novoorc').addEventListener('click', function () { if (dirty && !confirm('O orçamento aberto tem alterações por guardar. Começar um novo na mesma?')) return; cur = blankQuote(); dirty = false; lsSet(K_DRAFT, { q: cur, dirty: false }); toForm(cur); show('novo'); });
 
 function renderTudo() {
+  if (vistaAtual === 'trab') renderTrab(); if (vistaAtual === 'cal') renderCal();
   renderClientes();
   renderPedidos(); renderObras(); if (vistaAtual === 'obra') renderObra();
   if (!$('oseg-agenda').hidden) renderAgenda();
@@ -1223,7 +1229,7 @@ $('cf-obras').addEventListener('click', function (e) { var b = e.target.closest(
 // =====================================================================
 // FLUIDEZ: transições, voltar do telemóvel, posição de leitura
 // =====================================================================
-var PROF = { inicio: 0, clientes: 0, obras: 0, orcs: 0, mais: 0, cliente: 1, novo: 1, despesas: 1, dias: 1, contas: 1, docs: 1, def: 1, obra: 2 };
+var PROF = { inicio: 0, trab: 0, cal: 0, mais: 0, clientes: 1, obras: 1, orcs: 1, despesas: 1, dias: 1, contas: 1, docs: 1, def: 1, cliente: 2, novo: 2, obra: 3 };
 var posScroll = {}, hDepth = 0, ignorePop = false, dlgPushed = false, voltarNovo = 'orcs';
 var GUARD = {};
 ['cli-lista', 'ped-lista', 'obras-lista', 'orc-todos', 'cf-orcs', 'cf-obras', 'cf-pags', 'cf-fotos', 'ini-corpo', 'cf-dyn', 'cf-acts', 'agenda', 'dsp-lista', 'dsp-resumo', 'dias-lista', 'dias-resumo', 'ct-meses', 'ct-obras', 'docs-lista', 'obra-filtros', 'orc-filtros', 'equipa', 'obra-corpo'].forEach(function (k) { GUARD[k] = 1; });
@@ -1247,7 +1253,7 @@ function historico(v, de, dePop) {
 function voltar() {
   var v = vistaAtual;
   if (v === 'obra') { var b = voltarObra; fecharObra(); show(b === 'cliente' && clienteAberto ? 'cliente' : b, true); }
-  else if (v === 'cliente') { fecharCliente(); show('clientes', true); }
+  else if (v === 'cliente') { fecharCliente(); show(voltarCli, true); }
   else if (v === 'novo') show(voltarNovo === 'cliente' && !clienteAberto ? 'clientes' : voltarNovo, true);
   else if (PROF[v] === 1) show('mais', true);
 }
@@ -1807,7 +1813,7 @@ function renderInicio() {
   // topo
   h += '<section class="ohero ihero"><div class="ih-top"><div><small>Por receber</small><b>' + eur(pr) + '</b><span class="kt-bar"><i style="width:' + (aceite ? Math.round(recebido / aceite * 100) : 0) + '%"></i></span><span class="ih-s">' + (aceite ? 'Recebido ' + eur(recebido) + ' de ' + eur(aceite) + ' aceites' : 'Ainda sem orçamentos aceites') + '</span></div></div>' +
     '<div class="ih-chips"><button type="button" data-goto="obras"><b>' + emCurso.length + '</b>em curso</button><button type="button" data-goto="orcs"><b>' + pend.length + '</b>orçamentos pendentes</button><button type="button" data-goto="clientes" data-ped="1"><b>' + pedN + '</b>pedidos por tratar</button></div>' +
-    '<div class="oh-acts"><button type="button" class="oh-a" data-qa="pedido"><i>' + ICO.cli + '</i>Pedido</button><button type="button" class="oh-a" data-qa="orc"><i>' + ICO.doc + '</i>Orçamento</button><button type="button" class="oh-a" data-qa="despesa"><i>' + ICO.recibo + '</i>Despesa</button><button type="button" class="oh-a" data-qa="dia"><i>' + ICO.equipa + '</i>Dia</button><button type="button" class="oh-a" data-goto="obras" data-ag="1"><i>' + ICO.cal + '</i>Agenda</button></div></section>';
+    '<div class="oh-acts"><button type="button" class="oh-a" data-qa="pedido"><i>' + ICO.cli + '</i>Pedido</button><button type="button" class="oh-a" data-qa="orc"><i>' + ICO.doc + '</i>Orçamento</button><button type="button" class="oh-a" data-qa="despesa"><i>' + ICO.recibo + '</i>Despesa</button><button type="button" class="oh-a" data-qa="dia"><i>' + ICO.equipa + '</i>Dia</button><button type="button" class="oh-a" data-goto="cal"><i>' + ICO.cal + '</i>Agenda</button></div></section>';
   // agora
   var A = avisos();
   h += '<section class="card agora"><div class="titulo"><h2>Agora</h2>' + (A.length ? '<span class="badge-n">' + A.length + '</span>' : '') + '</div>' + (A.length ? A.slice(0, 6).map(function (a) {
@@ -1832,7 +1838,7 @@ function renderInicio() {
     if (!no.length) continue;
     lista += '<div class="wk">' + diaRot(d2) + '</div>' + no.map(function (e) { return '<button type="button" class="ag visita" data-ev="' + e.tipo + ':' + e.id + '"><span class="bar"></span><span style="flex:1;min-width:0"><b style="display:block">' + esc(e.titulo) + '</b><span class="meta">' + esc(e.sub) + '</span></span></button>'; }).join('');
   }
-  h += '<section class="card"><div class="titulo"><h2>Esta semana</h2><button type="button" class="lnk" data-goto="obras" data-ag="1">Agenda</button></div><div class="dias7">' + dd + '</div>' + (lista || '<p class="hint">Nada marcado para os próximos 7 dias.</p>') + '</section>';
+  h += '<section class="card"><div class="titulo"><h2>Esta semana</h2><button type="button" class="lnk" data-goto="cal">Agenda</button></div><div class="dias7">' + dd + '</div>' + (lista || '<p class="hint">Nada marcado para os próximos 7 dias.</p>') + '</section>';
   // mês
   h += '<div class="titulo sec-tit"><h2>' + nomeMes(mes).replace(/^\w/, function (c) { return c.toUpperCase(); }) + '</h2><button type="button" class="lnk" data-goto="contas">Contas</button></div>';
   h += '<div class="kgrid"><button type="button" class="ktile" data-goto="despesas"><small>Despesas</small><b>' + eur(dm) + '</b><span class="kt-s">Combustível, material…</span></button><button type="button" class="ktile" data-goto="dias"><small>Jornadas</small><b>' + fmtN(dMes) + '</b><span class="kt-s">Dias × pessoas este mês</span></button></div>';
@@ -1859,7 +1865,7 @@ $('ini-corpo').addEventListener('click', function (e) {
   else if (b.dataset.goto) {
     show(b.dataset.goto);
     if (b.dataset.ag) document.querySelector('[data-oseg="agenda"]').click();
-    if (b.dataset.ped) document.querySelector('[data-seg="ped"]').click();
+    if (b.dataset.ped) { etapaSel = 'pedido'; show('trab'); }
   }
 });
 
@@ -2189,6 +2195,168 @@ function dlgEditDias(ids) {
   ]);
 }
 $('obra-corpo').addEventListener('click', function (e) { var b = e.target.closest('[data-eddias]'); if (b) dlgEditDias(b.dataset.eddias.split(',')); });
+
+// =====================================================================
+// NOVA ESTRUTURA: Trabalhos (funil), Agenda (calendário) e botão criar
+// =====================================================================
+var ETAPAS = [
+  ['pedido', 'Pedidos', 'Contactos novos e visitas'],
+  ['orcamentar', 'A orçamentar', 'Fazer ou enviar o orçamento'],
+  ['enviado', 'Enviados', 'À espera de resposta'],
+  ['aceite', 'Aceites', 'Preparar e marcar a obra'],
+  ['obra', 'Em obra', 'A decorrer'],
+  ['fim', 'Concluídos', 'Obras acabadas'],
+  ['perdido', 'Perdidos', 'Recusados ou desistiram']
+];
+var etapaSel = 'todos';
+function trabalhos() {
+  var L = [], h = hoje();
+  pedidos.forEach(function (p) {
+    if (p.clienteId) return;
+    if (p.estado === 'Perdido') { L.push({ k: 'perdido', tipo: 'ped', id: p.id, nome: p.nome, sub: 'Pedido perdido', cid: cidade(p.morada), tel: p.telefone }); return; }
+    var info = p.visita ? 'Visita ' + diaRot(p.visita).toLowerCase() + (p.hora ? ' às ' + p.hora : '') : 'Recebido há ' + Math.max(0, diasEntre(p.data || h, h)) + ' dias · sem visita';
+    L.push({ k: 'pedido', tipo: 'ped', id: p.id, nome: p.nome, sub: info, cid: cidade(p.morada), tel: p.telefone, urg: !p.visita && diasEntre(p.data || h, h) >= 2, act: ['Orçamentar', 'pedorc:' + p.id] });
+  });
+  clientes.forEach(function (c) {
+    var os = orcs.filter(function (o) { return o.clienteId === c.id; }), ob = obras.filter(function (o) { return o.clienteId === c.id; });
+    var pago = todosPag.filter(function (x) { return x.clienteId === c.id; }).reduce(function (a, x) { return a + (x.valor || 0); }, 0);
+    var aceite = os.filter(function (o) { return o.estado === 'Aceite' || o.estado === 'Concluído'; }).reduce(function (a, o) { return a + (o.total || 0); }, 0);
+    var t = { tipo: 'cli', id: c.id, nome: c.nome, cid: cidade(c.morada), tel: c.telefone };
+    var emCurso = ob.find(function (o) { return o.estado === 'Em curso' || o.estado === 'Parada'; });
+    var plan = ob.find(function (o) { return o.estado === 'Planeada'; });
+    if (emCurso) { var px = proximaFase(emCurso); t.k = 'obra'; t.p = progFases(emCurso); t.sub = (emCurso.estado === 'Parada' ? 'Parada · ' : '') + (px ? 'A seguir: ' + px[1].toLowerCase() : 'Fases todas feitas'); t.valor = emCurso.valor; t.act = ['Abrir obra', 'obra:' + emCurso.id]; var dv = estadoPlano(emCurso).find(function (e) { return e.devida && e.falta > 0.005; }); if (dv) { t.urg = true; t.sub = 'Cobrar ' + eur(dv.falta) + ' · ' + t.sub; } }
+    else if (plan || os.some(function (o) { return o.estado === 'Aceite'; })) {
+      t.k = 'aceite';
+      var oa = os.find(function (o) { return o.estado === 'Aceite'; }); t.valor = plan ? plan.valor : oa && oa.total;
+      if (plan) { t.sub = plan.inicio ? 'Obra marcada para ' + dataPT(plan.inicio) : 'Obra criada · falta marcar datas'; t.act = ['Abrir obra', 'obra:' + plan.id]; t.urg = !plan.inicio; }
+      else { t.sub = 'Orçamento ' + oa.num + ' aceite · falta criar a obra'; t.act = ['Criar obra', 'mkobra:' + oa.id]; t.urg = true; }
+    }
+    else if (ob.length) { t.k = 'fim'; var fa = Math.max(aceite - pago, 0); t.valor = aceite; t.sub = fa > 0.005 ? 'Falta receber ' + eur(fa) : 'Pago'; t.urg = fa > 0.005; t.act = ['Abrir', 'cli:' + c.id]; }
+    else if (os.some(function (o) { return o.estado === 'Enviado'; })) { var oe = os.find(function (o) { return o.estado === 'Enviado'; }), d = diasEntre(oe.enviadoEm || oe.data, h); t.k = 'enviado'; t.valor = oe.total; t.sub = 'Orçamento ' + oe.num + ' · enviado ' + (d ? 'há ' + d + (d === 1 ? ' dia' : ' dias') : 'hoje'); t.urg = d >= 7; t.act = ['Ligar', 'tel']; }
+    else if (os.some(function (o) { return o.estado === 'Por enviar'; })) { var op = os.find(function (o) { return o.estado === 'Por enviar'; }); t.k = 'orcamentar'; t.valor = op.total; t.sub = 'Orçamento ' + op.num + ' por enviar'; t.act = ['Abrir', 'orc:' + op.id]; }
+    else if (os.length) { t.k = 'perdido'; t.sub = 'Orçamento recusado'; t.valor = os[0].total; }
+    else { t.k = 'orcamentar'; t.sub = 'Ainda sem orçamento'; t.act = ['Fazer orçamento', 'novoorc:' + c.id]; }
+    L.push(t);
+  });
+  return L;
+}
+function cartaoTrab(t) {
+  var tel = String(t.tel || '').replace(/[^\d+]/g, '');
+  var act = t.act ? (t.act[1] === 'tel' ? (tel ? '<a class="btn small ' + (t.urg ? 'acc' : 'ghost') + '" href="tel:' + tel + '">Ligar</a>' : '') : '<button type="button" class="btn small ' + (t.urg ? 'acc' : 'ghost') + '" data-tact="' + t.act[1] + '">' + t.act[0] + '</button>') : '';
+  return '<div class="tcard' + (t.urg ? ' urg' : '') + '" role="button" tabindex="0" data-trab="' + t.tipo + ':' + t.id + '">' +
+    (t.k === 'obra' ? anelMini(t.p) : avatar(t.nome)) +
+    '<span class="grow"><b>' + esc(t.nome || 'Sem nome') + '</b><span class="meta">' + esc(t.sub || '') + '</span>' + (t.cid ? '<span class="meta">' + esc(t.cid) + (t.valor ? ' · ' + eur(t.valor) : '') + '</span>' : (t.valor ? '<span class="meta">' + eur(t.valor) + '</span>' : '')) + '</span>' +
+    '<span class="tc-a">' + act + '</span></div>';
+}
+function renderTrab() {
+  var q = ($('trab_q').value || '').toLowerCase();
+  var T = trabalhos().filter(function (t) { return !q || ((t.nome || '') + ' ' + (t.cid || '') + ' ' + (t.sub || '')).toLowerCase().indexOf(q) >= 0; });
+  var cnt = {}; ETAPAS.forEach(function (e) { cnt[e[0]] = T.filter(function (t) { return t.k === e[0]; }).length; });
+  var max = Math.max.apply(null, ETAPAS.slice(0, 6).map(function (e) { return cnt[e[0]]; }).concat([1]));
+  // funil
+  $('trab-funil').innerHTML = ETAPAS.slice(0, 6).map(function (e, i) {
+    var urg = T.some(function (t) { return t.k === e[0] && t.urg; });
+    return '<button type="button" class="fn-e' + (etapaSel === e[0] ? ' sel' : '') + '" data-etapa="' + e[0] + '"><span class="fn-bar"><i style="height:' + Math.max(8, Math.round(cnt[e[0]] / max * 100)) + '%"></i></span><b>' + cnt[e[0]] + (urg ? '<em></em>' : '') + '</b><small>' + e[1] + '</small></button>';
+  }).join('');
+  $('trab-chips').innerHTML = '<button type="button" class="chip-f" data-etapa="todos" aria-pressed="' + (etapaSel === 'todos') + '">Todos · ' + T.filter(function (t) { return t.k !== 'perdido'; }).length + '</button>' + ETAPAS.map(function (e) { return cnt[e[0]] ? '<button type="button" class="chip-f" data-etapa="' + e[0] + '" aria-pressed="' + (etapaSel === e[0]) + '">' + e[1] + ' · ' + cnt[e[0]] + '</button>' : ''; }).join('');
+  var h = '';
+  ETAPAS.forEach(function (e) {
+    if (etapaSel === 'todos' ? e[0] === 'perdido' : etapaSel !== e[0]) return;
+    var l = T.filter(function (t) { return t.k === e[0]; }).sort(function (a, b) { return (b.urg ? 1 : 0) - (a.urg ? 1 : 0); });
+    if (!l.length) return;
+    h += '<div class="et-h"><span class="et-n">' + (ETAPAS.indexOf(e) + 1) + '</span><span><b>' + e[1] + '</b><small>' + e[2] + '</small></span><span class="et-c">' + l.length + '</span></div><div class="vcol tl-list">' + l.map(cartaoTrab).join('') + '</div>';
+  });
+  $('trab-lista').innerHTML = h || '<section class="card"><p class="empty">' + (q ? 'Nada encontrado.' : 'Ainda não há trabalhos. Carregue em + para registar um pedido.') + '</p></section>';
+}
+$('trab_q').addEventListener('input', renderTrab);
+$('v-trab').addEventListener('click', function (e) {
+  var et = e.target.closest('[data-etapa]');
+  if (et) { etapaSel = etapaSel === et.dataset.etapa && et.dataset.etapa !== 'todos' ? 'todos' : et.dataset.etapa; renderTrab(); return; }
+  if (e.target.closest('a')) return;
+  var ac = e.target.closest('[data-tact]');
+  if (ac) {
+    var p = ac.dataset.tact.split(':');
+    if (p[0] === 'obra') abrirObra(p[1]);
+    else if (p[0] === 'cli') abrirCliente(p[1]);
+    else if (p[0] === 'mkobra') { var o = orcs.find(function (x) { return x.id === p[1]; }); if (o) criarObraDeOrc(o); }
+    else if (p[0] === 'orc') { var x = orcs.find(function (z) { return z.id === p[1]; }); if (x) abrirOrcForm(x, false); }
+    else if (p[0] === 'novoorc') { if (dirty && !confirm('O orçamento aberto tem alterações por guardar. Começar um novo na mesma?')) return; cur = blankQuote(p[1]); dirty = false; lsSet(K_DRAFT, { q: cur, dirty: false }); toForm(cur); show('novo'); }
+    else if (p[0] === 'pedorc') { var pd = pedidos.find(function (z) { return z.id === p[1]; }); if (pd) converterPedido(pd.id, { nome: pd.nome, telefone: pd.telefone || '', morada: pd.morada || '', origem: pd.origem || '', estado: pd.estado, visita: pd.visita || '', hora: pd.hora || '', descricao: pd.descricao || '' }); }
+    return;
+  }
+  var c = e.target.closest('[data-trab]'); if (!c) return;
+  var q = c.dataset.trab.split(':');
+  if (q[0] === 'ped') dlgPedido(q[1]); else abrirCliente(q[1]);
+});
+
+// ---------- agenda em calendário ----------
+var calIni = null;
+function renderCal() {
+  if (!calIni) calIni = segunda(hoje());
+  var N = 7, fim = addDias(calIni, N - 1), h = hoje();
+  var ds = []; for (var i = 0; i < N; i++) ds.push(addDias(calIni, i));
+  var meses = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  var d0 = new Date(calIni + 'T12:00:00'), d1 = new Date(fim + 'T12:00:00');
+  $('cal-tit').textContent = d0.getDate() + ' ' + meses[d0.getMonth()] + ' – ' + d1.getDate() + ' ' + meses[d1.getMonth()];
+  var ob = obras.filter(function (o) { return o.inicio && o.estado !== 'Concluída' && (o.fim || o.inicio) >= calIni && o.inicio <= fim; });
+  var sem = obras.filter(function (o) { return !o.inicio && o.estado !== 'Concluída'; });
+  var vis = pedidos.filter(function (p) { return p.visita && p.visita >= calIni && p.visita <= fim && p.estado !== 'Perdido'; });
+  var g = '<div class="cg" style="--n:' + N + '"><div class="cg-l cg-hd"></div>' + ds.map(function (d) { var dt = new Date(d + 'T12:00:00'), we = dt.getDay() === 0 || dt.getDay() === 6; return '<div class="cg-d' + (d === h ? ' hoje' : '') + (we ? ' fds' : '') + '"><small>' + DIAS_S[dt.getDay()] + '</small><b>' + dt.getDate() + '</b></div>'; }).join('');
+  ob.forEach(function (o, r) {
+    var a = Math.max(0, diasEntre(calIni, o.inicio)), b = Math.min(N - 1, diasEntre(calIni, o.fim || o.inicio));
+    g += '<button type="button" class="cg-l" data-obra="' + o.id + '"><b>' + esc(o.nome) + '</b><small>' + esc((o.equipa || []).map(function (n) { return n.split(' ')[0]; }).join(', ') || 'Sem equipa') + '</small></button>';
+    g += '<div class="cg-row" style="grid-column:2 / span ' + N + '">' + ds.map(function (d) { return '<span class="' + (d === h ? 'hoje' : '') + '"></span>'; }).join('') + '<button type="button" class="cg-bar e-' + obraCls(o.estado) + '" data-obra="' + o.id + '" style="grid-column:' + (a + 1) + ' / ' + (b + 2) + '">' + progFases(o) + '%</button></div>';
+  });
+  if (vis.length) {
+    g += '<div class="cg-l"><b>Visitas</b><small>' + vis.length + '</small></div><div class="cg-row" style="grid-column:2 / span ' + N + '">' + ds.map(function (d) { return '<span class="' + (d === h ? 'hoje' : '') + '"></span>'; }).join('') +
+      vis.map(function (p) { return '<button type="button" class="cg-vis" data-ped="' + p.id + '" style="grid-column:' + (diasEntre(calIni, p.visita) + 1) + '" title="' + esc(p.nome) + '">' + esc(iniciais(p.nome)) + '</button>'; }).join('') + '</div>';
+  }
+  g += '</div>';
+  if (!ob.length && !vis.length) g = '<p class="empty">Nada marcado nestas duas semanas.</p>';
+  $('cal-grade').innerHTML = g;
+  // lista do período
+  var lst = '';
+  ds.forEach(function (d) {
+    var ev = vis.filter(function (p) { return p.visita === d; }).map(function (p) { return '<button type="button" class="ag visita" data-ped="' + p.id + '"><span class="bar"></span><span style="flex:1;min-width:0"><b style="display:block">Visita: ' + esc(p.nome) + '</b><span class="meta">' + esc([p.hora, p.morada].filter(Boolean).join(' · ')) + '</span></span></button>'; })
+      .concat(ob.filter(function (o) { return o.inicio === d; }).map(function (o) { return '<button type="button" class="ag" data-obra="' + o.id + '"><span class="bar"></span><span style="flex:1;min-width:0"><b style="display:block">Começa: ' + esc(o.nome) + '</b><span class="meta">' + esc((o.equipa || []).join(', ') || 'Equipa por definir') + '</span></span></button>'; }))
+      .concat(ob.filter(function (o) { return o.fim === d; }).map(function (o) { return '<button type="button" class="ag" data-obra="' + o.id + '"><span class="bar"></span><span style="flex:1;min-width:0"><b style="display:block">Fim previsto: ' + esc(o.nome) + '</b><span class="meta">' + progFases(o) + ' % das fases feitas</span></span></button>'; }));
+    if (ev.length) lst += '<div class="wk">' + diaRot(d) + (diaRot(d) === 'Hoje' || diaRot(d) === 'Amanhã' ? '' : '') + '</div>' + ev.join('');
+  });
+  $('cal-lista').innerHTML = lst || '<p class="hint">Sem visitas, inícios ou fins de obra neste período.</p>';
+  $('cal-sem').innerHTML = sem.length ? '<div class="wk">Obras sem datas</div>' + sem.map(function (o) { return '<button type="button" class="ag" data-obra="' + o.id + '"><span class="bar"></span><span style="flex:1;min-width:0"><b style="display:block">' + esc(o.nome) + '</b><span class="meta">Toque para marcar as datas</span></span></button>'; }).join('') : '';
+}
+$('cal-ant').addEventListener('click', function () { calIni = addDias(calIni || segunda(hoje()), -7); renderCal(); });
+$('cal-seg').addEventListener('click', function () { calIni = addDias(calIni || segunda(hoje()), 7); renderCal(); });
+$('cal-hoje').addEventListener('click', function () { calIni = segunda(hoje()); renderCal(); });
+$('v-cal').addEventListener('click', function (e) {
+  var o = e.target.closest('[data-obra]'); if (o) { abrirObra(o.dataset.obra); return; }
+  var p = e.target.closest('[data-ped]'); if (p) dlgPedido(p.dataset.ped);
+});
+
+// ---------- botão criar (+) ----------
+function dlgCriar() {
+  if (vistaAtual === 'obra' && obraAtual()) { dlgFab(obraAtual()); return; }
+  if (vistaAtual === 'cliente' && clienteAberto) { $('cf-fab').click(); return; }
+  var it = [['pedido', 'cli', 'Pedido', 'Alguém pediu orçamento'], ['orc', 'doc', 'Orçamento', 'Novo orçamento'], ['cliente', 'cli', 'Cliente', 'Ficha de cliente'], ['despesa', 'recibo', 'Despesa', 'Gasto ou talão'], ['dia', 'equipa', 'Dia de trabalho', 'Quem trabalhou'], ['foto', 'cam', 'Fotografia', 'Numa obra']];
+  abrirDlg('Criar', '<div class="cr-g">' + it.map(function (x) { return '<button type="button" class="cr-b" data-cr="' + x[0] + '"><span class="cr-i">' + ICO[x[1]] + '</span><b>' + x[2] + '</b><small>' + x[3] + '</small></button>'; }).join('') + '</div>', []);
+  $('dlg-b').onclick = function (ev) {
+    var b = ev.target.closest('[data-cr]'); if (!b) return; var a = b.dataset.cr;
+    if (a === 'pedido') dlgPedido(null);
+    else if (a === 'orc') { fecharDlg(); if (dirty && !confirm('O orçamento aberto tem alterações por guardar. Começar um novo na mesma?')) return; cur = blankQuote(); dirty = false; lsSet(K_DRAFT, { q: cur, dirty: false }); toForm(cur); show('novo'); }
+    else if (a === 'cliente') { fecharDlg(); abrirCliente(null); }
+    else if (a === 'despesa') dlgDespesa(null);
+    else if (a === 'dia') dlgDia(null);
+    else if (a === 'foto') {
+      var ab = obras.filter(function (o) { return o.estado !== 'Concluída'; });
+      if (!ab.length) { toast('Ainda não há obras abertas.'); return; }
+      if (ab.length === 1) { fecharDlg(); abrirObra(ab[0].id); toast('Toque em "Foto" para fotografar.'); return; }
+      $('dlg-t').textContent = 'Fotografia em que obra?';
+      $('dlg-b').innerHTML = '<div class="vcol">' + ab.map(obraRow).join('') + '</div>';
+      $('dlg-b').onclick = function (e2) { var o = e2.target.closest('[data-obra]'); if (!o) return; fecharDlg(); abrirObra(o.dataset.obra); };
+    }
+  };
+}
+$('nav-criar').addEventListener('click', dlgCriar);
 
 $('dlg-form').addEventListener('submit', function (e) { e.preventDefault(); });
 
