@@ -71,7 +71,10 @@ function cabecalho() {
   else if (vistaAtual === 'docs') { t = 'Documentos'; s = 'Seguros, alvarás e validades'; }
   $('h-titulo').textContent = t; $('h-sub').textContent = s;
 }
-function show(v) {
+function show(v, dePop) {
+  var de = vistaAtual;
+  if (de !== v) posScroll[de] = window.scrollY;
+  if (v === 'novo' && de !== 'novo') voltarNovo = de === 'obra' ? 'orcs' : de;
   vistaAtual = v;
   if (v !== 'obra' && obraAberta) fecharObra();
   VISTAS.forEach(function (x) { $('v-' + x).hidden = x !== v; });
@@ -82,7 +85,9 @@ function show(v) {
   cabecalho();
   var navV = NAV_DE[v] || v;
   document.querySelectorAll('nav button').forEach(function (b) { if (b.dataset.v === navV) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
-  window.scrollTo(0, 0);
+  animarVista(v, de);
+  historico(v, de, dePop);
+  window.scrollTo(0, (PROF[v] || 0) > (PROF[de] || 0) ? 0 : (posScroll[v] || 0));
 }
 document.querySelectorAll('nav button').forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.v); }); });
 
@@ -625,10 +630,11 @@ $('cf-novoorc').addEventListener('click', function () {
 function renderPagamentos() {
   $('cf-pags').innerHTML = pagamentos.length ? pagamentos.map(function (p) {
     return '<div class="pag"><span>' + dataPT(p.data) + (p.descricao ? ' · ' + esc(p.descricao) : '') + '<span class="meta">' + (p.por ? ' por ' + esc(p.por) : '') + '</span></span>' +
-      '<span>' + eur(p.valor) + ' <button type="button" class="btn danger small" data-rmp="' + p.id + '" aria-label="Apagar pagamento">✕</button></span></div>';
+      '<span>' + eur(p.valor) + ' <button type="button" class="btn ghost small" data-rec="' + p.id + '">Recibo</button><button type="button" class="btn danger small" data-rmp="' + p.id + '" aria-label="Apagar pagamento">✕</button></span></div>';
   }).join('') : '<p class="hint">Ainda não há pagamentos registados.</p>';
 }
 $('cf-pags').addEventListener('click', function (e) {
+  if (e.target.dataset.rec) { var pp = pagamentos.find(function (x) { return x.id === e.target.dataset.rec; }); if (pp) reciboPDF(Object.assign({ clienteId: clienteAberto }, pp), clienteAberto).catch(function (er) { console.error(er); toast('Não foi possível gerar o recibo.'); }); return; }
   var id = e.target.dataset.rmp; if (!id || !confirm('Apagar este pagamento?')) return;
   deleteDoc(doc(db, 'clientes', clienteAberto, 'pagamentos', id)).catch(function (er) { falhou(er, 'apagar o pagamento'); });
 });
@@ -647,7 +653,7 @@ function renderFotos() {
 }
 $('cf-fotos').addEventListener('click', async function (e) {
   var vf = e.target.closest('[data-verf]');
-  if (vf) { e.preventDefault(); verFoto(vf.dataset.verf); return; }
+  if (vf) { e.preventDefault(); verFotoEm(vf.dataset.verf, fotos, ['clientes', clienteAberto]); return; }
   var id = e.target.dataset.rmf; if (!id) return;
   e.preventDefault();
   if (!confirm('Apagar esta fotografia?')) return;
@@ -655,14 +661,6 @@ $('cf-fotos').addEventListener('click', async function (e) {
   deleteDoc(doc(db, 'clientes', clienteAberto, 'fotosFull', id)).catch(function () {});
   deleteDoc(doc(db, 'clientes', clienteAberto, 'fotos', id)).catch(function (er) { falhou(er, 'apagar a fotografia'); });
 });
-async function verFoto(id) {
-  var f = fotos.find(function (x) { return x.id === id; }); if (!f) return;
-  abrirDlg((f.fase || 'Fotografia') + (f.por ? ' · ' + f.por : ''), '<p class="hint">A abrir…</p>', []);
-  var src = f.url || '';
-  try { var d = await getDoc(doc(db, 'clientes', clienteAberto, 'fotosFull', id)); if (d.exists() && d.data().img) src = d.data().img; } catch (e) { console.warn(e); }
-  if (!src) src = f.thumb || '';
-  $('dlg-b').innerHTML = '<img src="' + esc(src) + '" alt="Fotografia" style="width:100%;border-radius:12px;display:block">' + (f.criadoEm ? '<p class="hint">' + esc(String(f.criadoEm.toDate ? f.criadoEm.toDate().toLocaleString('pt-PT') : '')) + '</p>' : '');
-}
 async function imgData(img, max, q0, limite) {
   var w = img.width, h = img.height, k = Math.min(1, max / Math.max(w, h));
   var c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
@@ -675,35 +673,11 @@ async function abrirImg(file) {
   try { return await createImageBitmap(file, { imageOrientation: 'from-image' }); }
   catch (e) { return await new Promise(function (ok, ko) { var i = new Image(); i.onload = function () { ok(i); }; i.onerror = ko; i.src = URL.createObjectURL(file); }); }
 }
-async function comprimir(file) {
-  var max = 1600, img;
-  try { img = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
-  catch (e) { img = await new Promise(function (ok, ko) { var i = new Image(); i.onload = function () { ok(i); }; i.onerror = ko; i.src = URL.createObjectURL(file); }); }
-  var w = img.width, h = img.height, k = Math.min(1, max / Math.max(w, h));
-  var c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
-  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-  return await new Promise(function (ok) { c.toBlob(ok, 'image/jpeg', 0.8); });
-}
 $('f_ficheiros').addEventListener('change', async function (e) {
   var files = [].slice.call(e.target.files || []); e.target.value = '';
   if (!files.length || !clienteAberto) return;
-  var id = clienteAberto, fase = $('f_fase').value, est = $('f-estado');
-  for (var i = 0; i < files.length; i++) {
-    est.textContent = 'A enviar fotografia ' + (i + 1) + ' de ' + files.length + '…';
-    try {
-      var img = await abrirImg(files[i]);
-      var full = await imgData(img, 1280, 0.72, 700000);
-      var thumb = await imgData(img, 360, 0.7, 60000);
-      var fref = doc(collection(db, 'clientes', id, 'fotos'));
-      await setDoc(doc(db, 'clientes', id, 'fotosFull', fref.id), { img: full });
-      await setDoc(fref, { thumb: thumb, fase: fase, por: perfil.nome || user.email, criadoEm: serverTimestamp() });
-    } catch (er) {
-      console.error(er);
-      est.textContent = 'Não foi possível enviar a fotografia. Verifique a internet e tente outra vez.';
-      return;
-    }
-  }
-  est.textContent = files.length === 1 ? 'Fotografia enviada.' : files.length + ' fotografias enviadas.';
+  var est = $('f-estado');
+  await enviarFotos(files, ['clientes', clienteAberto], {}, $('f_fase').value, function (t) { est.textContent = t; });
 });
 
 // ---------- definições ----------
@@ -866,11 +840,21 @@ function abrirDlg(titulo, corpo, acoes) {
   $('dlg-t').textContent = titulo; $('dlg-b').innerHTML = corpo;
   dlgAcoes = acoes || [];
   $('dlg-f').innerHTML = dlgAcoes.map(function (a, i) { return '<button type="button" class="btn ' + (a.cls || '') + '" data-dlg="' + i + '">' + a.txt + '</button>'; }).join('');
-  var d = $('dlg'); if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+  $('dlg-b').oninput = null; $('dlg-b').onchange = null; $('dlg-b').onclick = null;
+  var d = $('dlg'); clearTimeout(dlgT); d.classList.remove('fecha');
+  if (!d.open) { if (d.showModal) d.showModal(); else d.setAttribute('open', ''); }
+  if (!dlgPushed) { history.pushState({ dlg: 1 }, ''); dlgPushed = true; }
   var first = d.querySelector('.dlg-b input, .dlg-b select, .dlg-b textarea'); if (first && !('ontouchstart' in window)) first.focus();
 }
-function fecharDlg() { var d = $('dlg'); if (d.close) d.close(); else d.removeAttribute('open'); }
-$('dlg-x').addEventListener('click', fecharDlg);
+var dlgT = null;
+function fecharDlg(dePop) {
+  var d = $('dlg'); if (!d.open) return;
+  d.classList.add('fecha');
+  clearTimeout(dlgT); dlgT = setTimeout(function () { d.classList.remove('fecha'); if (d.close) d.close(); else d.removeAttribute('open'); }, 150);
+  if (dlgPushed && dePop !== true) { dlgPushed = false; ignorePop = true; history.back(); }
+}
+$('dlg-x').addEventListener('click', function () { fecharDlg(); });
+$('dlg').addEventListener('cancel', function (e) { e.preventDefault(); fecharDlg(); });
 $('dlg-f').addEventListener('click', async function (e) {
   var b = e.target.closest('[data-dlg]'); if (!b) return;
   var a = dlgAcoes[+b.dataset.dlg]; if (!a) return;
@@ -1028,12 +1012,13 @@ function dlgNovaObra(clienteId) {
 }
 $('cf-novaobra').addEventListener('click', function () { dlgNovaObra(clienteAberto); });
 
-function fecharObra() { subsObra.forEach(function (u) { u(); }); subsObra = []; obraAberta = null; diario = []; }
+function fecharObra() { subsObra.forEach(function (u) { u(); }); subsObra = []; obraAberta = null; diario = []; fotosObra = []; estadoFotoObra = ''; vistaFotoObra = 'todas'; }
 var voltarObra = 'obras';
 function abrirObra(id) {
   if (vistaAtual !== 'obra') voltarObra = ['cliente', 'inicio', 'orcs', 'obras', 'contas'].indexOf(vistaAtual) >= 0 ? vistaAtual : 'obras';
   fecharObra(); obraAberta = id;
   subsObra.push(onSnapshot(query(collection(db, 'obras', id, 'diario'), orderBy('data', 'desc')), function (s) { diario = s.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); }); renderObra(); }, function (e) { console.warn(e); }));
+  subFotosObra(id);
   renderObra(); show('obra');
 }
 $('ob-voltar').addEventListener('click', function () { var v = voltarObra; fecharObra(); if (v === 'cliente' && clienteAberto) show('cliente'); else show(v); });
@@ -1063,7 +1048,7 @@ function renderObra() {
   var gasto = dsp.reduce(function (a, d) { return a + (d.valor || 0); }, 0);
   var ds = dias.filter(function (d) { return d.obraId === o.id; });
   var nd = ds.reduce(function (a, d) { return a + (d.fracao || 1); }, 0);
-  var recebido = todosPag.filter(function (p) { return p.clienteId === o.clienteId && o.clienteId; }).reduce(function (a, p) { return a + (p.valor || 0); }, 0);
+  var recebido = recebidoObra(o);
   var f = o.fases || {}, p = progFases(o);
   var eq = o.equipa || [];
   var mat = materiais(o);
@@ -1078,8 +1063,10 @@ function renderObra() {
     '<div class="kpi falta"><small>Resultado</small><b>' + eur((o.valor || 0) - gasto) + '</b></div></div>' +
     '<div class="facts"><span>Recebido do cliente: <strong>' + eur(recebido) + '</strong></span><span>Dias de equipa: <strong>' + fmtN(nd) + '</strong></span>' + (o.area ? '<span>Área: <strong>' + esc(o.area) + ' m²</strong></span>' : '') + '</div>' +
     '<div class="grid">' + campo('ob_valor', 'Valor acordado (€)', o.valor ? fmtN(o.valor) : '', 'text', ' inputmode="decimal"') + campo('ob_area', 'Área (m²)', o.area, 'text', ' inputmode="decimal"') + '</div></section>';
+  h += pagamentosObraHTML(o);
   h += '<section class="card"><div class="titulo"><h2>Fases do capoto</h2><b>' + p + ' %</b></div><div class="prog"><i style="width:' + p + '%"></i></div><div>' +
     FASES.map(function (x) { var e = f[x[0]] || {}; return '<label class="fase" for="fs_' + x[0] + '"><input type="checkbox" id="fs_' + x[0] + '" data-fase="' + x[0] + '"' + (e.f ? ' checked' : '') + '><span><span style="color:var(--fg);font-weight:600;font-size:.95rem">' + x[1] + '</span>' + (e.f ? '<small>' + dataPT(e.d) + (e.por ? ' · ' + esc(e.por) : '') + '</small>' : '') + '</span></label>'; }).join('') + '</div></section>';
+  h += fotosObraHTML(o);
   h += '<section class="card"><h2>Materiais para encomendar</h2><div class="grid">' + campo('ob_per', 'Perímetro de arranque (m)', o.perim, 'text', ' inputmode="decimal"') + campo('ob_can', 'Cantos e arestas (m)', o.cantos, 'text', ' inputmode="decimal"') + '</div>' +
     (mat ? '<div>' + mat.map(function (r) { return '<div class="mrow2"><b>' + esc(r[0]) + '</b><span class="q">' + esc(r[1]) + (r[2] ? '<small>' + esc(r[2]) + '</small>' : '') + '</span></div>'; }).join('') + '</div><p class="hint">Calculado com os consumos das Definições. Confirmem com a ficha técnica e o fornecedor antes de encomendar.</p><button type="button" class="btn ghost small" data-oa="partilharmat" style="align-self:flex-start">Enviar lista ao fornecedor</button>' : '<p class="hint">Indique a área da obra para calcular o material.</p>') + '</section>';
   h += '<section class="card"><h2>Diário de obra</h2><div class="grid">' + campo('dr_data', 'Dia', hoje(), 'date') + campoSel('dr_tipo', 'Tipo', TIPOS_DIA, 'Trabalho normal') + '</div>' + campoTxt('dr_txt', 'O que se fez / notas', '', 'Ex.: colagem da fachada norte; falta rede para amanhã') +
@@ -1089,7 +1076,7 @@ function renderObra() {
     (ds.length ? '<div>' + agrupaDias(ds).slice(0, 15).map(function (g) { return '<div class="mrow2"><span style="flex:1;min-width:0"><b>' + dataPT(g.data) + '</b><span class="meta">' + esc(g.pessoas.join(', ')) + '</span></span><span class="q">' + fmtN(g.total) + (g.total === 1 ? ' dia' : ' dias') + '</span></div>'; }).join('') + '</div>' : '<p class="hint">Ainda sem dias registados.</p>') + '</section>';
   h += '<section class="card"><div class="titulo"><h2>Despesas da obra</h2><button type="button" class="btn small" data-oa="despesa">Registar</button></div>' +
     (dsp.length ? '<div>' + dsp.slice(0, 20).map(dspRow).join('') + '</div>' : '<p class="hint">Ainda sem despesas nesta obra.</p>') + '</section>';
-  h += '<section class="card">' + campoTxt('ob_notas', 'Notas da obra', o.notas, 'Acessos, onde deixar material, contactos no local…') + '<div class="row"><button type="button" class="btn danger" data-oa="apagar">Apagar obra</button></div></section>';
+  h += '<section class="card">' + campoTxt('ob_notas', 'Notas da obra', o.notas, 'Acessos, onde deixar material, contactos no local…') + '<div class="row"><button type="button" class="btn ghost" data-oa="relatorio">Relatório final para o cliente</button><button type="button" class="btn danger" data-oa="apagar">Apagar obra</button></div></section>';
   var foco = document.activeElement && document.activeElement.id;
   $('obra-corpo').innerHTML = h;
   if (foco && $(foco) && /^(ob_|dr_)/.test(foco)) { try { $(foco).focus(); } catch (e) {} }
@@ -1293,6 +1280,7 @@ function avisos() {
     if ((o.estado || 'Planeada') === 'Planeada' && o.inicio && o.inicio >= h && diasEntre(h, o.inicio) <= 7) A.push(['info', 'Obra começa ' + (o.inicio === h ? 'hoje' : 'a ' + dataPT(o.inicio)), o.nome + (materiais(o) ? ' · confirme o material encomendado.' : ''), 'obra:' + o.id]);
     if (o.estado === 'Em curso' && o.fim && o.fim < h) A.push(['no', 'Obra atrasada: ' + o.nome, 'Fim previsto a ' + dataPT(o.fim) + '.', 'obra:' + o.id]);
   });
+  obras.forEach(function (o) { if (!o.clienteId) return; estadoPlano(o).forEach(function (e) { if (e.devida && e.falta > 0.005) A.push(['warn', 'Cobrar ' + eur(e.falta) + (o.cliente ? ' a ' + o.cliente : ''), (e.t.d || 'Pagamento') + ' · ' + o.nome, 'obra:' + o.id]); }); });
   documentos.forEach(function (d) { var e = docEstado(d); if (e[1] === 'no' || e[1] === 'warn') A.push([e[1], d.nome, e[0] + '.', 'doc:' + d.id]); });
   return A;
 }
@@ -1358,6 +1346,389 @@ function renderObrasCliente() {
 }
 $('cf-obras').addEventListener('click', function (e) { var b = e.target.closest('[data-obra]'); if (b) abrirObra(b.dataset.obra); });
 
+
+// =====================================================================
+// FLUIDEZ: transições, voltar do telemóvel, posição de leitura
+// =====================================================================
+var PROF = { inicio: 0, clientes: 0, obras: 0, orcs: 0, mais: 0, cliente: 1, novo: 1, despesas: 1, dias: 1, contas: 1, docs: 1, def: 1, obra: 2 };
+var posScroll = {}, hDepth = 0, ignorePop = false, dlgPushed = false, voltarNovo = 'orcs';
+var GUARD = {};
+['cli-lista', 'ped-lista', 'obras-lista', 'orc-todos', 'cf-orcs', 'cf-obras', 'cf-pags', 'cf-fotos', 'ini-kpis', 'ini-avisos', 'ini-obras', 'ini-agenda', 'agenda', 'dsp-lista', 'dsp-resumo', 'dias-lista', 'dias-resumo', 'ct-meses', 'ct-obras', 'docs-lista', 'obra-filtros', 'orc-filtros', 'equipa', 'obra-corpo'].forEach(function (k) { GUARD[k] = 1; });
+(function () {
+  // só redesenha uma lista quando o conteúdo mudou mesmo (evita piscar e imagens a recarregar)
+  var d = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+  Object.defineProperty(Element.prototype, 'innerHTML', { configurable: true, get: d.get, set: function (v) { if (this.id && GUARD[this.id]) { if (this.__vtH === v) return; this.__vtH = v; } d.set.call(this, v); } });
+})();
+function animarVista(v, de) {
+  if (v === de) return;
+  var pa = PROF[de] || 0, pb = PROF[v] || 0, m = $('v-' + v);
+  m.classList.remove('vt-a', 'vt-b', 'vt-c'); void m.offsetWidth;
+  m.classList.add(pb > pa ? 'vt-a' : pb < pa ? 'vt-b' : 'vt-c');
+}
+function historico(v, de, dePop) {
+  if (dePop || v === de) return;
+  var pa = PROF[de] || 0, pb = PROF[v] || 0;
+  if (pb > pa) { history.pushState({ vt: v }, ''); hDepth++; }
+  else if (pb < pa && hDepth > 0) { var n = Math.min(hDepth, pa - pb); hDepth -= n; ignorePop = true; history.go(-n); }
+}
+function voltar() {
+  var v = vistaAtual;
+  if (v === 'obra') { var b = voltarObra; fecharObra(); show(b === 'cliente' && clienteAberto ? 'cliente' : b, true); }
+  else if (v === 'cliente') { fecharCliente(); show('clientes', true); }
+  else if (v === 'novo') show(voltarNovo === 'cliente' && !clienteAberto ? 'clientes' : voltarNovo, true);
+  else if (PROF[v] === 1) show('mais', true);
+}
+window.addEventListener('popstate', function () {
+  if (ignorePop) { ignorePop = false; return; }
+  if (dlgPushed) { dlgPushed = false; fecharDlg(true); return; }
+  hDepth = Math.max(0, hDepth - 1);
+  voltar();
+});
+
+// =====================================================================
+// PDF partilhado (recibos e relatórios)
+// =====================================================================
+function pdfSafe(s) { return String(s == null ? '' : s).replace(/ | /g, ' ').replace(/\t/g, ' ').replace(/[^\n\x20-\x7E\xA0-\xFF€–—‘’“”•…×]/g, ''); }
+function nomeFich(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w]+/g, '_').replace(/^_+|_+$/g, ''); }
+function entregarF(blob, nome) {
+  function baixar() { var url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 4000); }
+  var file; try { file = new File([blob], nome, { type: blob.type }); } catch (e) { file = null; }
+  if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+    navigator.share({ files: [file], title: nome }).catch(function (e) { if (!e || e.name !== 'AbortError') baixar(); });
+    return;
+  }
+  baixar();
+}
+async function pdfBase(titulo, linhasDir) {
+  var L = window.PDFLib, S = settings, d = await L.PDFDocument.create();
+  var reg = await d.embedFont(L.StandardFonts.Helvetica), bold = await d.embedFont(L.StandardFonts.HelveticaBold);
+  var W = 595.28, H = 841.89, M = 48, CW = W - 2 * M;
+  var C = { dark: L.rgb(0.169, 0.204, 0.251), blue: L.rgb(0.129, 0.357, 0.529), navy: L.rgb(0.090, 0.247, 0.373), gold: L.rgb(0.882, 0.580, 0.259), grey: L.rgb(0.35, 0.38, 0.42), line: L.rgb(0.83, 0.85, 0.87), soft: L.rgb(0.918, 0.941, 0.969), cream: L.rgb(0.984, 0.933, 0.867), white: L.rgb(1, 1, 1), light: L.rgb(0.85, 0.87, 0.9) };
+  var P = { L: L, doc: d, reg: reg, bold: bold, W: W, H: H, M: M, CW: CW, C: C, page: d.addPage([W, H]), y: 0 };
+  P.text = function (s, x, y, size, font, color) { P.page.drawText(pdfSafe(s), { x: x, y: y, size: size, font: font || reg, color: color || C.dark }); };
+  P.width = function (s, size, font) { return (font || reg).widthOfTextAtSize(pdfSafe(s), size); };
+  P.wrap = function (s, size, font, maxW) {
+    var out = [];
+    pdfSafe(s).split('\n').forEach(function (par) { var ws = par.split(' '), l = ''; ws.forEach(function (w) { var t = l ? l + ' ' + w : w; if (P.width(t, size, font) > maxW && l) { out.push(l); l = w; } else l = t; }); out.push(l); });
+    return out;
+  };
+  P.need = function (h) { if (P.y - h < 70) { P.page = d.addPage([W, H]); P.y = H - M; } };
+  P.para = function (s, size, font, color, x, maxW) { var lead = size * 1.45; P.wrap(s, size, font, maxW || CW - ((x || M) - M)).forEach(function (l) { P.need(lead); P.text(l, x || M, P.y, size, font, color); P.y -= lead; }); };
+  P.titulo = function (t) { P.need(34); P.y -= 6; P.text(t, M, P.y, 9, bold, C.grey); P.y -= 6; P.page.drawLine({ start: { x: M, y: P.y }, end: { x: W - M, y: P.y }, thickness: 0.6, color: C.line }); P.y -= 16; };
+  P.blocos = function (esq, dir) {
+    var colW = CW / 2 - 10, y0 = P.y;
+    function bloco(t, linhas, x) { var yy = y0; P.text(t, x, yy, 9, bold, C.grey); yy -= 15; linhas.filter(Boolean).forEach(function (l, i) { P.wrap(l, 10, i === 0 ? bold : reg, colW).forEach(function (w) { P.text(w, x, yy, 10, i === 0 ? bold : reg); yy -= 14; }); }); return yy; }
+    P.y = Math.min(bloco(esq[0], esq[1], M), bloco(dir[0], dir[1], M + CW / 2 + 10)) - 10;
+  };
+  P.linhaValor = function (lbl, v, negrito) { P.need(20); P.text(lbl, M + 8, P.y, 10, negrito ? bold : reg); P.text(v, W - M - 8 - P.width(v, 10, negrito ? bold : reg), P.y, 10, negrito ? bold : reg); P.y -= 8; P.page.drawLine({ start: { x: M, y: P.y }, end: { x: W - M, y: P.y }, thickness: 0.5, color: C.line }); P.y -= 14; };
+  // cabeçalho
+  P.page.drawRectangle({ x: 0, y: H - 100, width: W, height: 100, color: C.blue });
+  P.page.drawRectangle({ x: 0, y: H - 104, width: W, height: 4, color: C.gold });
+  var tx = M;
+  try { var png = await d.embedPng(await (await fetch('logo-icone.png')).arrayBuffer()); P.page.drawRectangle({ x: M, y: H - 84, width: 64, height: 64, color: C.white }); P.page.drawImage(png, { x: M + 4, y: H - 80, width: 56, height: 56 }); tx = M + 78; } catch (e) {}
+  P.text(S.s_nome || 'VisoThermLy', tx, H - 52, 22, bold, C.white);
+  P.text('Capoto & isolamento térmico', tx, H - 72, 10, reg, C.light);
+  P.text(titulo, W - M - P.width(titulo, 12, bold), H - 48, 12, bold, C.white);
+  (linhasDir || []).forEach(function (l, i) { P.text(l, W - M - P.width(l, 10), H - 64 - i * 14, 10, reg, C.light); });
+  P.y = H - 135;
+  P.fim = async function (nome) {
+    var pages = d.getPages();
+    pages.forEach(function (p, i) {
+      var ft = (S.s_nome || '') + (S.s_tel ? ' · ' + S.s_tel : '') + (S.s_email ? ' · ' + S.s_email : '');
+      p.drawText(pdfSafe(ft), { x: M, y: 28, size: 8, font: reg, color: C.grey });
+      var pg = 'Página ' + (i + 1) + ' de ' + pages.length;
+      p.drawText(pg, { x: W - M - reg.widthOfTextAtSize(pg, 8), y: 28, size: 8, font: reg, color: C.grey });
+    });
+    var bytes = await d.save();
+    entregarF(new Blob([bytes], { type: 'application/pdf' }), nome);
+  };
+  return P;
+}
+function empresaLinhas() { var S = settings; return [S.s_nome || 'VisoThermLy', S.s_resp, S.s_tel && 'Tel.: ' + S.s_tel, S.s_email, S.s_nif && 'NIF: ' + S.s_nif, S.s_morada]; }
+
+// valor por extenso (euros)
+function extenso(v) {
+  var u = ['zero', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'dez', 'onze', 'doze', 'treze', 'catorze', 'quinze', 'dezasseis', 'dezassete', 'dezoito', 'dezanove'];
+  var dz = ['', '', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
+  var ct = ['', 'cento', 'duzentos', 'trezentos', 'quatrocentos', 'quinhentos', 'seiscentos', 'setecentos', 'oitocentos', 'novecentos'];
+  function ate999(n) { if (n === 100) return 'cem'; var p = []; if (n >= 100) { p.push(ct[Math.floor(n / 100)]); n %= 100; } if (n >= 20) p.push(dz[Math.floor(n / 10)] + (n % 10 ? ' e ' + u[n % 10] : '')); else if (n > 0) p.push(u[n]); return p.join(' e '); }
+  function inteiro(n) {
+    if (!n) return 'zero';
+    var mi = Math.floor(n / 1e6), mil = Math.floor(n % 1e6 / 1000), r = n % 1000, p = [];
+    if (mi) p.push(mi === 1 ? 'um milhão' : ate999(mi) + ' milhões');
+    if (mil) p.push(mil === 1 ? 'mil' : ate999(mil) + ' mil');
+    if (r) p.push(ate999(r));
+    if (p.length > 1 && r && (r < 100 || r % 100 === 0)) { var last = p.pop(); return p.join(' ') + ' e ' + last; }
+    return p.join(' ');
+  }
+  v = Math.round((v || 0) * 100) / 100;
+  var e = Math.floor(v), c = Math.round((v - e) * 100), s = '';
+  if (e) s = inteiro(e) + (e === 1 ? ' euro' : (e % 1e6 === 0 ? ' de euros' : ' euros'));
+  if (c) s += (s ? ' e ' : '') + inteiro(c) + (c === 1 ? ' cêntimo' : ' cêntimos');
+  return s || 'zero euros';
+}
+
+// =====================================================================
+// PAGAMENTOS POR FASES
+// =====================================================================
+function pagsObra(o) {
+  if (!o || !o.clienteId) return [];
+  var unica = obras.filter(function (x) { return x.clienteId === o.clienteId; }).length === 1;
+  return todosPag.filter(function (p) { return p.clienteId === o.clienteId && (p.obraId === o.id || (!p.obraId && unica)); }).sort(function (a, b) { return (a.data || '').localeCompare(b.data || ''); });
+}
+function recebidoObra(o) { return pagsObra(o).reduce(function (a, p) { return a + (p.valor || 0); }, 0); }
+function quandoOpts() { return [['inicio', 'No início da obra']].concat(FASES.map(function (f) { return [f[0], 'Ao concluir: ' + f[1].toLowerCase()]; })).concat([['fim', 'No fim da obra'], ['data', 'Numa data']]); }
+function quandoTxt(t) { if (t.q === 'data') return t.data ? 'A ' + dataPT(t.data) : 'Data por definir'; var x = quandoOpts().find(function (k) { return k[0] === t.q; }); return x ? x[1] : ''; }
+function trancheDevida(t, o) {
+  var f = o.fases || {};
+  if (t.q === 'inicio') return (o.estado && o.estado !== 'Planeada') || !!(o.inicio && o.inicio <= hoje());
+  if (t.q === 'fim') return o.estado === 'Concluída' || !!(f.remates && f.remates.f);
+  if (t.q === 'data') return !!t.data && t.data <= hoje();
+  return !!(f[t.q] && f[t.q].f);
+}
+function estadoPlano(o) {
+  var rest = recebidoObra(o);
+  return (o.plano || []).map(function (t) { var v = t.v || 0, pago = Math.max(0, Math.min(v, rest)); rest -= v; return { t: t, pago: pago, falta: Math.round((v - pago) * 100) / 100, devida: trancheDevida(t, o) }; });
+}
+function pagamentosObraHTML(o) {
+  var rec = recebidoObra(o), falta = Math.max((o.valor || 0) - rec, 0), ps = pagsObra(o), ep = estadoPlano(o);
+  var h = '<section class="card"><div class="titulo"><h2>Pagamentos do cliente</h2>' + (o.clienteId ? '<button type="button" class="btn small" data-oa="pagar">Registar</button>' : '') + '</div>';
+  if (!o.clienteId) return h + '<p class="hint">Esta obra não tem cliente associado. Os pagamentos registam-se na pasta do cliente.</p></section>';
+  h += '<div class="kpis"><div class="kpi"><small>Acordado</small><b>' + eur(o.valor) + '</b></div><div class="kpi"><small>Recebido</small><b>' + eur(rec) + '</b></div><div class="kpi falta"><small>Falta</small><b>' + eur(falta) + '</b></div></div>';
+  if (ep.length) {
+    var soma = (o.plano || []).reduce(function (a, t) { return a + (t.v || 0); }, 0);
+    h += '<div>' + ep.map(function (e) {
+      var st = e.falta <= 0.005 ? pill('Pago', 'ok') : e.devida ? pill('Cobrar ' + eur(e.falta), 'warn') : e.pago > 0 ? pill('Falta ' + eur(e.falta)) : pill('Por cobrar');
+      return '<div class="mrow2"><span style="flex:1;min-width:0"><b>' + esc(e.t.d || 'Pagamento') + ' · ' + eur(e.t.v) + '</b><span class="meta">' + esc(quandoTxt(e.t)) + '</span></span><span class="q">' + st + '</span></div>';
+    }).join('') + '</div>';
+    if (o.valor && Math.abs(soma - o.valor) > 0.01) h += '<p class="hint">O plano soma ' + eur(soma) + ' e o valor acordado é ' + eur(o.valor) + '.</p>';
+  } else h += '<p class="hint">Defina em que momentos o cliente paga (por exemplo, uma parte na adjudicação, outra a meio e o resto no fim). A app avisa quando chega a altura de cobrar.</p>';
+  h += '<button type="button" class="btn ghost small" data-oa="plano" style="align-self:flex-start">' + (ep.length ? 'Alterar plano de pagamentos' : 'Definir plano de pagamentos') + '</button>';
+  if (ps.length) h += '<div>' + ps.slice().reverse().map(function (p) { return '<div class="mrow2"><span style="flex:1;min-width:0"><b>' + eur(p.valor) + '</b><span class="meta">' + dataPT(p.data) + (p.descricao ? ' · ' + esc(p.descricao) : '') + '</span></span><button type="button" class="btn ghost small" data-recp="' + p.id + '">Recibo</button></div>'; }).join('') + '</div>';
+  return h + '</section>';
+}
+function dlgPlano(o) {
+  var pl = JSON.parse(JSON.stringify(o.plano || []));
+  function linha(t, i) {
+    return '<div class="card" style="padding:12px;gap:8px;box-shadow:none;border:1px solid var(--line)"><div class="grid">' +
+      campo('pl_d' + i, 'Descrição', t.d, 'text', ' data-pl="' + i + '" data-c="d"') + campo('pl_v' + i, 'Valor (€)', t.v ? fmtN(t.v) : '', 'text', ' inputmode="decimal" data-pl="' + i + '" data-c="v"') + '</div>' +
+      '<div class="grid">' + '<label for="pl_q' + i + '">Quando<select id="pl_q' + i + '" data-pl="' + i + '" data-c="q">' + opts(quandoOpts(), t.q || 'inicio') + '</select></label>' +
+      (t.q === 'data' ? campo('pl_dt' + i, 'Data', t.data, 'date', ' data-pl="' + i + '" data-c="data"') : '') + '</div>' +
+      '<button type="button" class="btn danger small" data-plrm="' + i + '" style="align-self:flex-start">Remover</button></div>';
+  }
+  function soma() { var s = pl.reduce(function (a, t) { return a + (num(t.v) || 0); }, 0); return 'Total do plano: ' + eur(s) + (o.valor ? ' · valor acordado: ' + eur(o.valor) : ''); }
+  function desenhar() { $('pl-rows').innerHTML = pl.map(linha).join('') || '<p class="hint">Sem parcelas. Escolha um modelo ou adicione uma parcela.</p>'; $('pl-soma').textContent = soma(); }
+  var corpo = '<p class="hint">Modelos rápidos (calculados a partir do valor acordado, depois pode alterar):</p><div class="row"><button type="button" class="btn ghost small" data-pltpl="304030">30 / 40 / 30</button><button type="button" class="btn ghost small" data-pltpl="5050">50 / 50</button><button type="button" class="btn ghost small" data-pltpl="100">Tudo no fim</button></div><div id="pl-rows" style="display:flex;flex-direction:column;gap:10px"></div><button type="button" class="btn ghost small" id="pl-add" style="align-self:flex-start">+ Adicionar parcela</button><p class="hint" id="pl-soma"></p>';
+  abrirDlg('Plano de pagamentos', corpo, [{ txt: 'Guardar plano', cls: 'acc', fn: function () {
+    var limpo = pl.map(function (t) { return { d: (t.d || '').trim() || 'Pagamento', v: Math.round((num(t.v) || 0) * 100) / 100, q: t.q || 'inicio', data: t.q === 'data' ? (t.data || '') : '' }; }).filter(function (t) { return t.v > 0; });
+    updObra({ plano: limpo }); renderObra(); toast('Plano de pagamentos guardado.');
+  } }]);
+  desenhar();
+  $('dlg-b').oninput = function (e) { var t = e.target; if (t.dataset.pl == null) return; pl[+t.dataset.pl][t.dataset.c] = t.value; $('pl-soma').textContent = soma(); };
+  $('dlg-b').onchange = function (e) { var t = e.target; if (t.dataset.c === 'q') { pl[+t.dataset.pl].q = t.value; desenhar(); } };
+  $('dlg-b').onclick = function (e) {
+    var b = e.target.closest('[data-pltpl],[data-plrm],#pl-add'); if (!b) return;
+    if (b.id === 'pl-add') { pl.push({ d: '', v: '', q: 'fim' }); desenhar(); return; }
+    if (b.dataset.plrm != null) { pl.splice(+b.dataset.plrm, 1); desenhar(); return; }
+    var V = o.valor || 0; if (!V) { toast('Indique primeiro o valor acordado da obra.'); return; }
+    var mod = { '304030': [['Adjudicação', 0.3, 'inicio'], ['A meio da obra', 0.4, 'barramento'], ['Final da obra', 0.3, 'fim']], '5050': [['Início da obra', 0.5, 'inicio'], ['Final da obra', 0.5, 'fim']], '100': [['Pagamento final', 1, 'fim']] }[b.dataset.pltpl];
+    var acc = 0;
+    pl = mod.map(function (m, i) { var v = i === mod.length - 1 ? Math.round((V - acc) * 100) / 100 : Math.round(V * m[1] * 100) / 100; acc += v; return { d: m[0], v: fmtN(v), q: m[2] }; });
+    desenhar();
+  };
+}
+function dlgPagarObra(o) {
+  var prox = estadoPlano(o).find(function (e) { return e.falta > 0.005; });
+  var corpo = '<div class="grid">' + campo('po_data', 'Data', hoje(), 'date') + campo('po_valor', 'Valor (€)', prox ? fmtN(prox.falta) : '', 'text', ' inputmode="decimal"') + '</div>' + campo('po_desc', 'Descrição', prox ? prox.t.d : '', 'text', ' placeholder="Ex.: adjudicação, transferência"');
+  function gravar() {
+    var v = num(val('po_valor')); if (!v) { toast('Escreva o valor.'); return null; }
+    var ref = doc(collection(db, 'clientes', o.clienteId, 'pagamentos'));
+    var p = { data: val('po_data') || hoje(), valor: v, descricao: val('po_desc'), obraId: o.id, por: porQuem(), criadoEm: serverTimestamp() };
+    setDoc(ref, p).catch(function (e) { falhou(e, 'registar o pagamento'); });
+    toast('Pagamento de ' + eur(v) + ' registado.');
+    return Object.assign({ id: ref.id, clienteId: o.clienteId }, p);
+  }
+  abrirDlg('Registar pagamento', corpo, [
+    { txt: 'Guardar e fazer recibo', cls: 'ghost', fn: function () { var p = gravar(); if (!p) return false; reciboPDF(p, o.clienteId).catch(function (e) { console.error(e); toast('Não foi possível gerar o recibo.'); }); } },
+    { txt: 'Guardar', cls: 'acc', fn: function () { if (!gravar()) return false; } }
+  ]);
+}
+
+// =====================================================================
+// RECIBO (comprovativo de pagamento)
+// =====================================================================
+async function reciboPDF(p, clienteId) {
+  var c = clientes.find(function (x) { return x.id === clienteId; }) || {};
+  var o = p.obraId && obras.find(function (x) { return x.id === p.obraId; });
+  if (!o) { var os = obras.filter(function (x) { return x.clienteId === clienteId; }); if (os.length === 1) o = os[0]; }
+  var numero = 'CP-' + (p.data || hoje()).replace(/-/g, '') + '-' + String(p.id || '').slice(0, 4).toUpperCase();
+  var P = await pdfBase('COMPROVATIVO DE PAGAMENTO', ['N.º ' + numero, 'Data: ' + dataPT(p.data || hoje())]);
+  var C = P.C;
+  P.blocos(['RECEBIDO DE', [c.nome || '—', c.nif && 'NIF: ' + c.nif, c.morada, c.telefone && 'Tel.: ' + c.telefone]], ['EMITIDO POR', empresaLinhas()]);
+  P.y -= 6;
+  // caixa com o valor
+  var bx = 74; P.need(bx + 10);
+  P.page.drawRectangle({ x: P.M, y: P.y - bx + 14, width: P.CW, height: bx, color: C.cream });
+  P.text('Recebemos a quantia de', P.M + 16, P.y - 4, 10, P.reg, C.grey);
+  var vv = eur(p.valor); P.text(vv, P.M + 16, P.y - 30, 22, P.bold, C.navy);
+  P.y -= 46;
+  P.para('(' + extenso(p.valor) + ')', 10, P.reg, C.dark, P.M + 16, P.CW - 32);
+  P.y -= 18;
+  P.titulo('REFERENTE A');
+  P.para((p.descricao || 'Pagamento') + (o ? ' — ' + (o.morada ? 'obra em ' + o.morada : 'obra ' + o.nome) : ''), 10.5, P.reg);
+  if (o && o.valor) {
+    P.y -= 4; P.titulo('SITUAÇÃO DA OBRA A ' + dataPT(hoje()));
+    var rec = recebidoObra(o); if (!todosPag.some(function (x) { return x.id === p.id; })) rec += p.valor || 0;
+    P.linhaValor('Valor acordado', eur(o.valor));
+    P.linhaValor('Total recebido', eur(rec));
+    P.linhaValor('Em falta', eur(Math.max(o.valor - rec, 0)), true);
+  }
+  P.need(90); P.y -= 40;
+  P.page.drawLine({ start: { x: P.M, y: P.y }, end: { x: P.M + 230, y: P.y }, thickness: 0.6, color: C.grey });
+  P.text('Recebido por' + (porQuem() ? ' ' + porQuem() : ''), P.M, P.y - 12, 8.5, P.reg, C.grey);
+  P.y -= 40;
+  P.para('Documento interno de comprovativo de pagamento. Não substitui a fatura ou fatura-recibo emitida no Portal das Finanças.', 8.5, P.reg, C.grey);
+  await P.fim('Comprovativo_' + numero + (c.nome ? '_' + nomeFich(c.nome) : '') + '.pdf');
+}
+
+// =====================================================================
+// FOTOGRAFIAS (partilhado entre pasta do cliente e obra)
+// =====================================================================
+var FASES_FOTO = ['Visita', 'Antes', 'Durante', 'Depois', 'Problema'];
+var fotosObra = [], faseFotoObra = 'Durante', vistaFotoObra = 'todas', estadoFotoObra = '';
+function tsN(x) { if (!x) return 1e15; if (x.seconds) return x.seconds; var t = Date.parse(x); return isNaN(t) ? 0 : t / 1000; }
+function baseFotosObra(o) { return o.clienteId ? ['clientes', o.clienteId] : ['obras', o.id]; }
+async function enviarFotos(files, base, extra, fase, est) {
+  var n = files.length;
+  for (var i = 0; i < n; i++) {
+    est('A preparar fotografia ' + (i + 1) + ' de ' + n + '…');
+    try {
+      var img = await abrirImg(files[i]);
+      var full = await imgData(img, 1280, 0.72, 700000);
+      var thumb = await imgData(img, 360, 0.7, 60000);
+      var fref = doc(collection(db, base[0], base[1], 'fotos'));
+      setDoc(doc(db, base[0], base[1], 'fotosFull', fref.id), { img: full }).catch(function (e) { falhou(e, 'enviar a fotografia'); });
+      setDoc(fref, Object.assign({ thumb: thumb, fase: fase, por: porQuem(), criadoEm: serverTimestamp() }, extra || {})).catch(function (e) { falhou(e, 'enviar a fotografia'); });
+    } catch (er) { console.error(er); est('Não foi possível abrir a fotografia. Tente outra.'); return; }
+  }
+  est((n === 1 ? 'Fotografia guardada' : n + ' fotografias guardadas') + (navigator.onLine ? '.' : '. Seguem para a equipa quando houver internet.'));
+}
+async function verFotoEm(id, lista, base) {
+  var f = lista.find(function (x) { return x.id === id; }); if (!f) return;
+  abrirDlg((f.fase || 'Fotografia') + (f.por ? ' · ' + f.por : ''), '<img src="' + esc(f.thumb || f.url || '') + '" alt="Fotografia" style="width:100%;border-radius:12px;display:block;filter:blur(2px)">', []);
+  var src = f.url || '';
+  try { var d = await getDoc(doc(db, base[0], base[1], 'fotosFull', id)); if (d.exists() && d.data().img) src = d.data().img; } catch (e) { console.warn(e); }
+  if (!src) src = f.thumb || '';
+  var dt = f.criadoEm && f.criadoEm.toDate ? f.criadoEm.toDate().toLocaleString('pt-PT') : '';
+  $('dlg-b').innerHTML = '<img src="' + esc(src) + '" alt="Fotografia" style="width:100%;border-radius:12px;display:block">' + (dt ? '<p class="hint">' + esc(dt) + '</p>' : '');
+}
+function fotoCel(f, ver, rm) { return '<div class="foto"><a href="#" ' + ver + '="' + f.id + '"><img src="' + esc(f.thumb || f.url || '') + '" alt="Fotografia ' + esc(f.fase || '') + '" loading="lazy" style="pointer-events:none"></a><span>' + esc(f.fase || '') + '</span><button type="button" ' + rm + '="' + f.id + '" aria-label="Apagar fotografia">✕</button></div>'; }
+var IC_CAM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
+function fotosObraHTML(o) {
+  var h = '<section class="card"><div class="titulo"><h2>Fotografias</h2><span class="meta">' + fotosObra.length + '</span></div>' +
+    '<div class="row" style="align-items:flex-end">' + '<label for="of_fase" style="flex:1 1 120px">Fase<select id="of_fase">' + opts(FASES_FOTO, faseFotoObra) + '</select></label>' +
+    '<label class="btn" for="of_cam" style="color:#fff">' + IC_CAM + 'Tirar<input id="of_cam" type="file" accept="image/*" capture="environment" hidden></label>' +
+    '<label class="btn ghost" for="of_gal">Galeria<input id="of_gal" type="file" accept="image/*" multiple hidden></label></div>' +
+    '<p class="hint" id="of-estado"' + (estadoFotoObra ? '' : ' hidden') + '>' + esc(estadoFotoObra) + '</p>';
+  if (!fotosObra.length) return h + '<p class="hint">Ainda sem fotografias desta obra. Tirem fotos antes de começar e no fim: ficam no relatório para o cliente.</p></section>';
+  h += '<div class="seg"><button type="button" data-fv="todas" aria-selected="' + (vistaFotoObra === 'todas') + '">Todas</button><button type="button" data-fv="ad" aria-selected="' + (vistaFotoObra === 'ad') + '">Antes e depois</button></div>';
+  if (vistaFotoObra === 'ad') {
+    var an = fotosObra.filter(function (f) { return f.fase === 'Antes' || f.fase === 'Visita'; }), de = fotosObra.filter(function (f) { return f.fase === 'Depois'; });
+    h += '<div class="ad"><div><b>Antes</b><div class="fotos">' + (an.map(function (f) { return fotoCel(f, 'data-verfo', 'data-rmfo'); }).join('') || '<p class="hint">Sem fotos.</p>') + '</div></div><div><b>Depois</b><div class="fotos">' + (de.map(function (f) { return fotoCel(f, 'data-verfo', 'data-rmfo'); }).join('') || '<p class="hint">Sem fotos.</p>') + '</div></div></div>';
+  } else h += '<div class="fotos">' + fotosObra.map(function (f) { return fotoCel(f, 'data-verfo', 'data-rmfo'); }).join('') + '</div>';
+  return h + '</section>';
+}
+function subFotosObra(id) {
+  var o = obras.find(function (x) { return x.id === id; }); if (!o) return;
+  var b = baseFotosObra(o);
+  subsObra.push(onSnapshot(collection(db, b[0], b[1], 'fotos'), function (s) {
+    fotosObra = s.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); }).filter(function (f) { return b[0] === 'obras' || f.obraId === id; }).sort(function (x, y) { return tsN(y.criadoEm) - tsN(x.criadoEm); });
+    renderObra();
+  }, function (e) { console.warn(e); }));
+}
+$('obra-corpo').addEventListener('change', function (e) {
+  var t = e.target, o = obraAtual(); if (!o) return;
+  if (t.id === 'of_fase') { faseFotoObra = t.value; return; }
+  if (t.id === 'of_cam' || t.id === 'of_gal') {
+    var files = [].slice.call(t.files || []); t.value = ''; if (!files.length) return;
+    enviarFotos(files, baseFotosObra(o), { obraId: o.id }, faseFotoObra, function (s) { estadoFotoObra = s; var el = $('of-estado'); if (el) { el.hidden = false; el.textContent = s; } });
+  }
+});
+$('obra-corpo').addEventListener('click', function (e) {
+  var o = obraAtual(); if (!o) return;
+  var b = e.target.closest('[data-verfo],[data-rmfo],[data-fv],[data-recp],[data-oa="pagar"],[data-oa="plano"],[data-oa="relatorio"]'); if (!b) return;
+  e.preventDefault();
+  if (b.dataset.verfo) verFotoEm(b.dataset.verfo, fotosObra, baseFotosObra(o));
+  else if (b.dataset.rmfo) { if (!confirm('Apagar esta fotografia?')) return; var bs = baseFotosObra(o); deleteDoc(doc(db, bs[0], bs[1], 'fotosFull', b.dataset.rmfo)).catch(function () {}); deleteDoc(doc(db, bs[0], bs[1], 'fotos', b.dataset.rmfo)).catch(function (er) { falhou(er, 'apagar a fotografia'); }); }
+  else if (b.dataset.fv) { vistaFotoObra = b.dataset.fv; renderObra(); }
+  else if (b.dataset.recp) { var p = todosPag.find(function (x) { return x.id === b.dataset.recp; }); if (p) reciboPDF(p, p.clienteId).catch(function (er) { console.error(er); toast('Não foi possível gerar o recibo.'); }); }
+  else if (b.dataset.oa === 'pagar') dlgPagarObra(o);
+  else if (b.dataset.oa === 'plano') dlgPlano(o);
+  else if (b.dataset.oa === 'relatorio') dlgRelatorio(o);
+});
+
+// =====================================================================
+// RELATÓRIO FINAL DA OBRA
+// =====================================================================
+function dlgRelatorio(o) {
+  var na = fotosObra.filter(function (f) { return f.fase === 'Antes' || f.fase === 'Visita'; }).length, nd = fotosObra.filter(function (f) { return f.fase === 'Depois'; }).length;
+  var corpo = '<p class="hint">PDF para entregar ao cliente com o resumo da obra, as fases concluídas e as fotografias de antes e depois.</p>' +
+    campoTxt('rf_msg', 'Mensagem para o cliente (opcional)', '', 'Ex.: Obrigado pela confiança. Qualquer questão, estamos ao dispor.') +
+    '<div class="checks"><label for="rf_fotos"><input type="checkbox" id="rf_fotos"' + (na || nd ? ' checked' : '') + '>Incluir fotografias (' + na + ' antes, ' + nd + ' depois)</label></div>';
+  abrirDlg('Relatório final', corpo, [{ txt: 'Gerar PDF', cls: 'acc', fn: async function () {
+    var msg = val('rf_msg'), cf = $('rf_fotos').checked;
+    toast('A preparar o relatório…');
+    try { await relatorioPDF(o, msg, cf); } catch (e) { console.error(e); toast('Não foi possível gerar o relatório.'); }
+  } }]);
+}
+async function relatorioPDF(o, msg, comFotos) {
+  var c = clientes.find(function (x) { return x.id === o.clienteId; }) || {};
+  var f = o.fases || {};
+  var feitas = FASES.filter(function (x) { return f[x[0]] && f[x[0]].f; });
+  var ultima = feitas.reduce(function (a, x) { return f[x[0]].d && f[x[0]].d > a ? f[x[0]].d : a; }, '');
+  var P = await pdfBase('RELATÓRIO DE OBRA', ['Data: ' + dataPT(hoje())]);
+  var C = P.C;
+  P.blocos(['CLIENTE', [o.cliente || c.nome || '—', (c.telefone || o.telefone) && 'Tel.: ' + (c.telefone || o.telefone), o.morada && 'Obra: ' + o.morada]], ['EMPRESA', empresaLinhas()]);
+  P.titulo('RESUMO DA OBRA');
+  var res = [];
+  if (o.inicio) res.push(['Início', dataPT(o.inicio)]);
+  if (o.estado === 'Concluída' || ultima) res.push([o.estado === 'Concluída' ? 'Conclusão' : 'Último trabalho registado', dataPT(ultima || o.fim)]);
+  if (o.area) res.push(['Área de fachada', String(o.area).replace('.', ',') + ' m²']);
+  if (o.iso || o.esp) res.push(['Isolamento', [o.iso, o.esp ? o.esp + ' cm' : ''].filter(Boolean).join(' · ')]);
+  res.push(['Estado', o.estado || 'Planeada']);
+  res.forEach(function (r) { P.linhaValor(r[0], r[1]); });
+  P.titulo('TRABALHOS REALIZADOS');
+  if (feitas.length) feitas.forEach(function (x) { var e = f[x[0]]; P.need(18); P.text('•', P.M + 4, P.y, 10, P.bold, C.gold); P.text(x[1], P.M + 16, P.y, 10.5, P.reg); if (e.d) { var dd = dataPT(e.d); P.text(dd, P.W - P.M - P.width(dd, 9.5), P.y, 9.5, P.reg, C.grey); } P.y -= 18; });
+  else P.para('Ainda não há fases marcadas como concluídas.', 10, P.reg, C.grey);
+  if (msg) { P.titulo('NOTA'); P.para(msg, 10.5, P.reg); }
+  if (comFotos) {
+    var base = baseFotosObra(o);
+    async function grupo(titulo, lista) {
+      if (!lista.length) return;
+      var cw = (P.CW - 12) / 2, chH = cw * 0.75;
+      P.need(chH + 50); P.titulo(titulo);
+      for (var i = 0; i < lista.length; i += 2) {
+        P.need(chH + 12);
+        for (var k = 0; k < 2 && i + k < lista.length; k++) {
+          var ft = lista[i + k], src = ft.thumb || '';
+          try { var d = await getDoc(doc(db, base[0], base[1], 'fotosFull', ft.id)); if (d.exists() && d.data().img) src = d.data().img; } catch (e) {}
+          if (!src) continue;
+          try {
+            var im = await P.doc.embedJpg(await (await fetch(src)).arrayBuffer());
+            var sc = Math.min(cw / im.width, chH / im.height), w = im.width * sc, hh = im.height * sc, x = P.M + k * (cw + 12);
+            P.page.drawRectangle({ x: x, y: P.y - chH, width: cw, height: chH, color: C.soft });
+            P.page.drawImage(im, { x: x + (cw - w) / 2, y: P.y - chH + (chH - hh) / 2, width: w, height: hh });
+          } catch (e) { console.warn(e); }
+        }
+        P.y -= chH + 12;
+      }
+    }
+    var ord = function (a, b) { return tsN(a.criadoEm) - tsN(b.criadoEm); };
+    await grupo('ANTES', fotosObra.filter(function (x) { return x.fase === 'Antes' || x.fase === 'Visita'; }).sort(ord).slice(0, 6));
+    await grupo('DEPOIS', fotosObra.filter(function (x) { return x.fase === 'Depois'; }).sort(ord).slice(0, 6));
+  }
+  await P.fim('Relatorio_obra_' + nomeFich(o.nome || 'obra') + '.pdf');
+}
 
 $('dlg-form').addEventListener('submit', function (e) { e.preventDefault(); });
 
