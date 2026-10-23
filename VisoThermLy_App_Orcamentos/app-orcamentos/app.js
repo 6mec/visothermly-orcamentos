@@ -57,7 +57,7 @@ function corDe(s) { var h = 0; s = String(s || ''); for (var i = 0; i < s.length
 function avatar(nome, big) { return '<span class="av' + (big ? ' big' : '') + '" style="background:' + corDe(nome) + '">' + esc(iniciais(nome)) + '</span>'; }
 function cabecalho() {
   var t = 'Clientes', s = clientes.length + (clientes.length === 1 ? ' cliente' : ' clientes') + ' · ' + orcs.length + (orcs.length === 1 ? ' orçamento' : ' orçamentos');
-  if (vistaAtual === 'cliente') { var c = clientes.find(function (x) { return x.id === clienteAberto; }); t = clienteAberto ? (c && c.nome || 'Cliente') : 'Novo cliente'; s = 'Pasta do cliente'; }
+  if (vistaAtual === 'cliente') { var c = clientes.find(function (x) { return x.id === clienteAberto; }); t = clienteAberto ? 'Cliente' : 'Novo cliente'; s = 'Pasta do cliente'; }
   else if (vistaAtual === 'novo') { t = cur && cur.num ? 'Orçamento ' + cur.num : 'Novo orçamento'; s = cur && cur.f && cur.f.c_nome ? cur.f.c_nome : 'Capoto & isolamento térmico'; }
   else if (vistaAtual === 'def') { t = 'Definições'; s = 'Perfil, empresa, equipa e consumos'; }
   else if (vistaAtual === 'inicio') { var hr = new Date().getHours(); t = (hr < 13 ? 'Bom dia' : hr < 20 ? 'Boa tarde' : 'Boa noite') + (perfil.nome ? ', ' + perfil.nome.split(' ')[0] : ''); s = new Date().toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' }); }
@@ -486,7 +486,7 @@ function orcHTML(items, mostrarCliente) {
       '<div class="oacts"><label for="st' + x.id + '" class="sr">Estado</label><select id="st' + x.id + '" data-st="' + x.id + '" class="est est-' + estClasse(x.estado) + '">' +
       ESTADOS.map(function (e) { return '<option' + (e === (x.estado || 'Por enviar') ? ' selected' : '') + '>' + e + '</option>'; }).join('') + '</select>' +
       '<button type="button" class="btn small" data-open="' + x.id + '">Abrir</button>' +
-      ((x.estado === 'Aceite' || x.estado === 'Concluído') ? '<button type="button" class="btn acc small" data-mkobra="' + x.id + '">' + (obras.some(function (b) { return b.orcamentoId === x.id; }) ? 'Ver obra' : 'Criar obra') + '</button>' : '') +
+      ((x.estado === 'Aceite' || x.estado === 'Concluído') ? '<button type="button" class="btn acc small" data-mkobra="' + x.id + '">' + (obras.some(function (b) { return b.orcamentoId === x.id; }) ? 'Obra' : 'Criar obra') + '</button>' : '') +
       '<button type="button" class="btn ghost small ico" data-dup="' + x.id + '" aria-label="Duplicar" title="Duplicar">' + IC_DUP + '</button>' +
       '<button type="button" class="btn danger small ico" data-rm="' + x.id + '" aria-label="Apagar" title="Apagar">' + IC_DEL + '</button></div></div>';
   }).join('');
@@ -551,8 +551,9 @@ function abrirCliente(id) {
   $('cf-det').open = !id;
   $('cf-apagar').hidden = !id;
   fichaTopo(c);
-  ['cf-resumo'].forEach(function (s) { $(s).hidden = !id; });
-  document.querySelectorAll('#v-cliente > section.card').forEach(function (s, i) { if (i > 0) s.hidden = !id; });
+  document.querySelectorAll('#v-cliente .so-ex').forEach(function (s) { s.hidden = !id; });
+  document.querySelectorAll('#v-cliente details[data-csec]').forEach(function (d) { if (secCli[d.dataset.csec] !== undefined) d.open = !!secCli[d.dataset.csec]; });
+  $('cf-dyn').innerHTML = '';
   $('cf-pags').innerHTML = ''; $('cf-fotos').innerHTML = ''; $('f-estado').textContent = '';
   $('p_data').value = hoje();
   if (id) {
@@ -567,18 +568,6 @@ function abrirCliente(id) {
   show('cliente');
   if (!id) $('cf_nome').focus();
 }
-function fichaTopo(c) {
-  c = c || {};
-  var av = $('cf-av'); av.textContent = iniciais(c.nome || '+'); av.style.background = corDe(c.nome || '');
-  $('cf-sub').textContent = [c.telefone, c.morada].filter(Boolean).join(' · ') || (clienteAberto ? 'Sem contactos' : 'Preencha os dados e guarde');
-  var tel = String(c.telefone || '').replace(/[^\d+]/g, '');
-  $('cf-acoes').hidden = !tel;
-  if (tel) {
-    $('cf-ligar').href = 'tel:' + tel;
-    var wa = tel.replace(/^\+/, ''); if (wa.length === 9) wa = '351' + wa;
-    $('cf-wa').href = 'https://wa.me/' + wa;
-  }
-}
 function renderCliente() {
   if (!clienteAberto) return;
   var c = clientes.find(function (x) { return x.id === clienteAberto; });
@@ -586,11 +575,6 @@ function renderCliente() {
   renderObrasCliente();
   $('cf-orcs').innerHTML = orcHTML(orcs.filter(function (o) { return o.clienteId === clienteAberto; }), false);
   renderKpis();
-}
-function renderKpis() {
-  var aceite = orcs.filter(function (o) { return o.clienteId === clienteAberto && (o.estado === 'Aceite' || o.estado === 'Concluído'); }).reduce(function (a, o) { return a + (o.total || 0); }, 0);
-  var pago = pagamentos.reduce(function (a, p) { return a + (p.valor || 0); }, 0);
-  $('k-aceite').textContent = eur(aceite); $('k-pago').textContent = eur(pago); $('k-falta').textContent = eur(Math.max(aceite - pago, 0));
 }
 $('cf-guardar').addEventListener('click', function () {
   var nome = $('cf_nome').value.trim();
@@ -650,6 +634,7 @@ function renderFotos() {
   $('cf-fotos').innerHTML = fotos.length ? fotos.map(function (f) {
     return '<div class="foto"><a href="#" data-verf="' + f.id + '"><img src="' + esc(f.thumb || f.url || '') + '" alt="Fotografia ' + esc(f.fase || '') + '" loading="lazy" style="pointer-events:none"></a><span>' + esc(f.fase || '') + '</span><button type="button" data-rmf="' + f.id + '" aria-label="Apagar fotografia">✕</button></div>';
   }).join('') : '<p class="hint">Ainda não há fotografias.</p>';
+  renderClienteDyn();
 }
 $('cf-fotos').addEventListener('click', async function (e) {
   var vf = e.target.closest('[data-verf]');
@@ -1244,39 +1229,6 @@ function avisos() {
   documentos.forEach(function (d) { var e = docEstado(d); if (e[1] === 'no' || e[1] === 'warn') A.push([e[1], d.nome, e[0] + '.', 'doc:' + d.id]); });
   return A;
 }
-function renderInicio() {
-  var emCurso = obras.filter(function (o) { return o.estado === 'Em curso'; });
-  var pend = orcs.filter(function (o) { return o.estado === 'Por enviar' || o.estado === 'Enviado'; });
-  var mes = mesAtual(), dm = despesas.filter(function (d) { return (d.data || '').slice(0, 7) === mes; }).reduce(function (a, d) { return a + (d.valor || 0); }, 0);
-  $('ini-kpis').innerHTML = '<button type="button" class="ktile dest" data-goto="contas"><small>Por receber</small><b>' + eur(porReceberTotal()) + '</b></button>' +
-    '<button type="button" class="ktile" data-goto="obras"><small>Obras em curso</small><b>' + emCurso.length + '</b></button>' +
-    '<button type="button" class="ktile" data-goto="orcs"><small>Orçamentos pendentes</small><b>' + pend.length + '</b></button>' +
-    '<button type="button" class="ktile" data-goto="despesas"><small>Despesas de ' + nomeMes(mes).split(' ')[0] + '</small><b>' + eur(dm) + '</b></button>';
-  var A = avisos();
-  $('ini-avisos').innerHTML = A.length ? A.map(function (a) { return '<button type="button" class="aviso" data-av="' + a[3] + '"><span class="dot ' + a[0] + '"></span><span><b style="font-size:.92rem">' + esc(a[1]) + '</b><span class="meta">' + esc(a[2]) + '</span></span></button>'; }).join('') : '<p class="hint">Está tudo em dia.</p>';
-  $('ini-obras').innerHTML = emCurso.length ? '<div class="list">' + emCurso.map(obraRow).join('') + '</div>' : '<p class="hint">Nenhuma obra em curso.</p>';
-  var ev = eventos(hoje(), addDias(hoje(), 7));
-  $('ini-agenda').innerHTML = ev.length ? ev.map(agHTML).join('') : '<p class="hint">Nada marcado para os próximos 7 dias.</p>';
-}
-$('ini-kpis').addEventListener('click', function (e) { var b = e.target.closest('[data-goto]'); if (b) show(b.dataset.goto); });
-$('ini-obras').addEventListener('click', function (e) { var b = e.target.closest('[data-obra]'); if (b) abrirObra(b.dataset.obra); });
-$('ini-agenda').addEventListener('click', clickEv);
-$('ini-avisos').addEventListener('click', function (e) {
-  var b = e.target.closest('[data-av]'); if (!b) return; var p = b.dataset.av.split(':');
-  if (p[0] === 'obra') abrirObra(p[1]);
-  else if (p[0] === 'ped') dlgPedido(p[1]);
-  else if (p[0] === 'doc') dlgDoc(p[1]);
-  else if (p[0] === 'criarobra') { var o = orcs.find(function (x) { return x.id === p[1]; }); if (o) criarObraDeOrc(o); }
-  else if (p[0] === 'orc') { var q = orcs.find(function (x) { return x.id === p[1]; }); if (q && q.clienteId) abrirCliente(q.clienteId); else show('orcs'); }
-});
-$('ini-qa').addEventListener('click', function (e) {
-  var b = e.target.closest('[data-qa]'); if (!b) return; var a = b.dataset.qa;
-  if (a === 'pedido') dlgPedido(null);
-  else if (a === 'orc') { if (dirty && !confirm('O orçamento aberto tem alterações por guardar. Começar um novo na mesma?')) return; cur = blankQuote(); dirty = false; lsSet(K_DRAFT, { q: cur, dirty: false }); toForm(cur); show('novo'); }
-  else if (a === 'despesa') dlgDespesa(null);
-  else if (a === 'dia') dlgDia(null);
-});
-
 // ---------- lista de orçamentos ----------
 var filtroOrc = 'Todos';
 function renderOrcs() {
@@ -1313,7 +1265,7 @@ $('cf-obras').addEventListener('click', function (e) { var b = e.target.closest(
 var PROF = { inicio: 0, clientes: 0, obras: 0, orcs: 0, mais: 0, cliente: 1, novo: 1, despesas: 1, dias: 1, contas: 1, docs: 1, def: 1, obra: 2 };
 var posScroll = {}, hDepth = 0, ignorePop = false, dlgPushed = false, voltarNovo = 'orcs';
 var GUARD = {};
-['cli-lista', 'ped-lista', 'obras-lista', 'orc-todos', 'cf-orcs', 'cf-obras', 'cf-pags', 'cf-fotos', 'ini-kpis', 'ini-avisos', 'ini-obras', 'ini-agenda', 'agenda', 'dsp-lista', 'dsp-resumo', 'dias-lista', 'dias-resumo', 'ct-meses', 'ct-obras', 'docs-lista', 'obra-filtros', 'orc-filtros', 'equipa', 'obra-corpo'].forEach(function (k) { GUARD[k] = 1; });
+['cli-lista', 'ped-lista', 'obras-lista', 'orc-todos', 'cf-orcs', 'cf-obras', 'cf-pags', 'cf-fotos', 'ini-corpo', 'cf-dyn', 'cf-acts', 'agenda', 'dsp-lista', 'dsp-resumo', 'dias-lista', 'dias-resumo', 'ct-meses', 'ct-obras', 'docs-lista', 'obra-filtros', 'orc-filtros', 'equipa', 'obra-corpo'].forEach(function (k) { GUARD[k] = 1; });
 (function () {
   // só redesenha uma lista quando o conteúdo mudou mesmo (evita piscar e imagens a recarregar)
   var d = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
@@ -1869,6 +1821,192 @@ $('obra-corpo').addEventListener('click', function (e) {
   else if (b.dataset.concluir) { updObra({ estado: 'Concluída', fim: o.fim && o.fim <= hoje() ? o.fim : hoje() }); renderObra(); toast('Obra concluída.'); }
   else if (b.dataset.oa === 'fab') dlgFab(o);
   else if (b.dataset.oa === 'novodiario') dlgDiario(o);
+});
+
+// =====================================================================
+// INÍCIO (painel do dia)
+// =====================================================================
+var DIAS_S = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+function diaRot(iso) { var h = hoje(); if (iso === h) return 'Hoje'; if (iso === addDias(h, 1)) return 'Amanhã'; var d = new Date(iso + 'T12:00:00'); return DIAS_S[d.getDay()] + ' ' + d.getDate(); }
+function anelMini(p) { var c = 2 * Math.PI * 16; return '<span class="anel-m"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" class="a-bg"/><circle cx="20" cy="20" r="16" class="a-fg" stroke-dasharray="' + c.toFixed(1) + '" stroke-dashoffset="' + (c * (1 - p / 100)).toFixed(1) + '"/></svg><b>' + p + '</b></span>'; }
+function avisoInfo(a) {
+  var t = a[3].split(':')[0], cobrar = /^Cobrar/.test(a[1]);
+  if (cobrar) return ['eur', 'warn', 'Registar', 'pagar:' + a[3].split(':')[1]];
+  return ({ orc: ['doc', 'warn', 'Ver'], criarobra: ['caixa', 'info', 'Criar obra'], ped: ['cli', 'info', 'Abrir'], obra: ['fases', a[0] === 'no' ? 'warn' : 'blue', 'Abrir'], doc: ['recibo', a[0] === 'no' ? 'warn' : 'info', 'Ver'] })[t].concat([a[3]]);
+}
+function renderInicio() {
+  var emCurso = obras.filter(function (o) { return o.estado === 'Em curso'; });
+  var pend = orcs.filter(function (o) { return o.estado === 'Por enviar' || o.estado === 'Enviado'; });
+  var pedN = pedidos.filter(function (p) { return (p.estado || 'Novo') === 'Novo' || p.estado === 'Visita marcada'; }).length;
+  var mes = mesAtual(), dm = despesas.filter(function (d) { return (d.data || '').slice(0, 7) === mes; }).reduce(function (a, d) { return a + (d.valor || 0); }, 0);
+  var dMes = dias.filter(function (d) { return (d.data || '').slice(0, 7) === mes; }).reduce(function (a, d) { return a + (d.fracao || 1); }, 0);
+  var aceite = orcs.filter(function (o) { return o.estado === 'Aceite' || o.estado === 'Concluído'; }).reduce(function (a, o) { return a + (o.total || 0); }, 0);
+  var pr = porReceberTotal(), recebido = Math.max(aceite - pr, 0);
+  var h = '';
+  // topo
+  h += '<section class="ohero ihero"><div class="ih-top"><div><small>Por receber</small><b>' + eur(pr) + '</b><span class="kt-bar"><i style="width:' + (aceite ? Math.round(recebido / aceite * 100) : 0) + '%"></i></span><span class="ih-s">' + (aceite ? 'Recebido ' + eur(recebido) + ' de ' + eur(aceite) + ' aceites' : 'Ainda sem orçamentos aceites') + '</span></div></div>' +
+    '<div class="ih-chips"><button type="button" data-goto="obras"><b>' + emCurso.length + '</b>em curso</button><button type="button" data-goto="orcs"><b>' + pend.length + '</b>orçamentos pendentes</button><button type="button" data-goto="clientes" data-ped="1"><b>' + pedN + '</b>pedidos por tratar</button></div>' +
+    '<div class="oh-acts"><button type="button" class="oh-a" data-qa="pedido"><i>' + ICO.cli + '</i>Pedido</button><button type="button" class="oh-a" data-qa="orc"><i>' + ICO.doc + '</i>Orçamento</button><button type="button" class="oh-a" data-qa="despesa"><i>' + ICO.recibo + '</i>Despesa</button><button type="button" class="oh-a" data-qa="dia"><i>' + ICO.equipa + '</i>Dia</button><button type="button" class="oh-a" data-goto="obras" data-ag="1"><i>' + ICO.cal + '</i>Agenda</button></div></section>';
+  // agora
+  var A = avisos();
+  h += '<section class="card agora"><div class="titulo"><h2>Agora</h2>' + (A.length ? '<span class="badge-n">' + A.length + '</span>' : '') + '</div>' + (A.length ? A.slice(0, 6).map(function (a) {
+    var i = avisoInfo(a);
+    return '<div class="ag-r" data-av="' + i[3] + '"><span class="ag-ic t-' + i[1] + '">' + ICO[i[0]] + '</span><span class="ag-t"><b>' + esc(a[1]) + '</b><span class="meta">' + esc(a[2]) + '</span></span><button type="button" class="btn small ' + (i[1] === 'warn' ? 'acc' : 'ghost') + '" data-av="' + i[3] + '">' + i[2] + '</button></div>';
+  }).join('') + (A.length > 6 ? '<p class="hint">+ ' + (A.length - 6) + (A.length - 6 === 1 ? ' aviso' : ' avisos') + '</p>' : '') : '<div class="ag-r"><span class="ag-ic t-ok">' + ICO.fases + '</span><span class="ag-t"><b>Está tudo em dia</b><span class="meta">Sem cobranças, visitas ou prazos pendentes.</span></span></div>') + '</section>';
+  // obras em curso
+  var ob = obras.filter(function (o) { return o.estado === 'Em curso' || o.estado === 'Parada' || (o.estado === 'Planeada' && o.inicio && diasEntre(hoje(), o.inicio) <= 14); });
+  h += '<div class="titulo sec-tit"><h2>Obras</h2><button type="button" class="lnk" data-goto="obras">Ver todas</button></div>';
+  h += ob.length ? '<div class="carr">' + ob.map(function (o) {
+    var px = proximaFase(o);
+    return '<button type="button" class="ocard" data-obra="' + o.id + '">' + anelMini(progFases(o)) + '<span class="oc-t"><span class="pill ' + obraCls(o.estado) + '">' + esc(o.estado) + '</span><b>' + esc(o.nome) + '</b><span class="meta">' + esc(px ? 'A seguir: ' + px[1] : 'Fases todas feitas') + '</span><span class="meta">' + esc((o.equipa || []).join(', ') || 'Equipa por definir') + '</span></span></button>';
+  }).join('') + '</div>' : '<section class="card"><p class="hint">Nenhuma obra em curso. As obras criam-se a partir de um orçamento aceite.</p></section>';
+  // semana
+  var ev = eventos(hoje(), addDias(hoje(), 6));
+  var dd = ''; for (var k = 0; k < 7; k++) { var d = addDias(hoje(), k), n = ev.filter(function (e) { return e.ini <= d && e.fim >= d; }).length, dt = new Date(d + 'T12:00:00'); dd += '<span class="dch' + (k === 0 ? ' hoje' : '') + '"><small>' + DIAS_S[dt.getDay()] + '</small><b>' + dt.getDate() + '</b><i>' + (n ? '<em></em>'.repeat(Math.min(n, 3)) : '') + '</i></span>'; }
+  var lista = '', fimS = addDias(hoje(), 6);
+  var longas = ev.filter(function (e) { return e.tipo === 'obra'; });
+  if (longas.length) lista += '<div class="wk">A decorrer</div>' + longas.map(function (e) { return '<button type="button" class="ag" data-ev="obra:' + e.id + '"><span class="bar"></span><span style="flex:1;min-width:0"><b style="display:block">' + esc(e.titulo) + '</b><span class="meta">' + (e.ini > hoje() ? 'Começa ' + diaRot(e.ini).toLowerCase() : 'Até ' + dataPT(e.fim)) + ' · ' + esc(e.sub) + '</span></span></button>'; }).join('');
+  for (var k2 = 0; k2 < 7; k2++) {
+    var d2 = addDias(hoje(), k2), no = ev.filter(function (e) { return e.tipo !== 'obra' && e.ini === d2; });
+    if (!no.length) continue;
+    lista += '<div class="wk">' + diaRot(d2) + '</div>' + no.map(function (e) { return '<button type="button" class="ag visita" data-ev="' + e.tipo + ':' + e.id + '"><span class="bar"></span><span style="flex:1;min-width:0"><b style="display:block">' + esc(e.titulo) + '</b><span class="meta">' + esc(e.sub) + '</span></span></button>'; }).join('');
+  }
+  h += '<section class="card"><div class="titulo"><h2>Esta semana</h2><button type="button" class="lnk" data-goto="obras" data-ag="1">Agenda</button></div><div class="dias7">' + dd + '</div>' + (lista || '<p class="hint">Nada marcado para os próximos 7 dias.</p>') + '</section>';
+  // mês
+  h += '<div class="titulo sec-tit"><h2>' + nomeMes(mes).replace(/^\w/, function (c) { return c.toUpperCase(); }) + '</h2><button type="button" class="lnk" data-goto="contas">Contas</button></div>';
+  h += '<div class="kgrid"><button type="button" class="ktile" data-goto="despesas"><small>Despesas</small><b>' + eur(dm) + '</b><span class="kt-s">Combustível, material…</span></button><button type="button" class="ktile" data-goto="dias"><small>Dias de equipa</small><b>' + fmtN(dMes) + '</b><span class="kt-s">Registados este mês</span></button></div>';
+  $('ini-corpo').innerHTML = h;
+}
+$('ini-corpo').addEventListener('click', function (e) {
+  var b = e.target.closest('[data-qa],[data-av],[data-obra],[data-ev],[data-goto]'); if (!b) return;
+  if (b.dataset.qa) {
+    var a = b.dataset.qa;
+    if (a === 'pedido') dlgPedido(null);
+    else if (a === 'orc') { if (dirty && !confirm('O orçamento aberto tem alterações por guardar. Começar um novo na mesma?')) return; cur = blankQuote(); dirty = false; lsSet(K_DRAFT, { q: cur, dirty: false }); toForm(cur); show('novo'); }
+    else if (a === 'despesa') dlgDespesa(null);
+    else if (a === 'dia') dlgDia(null);
+  } else if (b.dataset.av) {
+    var p = b.dataset.av.split(':');
+    if (p[0] === 'pagar') { var oo = obras.find(function (x) { return x.id === p[1]; }); if (oo) dlgPagarObra(oo); }
+    else if (p[0] === 'obra') abrirObra(p[1]);
+    else if (p[0] === 'ped') dlgPedido(p[1]);
+    else if (p[0] === 'doc') dlgDoc(p[1]);
+    else if (p[0] === 'criarobra') { var o = orcs.find(function (x) { return x.id === p[1]; }); if (o) criarObraDeOrc(o); }
+    else if (p[0] === 'orc') { var q = orcs.find(function (x) { return x.id === p[1]; }); if (q && q.clienteId) abrirCliente(q.clienteId); else show('orcs'); }
+  } else if (b.dataset.obra) abrirObra(b.dataset.obra);
+  else if (b.dataset.ev) clickEv(e);
+  else if (b.dataset.goto) {
+    show(b.dataset.goto);
+    if (b.dataset.ag) document.querySelector('[data-oseg="agenda"]').click();
+    if (b.dataset.ped) document.querySelector('[data-seg="ped"]').click();
+  }
+});
+
+// =====================================================================
+// PASTA DO CLIENTE
+// =====================================================================
+var secCli = { orcs: true, obras: true, pags: false, fotos: false };
+function renderClienteDyn() {
+  if (!clienteAberto) { $('cf-dyn').innerHTML = ''; return; }
+  var c = clientes.find(function (x) { return x.id === clienteAberto; }) || {};
+  var os = orcs.filter(function (o) { return o.clienteId === clienteAberto; });
+  var ob = obras.filter(function (o) { return o.clienteId === clienteAberto; });
+  var aceite = os.filter(function (o) { return o.estado === 'Aceite' || o.estado === 'Concluído'; }).reduce(function (a, o) { return a + (o.total || 0); }, 0);
+  var pago = pagamentos.reduce(function (a, p) { return a + (p.valor || 0); }, 0), falta = Math.max(aceite - pago, 0);
+  var tel = String(c.telefone || '').replace(/[^\d+]/g, '');
+  var h = '';
+  // agora
+  var ag = [];
+  os.forEach(function (o) {
+    if (o.estado === 'Por enviar') ag.push(['doc', 'info', 'Orçamento ' + o.num + ' por enviar', eur(o.total) + ' · criado a ' + dataPT(o.data), '<button type="button" class="btn small ghost" data-cfopen="' + o.id + '">Abrir</button>']);
+    if (o.estado === 'Enviado') { var dd = diasEntre(o.enviadoEm || o.data, hoje()); ag.push(['doc', dd >= 7 ? 'warn' : 'info', 'Orçamento ' + o.num + ' enviado', (dd ? 'Há ' + dd + (dd === 1 ? ' dia' : ' dias') : 'Hoje') + ' · ' + eur(o.total) + (dd >= 7 ? ' · vale a pena ligar' : ''), tel ? '<a class="btn small ' + (dd >= 7 ? 'acc' : 'ghost') + '" href="tel:' + tel + '">Ligar</a>' : '']); }
+    if (o.estado === 'Aceite' && !obras.some(function (b) { return b.orcamentoId === o.id; })) ag.push(['caixa', 'warn', 'Orçamento ' + o.num + ' aceite', 'Crie a obra para planear datas, equipa e material.', '<button type="button" class="btn small acc" data-cfmk="' + o.id + '">Criar obra</button>']);
+  });
+  ob.forEach(function (o) {
+    estadoPlano(o).forEach(function (e) { if (e.devida && e.falta > 0.005) ag.push(['eur', 'warn', 'Cobrar ' + eur(e.falta), (e.t.d || 'Pagamento') + ' · ' + o.nome, '<button type="button" class="btn small acc" data-cfpagar="' + o.id + '">Registar</button>']); });
+    if (o.estado === 'Em curso' || o.estado === 'Parada') { var px = proximaFase(o); ag.push(['fases', 'blue', 'Obra ' + o.estado.toLowerCase() + ' · ' + progFases(o) + ' %', px ? 'A seguir: ' + px[1] : 'Fases todas feitas', '<button type="button" class="btn small ghost" data-obra="' + o.id + '">Abrir</button>']); }
+  });
+  if (!os.length && !ob.length) ag.push(['doc', 'info', 'Fazer o primeiro orçamento', 'Os dados do cliente entram automaticamente.', '<button type="button" class="btn small" data-cfa="orc">Novo</button>']);
+  if (ag.length) h += '<section class="card agora"><h2>Agora</h2>' + ag.map(function (a) { return '<div class="ag-r"><span class="ag-ic t-' + a[1] + '">' + ICO[a[0]] + '</span><span class="ag-t"><b>' + esc(a[2]) + '</b><span class="meta">' + esc(a[3]) + '</span></span>' + a[4] + '</div>'; }).join('') + '</section>';
+  // números
+  var ult = os[0];
+  h += '<div class="kgrid"><button type="button" class="ktile dest" data-cabrir="pags"><small>Falta receber</small><b>' + eur(falta) + '</b><span class="kt-bar"><i style="width:' + (aceite ? Math.min(100, Math.round(pago / aceite * 100)) : 0) + '%"></i></span><span class="kt-s">Recebido ' + eur(pago) + (aceite ? ' de ' + eur(aceite) : '') + '</span></button>' +
+    '<button type="button" class="ktile" data-cabrir="orcs"><small>Orçamentos</small><b>' + os.length + '</b><span class="kt-s">' + (ult ? 'Último: ' + esc(ult.estado || 'Por enviar') : 'Nenhum ainda') + '</span></button></div>';
+  // fotos
+  h += '<div class="strip"><label class="strip-add" for="cf_cam" aria-label="Tirar fotografia">' + ICO.cam + '<span>Foto</span></label>' + fotos.slice(0, 14).map(function (f) { return '<a href="#" data-cfverf="' + f.id + '"><img src="' + esc(f.thumb || f.url || '') + '" alt="Fotografia ' + esc(f.fase || '') + '" style="pointer-events:none"></a>'; }).join('') + (fotos.length > 14 ? '<button type="button" class="strip-mais" data-cabrir="fotos">+' + (fotos.length - 14) + '</button>' : '') + '</div>';
+  $('cf-dyn').innerHTML = h;
+  // resumos das secções
+  $('cs-orcs').textContent = os.length ? os.length + (os.length === 1 ? ' orçamento' : ' orçamentos') + ' · ' + eur(os.reduce(function (a, o) { return a + (o.total || 0); }, 0)) : 'Nenhum orçamento';
+  $('cs-obras').textContent = ob.length ? ob.map(function (o) { return o.estado; }).join(', ') : 'Nenhuma obra';
+  $('cs-pags').textContent = pagamentos.length ? pagamentos.length + (pagamentos.length === 1 ? ' pagamento' : ' pagamentos') + ' · ' + eur(pago) : 'Sem pagamentos';
+  $('cs-fotos').textContent = fotos.length ? fotos.length + (fotos.length === 1 ? ' fotografia' : ' fotografias') : 'Ainda sem fotos';
+  $('cs-dados').textContent = [c.telefone, c.nif && 'NIF ' + c.nif, c.email].filter(Boolean).join(' · ') || 'Telefone, NIF, morada e notas';
+}
+function fichaTopo(c) {
+  c = c || {};
+  var av = $('cf-av'); av.textContent = iniciais(c.nome || '+'); av.style.background = corDe(c.nome || '');
+  $('cf-sub').textContent = c.morada || (clienteAberto ? 'Sem morada' : 'Preencha os dados e guarde');
+  var os = clienteAberto ? orcs.filter(function (o) { return o.clienteId === clienteAberto; }) : [], ob = clienteAberto ? obras.filter(function (o) { return o.clienteId === clienteAberto; }) : [];
+  var est = !clienteAberto ? 'Novo cliente' : ob.some(function (o) { return o.estado === 'Em curso'; }) ? 'Obra em curso' : ob.some(function (o) { return o.estado === 'Concluída'; }) && !ob.some(function (o) { return o.estado !== 'Concluída'; }) ? 'Obra concluída' : os.some(function (o) { return o.estado === 'Aceite'; }) ? 'Orçamento aceite' : os.length ? 'Em orçamento' : 'Contacto';
+  $('cf-est').textContent = est; $('cf-est').className = 'oh-est' + (est === 'Obra em curso' || est === 'Orçamento aceite' ? ' e-warn' : est === 'Obra concluída' ? ' e-ok' : '');
+  var tel = String(c.telefone || '').replace(/[^\d+]/g, ''), wa = tel.replace(/^\+/, ''); if (wa.length === 9) wa = '351' + wa;
+  var a = '';
+  if (tel) a += '<a class="oh-a" href="tel:' + tel + '"><i>' + ICO.tel + '</i>Ligar</a><a class="oh-a" href="https://wa.me/' + wa + '" target="_blank" rel="noopener"><i>' + ICO.wa + '</i>WhatsApp</a>';
+  if (c.morada) a += '<a class="oh-a" href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(c.morada) + '" target="_blank" rel="noopener"><i>' + ICO.mapa + '</i>Mapa</a>';
+  if (c.email) a += '<a class="oh-a" href="mailto:' + esc(c.email) + '"><i>' + SV('<path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M22 6l-10 7L2 6"/>') + '</i>Email</a>';
+  a += '<button type="button" class="oh-a" data-cfa="orc"><i>' + ICO.doc + '</i>Orçamento</button><button type="button" class="oh-a" data-cfa="obra"><i>' + ICO.caixa + '</i>Obra</button>';
+  $('cf-acts').innerHTML = clienteAberto ? a : '';
+}
+function renderKpis() { renderClienteDyn(); }
+function dlgPagarCli() {
+  var ob = obras.filter(function (o) { return o.clienteId === clienteAberto; });
+  var corpo = '<div class="grid">' + campo('pc_data', 'Data', hoje(), 'date') + campo('pc_valor', 'Valor (€)', '', 'text', ' inputmode="decimal"') + '</div>' + campo('pc_desc', 'Descrição', '', 'text', ' placeholder="Ex.: adjudicação, 2.ª prestação"') + (ob.length ? campoSel('pc_obra', 'Obra', [['', 'Sem obra']].concat(ob.map(function (o) { return [o.id, o.nome]; })), ob.length === 1 ? ob[0].id : '') : '');
+  function gravar() {
+    var v = num(val('pc_valor')); if (!v) { toast('Escreva o valor.'); return null; }
+    var ref = doc(collection(db, 'clientes', clienteAberto, 'pagamentos'));
+    var p = { data: val('pc_data') || hoje(), valor: v, descricao: val('pc_desc'), obraId: (ob.length && val('pc_obra')) || null, por: porQuem(), criadoEm: serverTimestamp() };
+    setDoc(ref, p).catch(function (e) { falhou(e, 'registar o pagamento'); });
+    toast('Pagamento de ' + eur(v) + ' registado.');
+    return Object.assign({ id: ref.id, clienteId: clienteAberto }, p);
+  }
+  abrirDlg('Registar pagamento', corpo, [
+    { txt: 'Guardar e fazer recibo', cls: 'ghost', fn: function () { var p = gravar(); if (!p) return false; reciboPDF(p, p.clienteId).catch(function (e) { console.error(e); toast('Não foi possível gerar o recibo.'); }); } },
+    { txt: 'Guardar', cls: 'acc', fn: function () { if (!gravar()) return false; } }
+  ]);
+}
+function abrirSecCli(k) { var el = document.querySelector('#v-cliente [data-csec="' + k + '"]'); if (!el) return; el.open = true; setTimeout(function () { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30); }
+$('v-cliente').addEventListener('toggle', function (e) { var d = e.target; if (d && d.dataset && d.dataset.csec && secCli[d.dataset.csec] !== undefined) secCli[d.dataset.csec] = d.open; }, true);
+$('v-cliente').addEventListener('click', function (e) {
+  var b = e.target.closest('[data-cfa],[data-cabrir],[data-cfopen],[data-cfmk],[data-cfpagar],[data-cfverf],#cf-dyn [data-obra],#cf-fab'); if (!b || !clienteAberto) return;
+  if (b.id === 'cf-fab') {
+    var it = [['orc', 'doc', 'Orçamento'], ['obra', 'caixa', 'Obra'], ['pagar', 'eur', 'Pagamento'], ['foto', 'cam', 'Fotografia'], ['galeria', 'cam', 'Da galeria'], ['dados', 'cli', 'Editar dados']];
+    abrirDlg('Adicionar ao cliente', '<div class="qa fabg">' + it.map(function (x) { return '<button type="button" class="qbtn" data-fab="' + x[0] + '">' + ICO[x[1]] + '<span>' + x[2] + '</span></button>'; }).join('') + '</div>', []);
+    $('dlg-b').onclick = function (ev) {
+      var q = ev.target.closest('[data-fab]'); if (!q) return; var a = q.dataset.fab;
+      if (a === 'orc') { fecharDlg(); $('cf-novoorc').click(); }
+      else if (a === 'obra') dlgNovaObra(clienteAberto);
+      else if (a === 'pagar') dlgPagarCli();
+      else if (a === 'foto') { fecharDlg(); $('cf_cam').click(); }
+      else if (a === 'galeria') { fecharDlg(); $('f_ficheiros').click(); }
+      else if (a === 'dados') { fecharDlg(); abrirSecCli('dados'); }
+    };
+    return;
+  }
+  e.preventDefault();
+  if (b.dataset.cfa === 'orc') $('cf-novoorc').click();
+  else if (b.dataset.cfa === 'obra') dlgNovaObra(clienteAberto);
+  else if (b.dataset.cabrir) abrirSecCli(b.dataset.cabrir);
+  else if (b.dataset.cfopen) { var x = orcs.find(function (o) { return o.id === b.dataset.cfopen; }); if (x) { cur = { id: x.id, num: x.num, data: x.data, estado: x.estado || 'Por enviar', f: JSON.parse(JSON.stringify(x.f || {})), extras: JSON.parse(JSON.stringify(x.extras || [])), clienteId: x.clienteId || null, medicao: x.medicao ? JSON.parse(JSON.stringify(x.medicao)) : null }; dirty = false; toForm(cur); show('novo'); } }
+  else if (b.dataset.cfmk) { var o = orcs.find(function (z) { return z.id === b.dataset.cfmk; }); if (o) criarObraDeOrc(o); }
+  else if (b.dataset.cfpagar) { var ob = obras.find(function (z) { return z.id === b.dataset.cfpagar; }); if (ob) dlgPagarObra(ob); }
+  else if (b.dataset.cfverf) verFotoEm(b.dataset.cfverf, fotos, ['clientes', clienteAberto]);
+  else if (b.dataset.obra) abrirObra(b.dataset.obra);
+});
+$('cf_cam').addEventListener('change', async function (e) {
+  var files = [].slice.call(e.target.files || []); e.target.value = '';
+  if (!files.length || !clienteAberto) return;
+  var est = $('f-estado');
+  await enviarFotos(files, ['clientes', clienteAberto], {}, $('f_fase').value, function (t) { est.textContent = t; });
 });
 
 $('dlg-form').addEventListener('submit', function (e) { e.preventDefault(); });
