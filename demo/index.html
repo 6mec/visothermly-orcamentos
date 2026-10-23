@@ -11,6 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="VisoThermLy">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700&display=swap" rel="stylesheet">
 <style>
 [hidden]{display:none!important}
 :root{--bg:#eef2f7;--surface:#fff;--surface2:#f6f8fb;--fg:#1d2733;--muted:#5f6b7a;--line:#e1e7ef;--blue:#215b87;--blue-2:#2c74ab;--blue-t:#215b87;--deep:#163a57;--accent:#e19442;--on-accent:#1b2b3a;--accent-soft:#fdf1e3;--accent-text:#a35d17;--ok-bg:#e4f5ec;--ok:#1b6b3f;--warn-bg:#fff4d6;--warn-fg:#6b4a00;--no-bg:#fbe6e3;--no:#9b2c22;
@@ -442,6 +443,121 @@ nav.nav2 .nav-c:active{transform:scale(.92)}
 .cal-card .scrollx{overflow:visible}
 .cg-d small{font-size:.6rem}
 .tcard .grow .meta:first-of-type{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+
+/* ===== acabamento profissional ===== */
+:root{--bg:#f3f5f8;--surface:#fff;--surface2:#f5f7fa;--fg:#14202c;--muted:#64707e;--line:#e2e7ed;--line2:#eef1f5;--blue:#1d4f78;--blue-2:#2a6a9e;--blue-t:#1d4f78;--deep:#0f2a40;--accent:#df8f3c;--accent-soft:#fcf1e4;--accent-text:#9a5512;
+--shadow:0 1px 2px rgba(16,32,48,.05),0 1px 1px rgba(16,32,48,.03);--shadow2:0 4px 16px rgba(16,32,48,.08);--r:14px;
+--font:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+@media (prefers-color-scheme: dark){:root{--bg:#0b1016;--surface:#121a23;--surface2:#18222d;--fg:#e6ebf1;--muted:#8d9aa9;--line:#223040;--line2:#1c2834;--blue:#2a6496;--blue-2:#3b7fb8;--blue-t:#8bbde6;--deep:#0a1825;--accent-soft:#2e2318;--accent-text:#eeab64;--shadow:0 1px 2px rgba(0,0,0,.35);--shadow2:0 6px 20px rgba(0,0,0,.4)}}
+body{font-feature-settings:"cv11","ss01","tnum" 0;-webkit-font-smoothing:antialiased;letter-spacing:-.006em;font-size:15px}
+b,strong{font-weight:650}
+/* cabeçalho compacto e sóbrio */
+header{background:var(--deep);border-radius:0;padding:calc(10px + env(safe-area-inset-top,0px)) 16px 12px;border-bottom:1px solid rgba(255,255,255,.06)}
+.brand b{font-size:1rem;font-weight:700;letter-spacing:-.01em;gap:9px}
+.brand img{width:30px;height:30px;border-radius:8px;padding:3px;box-shadow:none}
+.chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);font-weight:600;font-size:.74rem;padding:5px 10px}
+.hero{margin-top:12px}
+.hero h1{font-size:1.32rem;font-weight:700;letter-spacing:-.02em}
+.hero p{font-size:.82rem;opacity:.65;margin-top:2px}
+main{gap:12px;padding-top:14px}
+/* superfícies */
+.card,.sec,.ob-c,.ocard,.tcard,.funil{border-radius:var(--r);border-color:var(--line);box-shadow:var(--shadow)}
+.card{padding:16px;gap:12px}
+.card h2{font-size:.95rem;font-weight:650;letter-spacing:-.01em}
+.ic,.sec-ic,.ag-ic{border-radius:10px;background:var(--surface2);color:var(--blue-t);border:1px solid var(--line2)}
+.ic{width:30px;height:30px}.ic svg{width:16px;height:16px}
+.sec-ic{width:36px;height:36px}.sec-ic svg{width:18px;height:18px}
+.sec[open] .sec-ic{background:var(--blue);color:#fff;border-color:transparent}
+.ag-ic{width:34px;height:34px}.ag-ic svg{width:17px;height:17px}
+.t-warn{background:var(--accent-soft);color:var(--accent-text);border-color:transparent}.t-ok{background:var(--ok-bg);color:var(--ok);border-color:transparent}
+.sec>summary{min-height:60px;padding:10px 14px}
+.sec-t b{font-size:.95rem;font-weight:650}
+.meta{font-size:.78rem}
+/* rótulos de secção */
+.grp-l,.sub,.kpi small,.ih-top small,.sub{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.sec-tit h2,.sec-tit b{font-size:.78rem!important;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+/* etiquetas de estado: retangulares e discretas */
+.pill{border-radius:6px;font-size:.68rem;font-weight:650;padding:3px 7px;letter-spacing:.01em;background:var(--surface2);border:1px solid var(--line)}
+.pill.ok,.pill.warn,.pill.no{border:1px solid transparent}
+/* botões */
+.btn{border-radius:10px;font-weight:650;font-size:.9rem;min-height:44px;letter-spacing:-.005em;box-shadow:0 1px 1px rgba(16,32,48,.08)}
+.btn.small{border-radius:9px;min-height:36px;padding:7px 12px;font-size:.82rem}
+.btn.ghost{border:1px solid var(--line);box-shadow:var(--shadow)}
+.btn.danger{border:1px solid var(--line);box-shadow:none}
+.btn.acc{background:var(--accent);color:#fff}
+.chip-f{border:1px solid var(--line);font-weight:600;font-size:.8rem;padding:6px 12px}
+.chip-f[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
+input,select,textarea{border:1px solid var(--line);border-radius:10px;background:var(--surface);min-height:44px}
+label{font-weight:600;font-size:.78rem}
+.search input{box-shadow:none;border-color:var(--line)}
+/* blocos escuros (topo da obra, hoje, cliente, orçamento) */
+.ohero{background:var(--deep);background-image:radial-gradient(120% 90% at 100% 0%,rgba(42,106,158,.45),transparent 60%);border-radius:16px;box-shadow:var(--shadow2);border:1px solid rgba(255,255,255,.04)}
+.oh-txt h2{font-size:1.12rem;font-weight:700}
+.oh-est{border-radius:6px;font-size:.62rem;letter-spacing:.08em;padding:3px 7px}
+.oh-est.e-warn{color:#fff}
+.oh-a{font-weight:600;font-size:.68rem;opacity:.92}
+.oh-a i{border-radius:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);width:42px;height:42px}
+.ih-top b{font-size:1.9rem;font-weight:700}
+.ih-chips button{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:10px}
+.qh-total{font-weight:700}
+.total{background:var(--deep);border-radius:12px}
+.kt-bar{height:4px}.ih-top .kt-bar,.qhero .kt-bar{height:5px}
+.a-fg{stroke:var(--accent)}
+.badge-n{border-radius:6px;min-width:22px;height:22px;font-size:.74rem;color:#fff}
+/* cartões de trabalho */
+.tcard{padding:12px 12px 12px 14px;transition:border-color .15s,transform .1s,box-shadow .15s}
+.tcard .grow b{font-size:.93rem;font-weight:650}
+.tcard.urg{border-color:var(--line);box-shadow:inset 3px 0 0 var(--accent),var(--shadow)}
+.tcard.urg::before{width:8px;height:8px;margin-top:-4px;left:-18px}
+.tl-list{border-left:1px solid var(--line);padding-left:12px}
+.et-h{margin:10px 2px -2px}
+.et-h b{font-size:.82rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.et-h small{font-size:.74rem}
+.et-n{width:22px;height:22px;border-radius:6px;font-size:.72rem;background:var(--surface);color:var(--blue-t);border:1px solid var(--line)}
+.et-c{font-size:.8rem;font-weight:700;background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:1px 7px}
+/* funil sóbrio: um só tom, concluído a verde */
+.funil{padding:12px 8px 8px}
+.fn-bar{width:100%;max-width:30px;height:40px;border-radius:5px}
+.fn-bar i,.fn-e:nth-child(5) .fn-bar i{background:var(--blue);border-radius:5px}
+.fn-e:nth-child(6) .fn-bar i{background:#2b8a52}
+.fn-e.sel{background:var(--surface2);box-shadow:inset 0 0 0 1px var(--line)}
+.fn-e b{font-size:.98rem;font-weight:700}
+.fn-e small{font-size:.58rem;font-weight:650;letter-spacing:.02em}
+/* agenda */
+.cg-d{border-radius:8px}.cg-d b{font-weight:650}
+.cg-d.hoje{background:var(--blue)}
+.cg-bar{border-radius:6px;background:var(--blue);box-shadow:none;font-weight:700;height:26px}
+.cg-bar.e-warn{background:var(--accent);color:#fff}
+.cg-vis{border-width:1.5px}
+.cg-row>span{border-left:1px solid var(--line2)}
+.dch{border-radius:10px;background:var(--surface);border:1px solid var(--line)}
+.dch.hoje{background:var(--blue);border-color:var(--blue)}
+/* navegação inferior */
+nav.nav2{background:color-mix(in srgb,var(--surface) 92%,transparent);border:1px solid var(--line);border-radius:20px;box-shadow:0 8px 28px rgba(16,32,48,.12)}
+nav.nav2 button{font-size:.68rem;font-weight:600;border-radius:14px;gap:4px}
+nav.nav2 button svg{width:22px;height:22px}
+nav.nav2 button[aria-current="page"]{background:none;color:var(--blue-t)}
+nav.nav2 button[aria-current="page"] svg{background:color-mix(in srgb,var(--blue) 12%,transparent);border-radius:9px;padding:3px;width:30px;height:28px;margin:-3px 0}
+nav.nav2 .nav-c{background:var(--blue);color:#fff;border-radius:16px;flex-basis:54px;max-width:54px;height:54px;min-height:54px;margin-top:-18px;box-shadow:0 6px 16px rgba(29,79,120,.35)}
+nav.nav2 .nav-c svg{width:24px;height:24px;stroke-width:2.4}
+/* menu Criar */
+.cr-b{border-radius:14px;background:var(--surface);box-shadow:var(--shadow)}
+.cr-i,.cr-b:nth-child(2) .cr-i{background:var(--surface2);color:var(--blue-t);border:1px solid var(--line);border-radius:10px;width:36px;height:36px}
+.cr-b:first-child .cr-i{background:var(--blue);color:#fff;border-color:transparent}
+.cr-b b{font-weight:650;font-size:.93rem}
+/* listas */
+.av{border-radius:12px;font-weight:700;width:42px;height:42px;font-size:.85rem}
+.av.big{border-radius:16px}
+.av.mini{border-radius:50%;width:26px;height:26px}
+.ic-call{border-radius:10px;width:38px;height:38px}
+.orc-r::before{width:3px}
+.lnk{font-weight:650;font-size:.85rem}
+.back{font-weight:650;font-size:.9rem}
+.strip>*{border-radius:12px}
+.foto{border-radius:10px}
+.tl-dot{width:22px;height:22px}.tl li::before{left:10px;width:1.5px}
+.toast{border-radius:10px;background:#14202c;font-weight:500}
+.empty{font-size:.88rem}
 .demo-bar{position:sticky;top:0;z-index:30;background:#e19442;color:#1b2b3a;font:700 .78rem/1.3 system-ui,sans-serif;text-align:center;padding:6px 10px}.demo-bar a{color:inherit}
 </style></head>
 <body>
@@ -801,6 +917,6 @@ nav.nav2 .nav-c:active{transform:scale(.92)}
 <script>window.VT_FIREBASE={};</script>
 <script src="/visothermly-orcamentos/VisoThermLy_App_Orcamentos/app-orcamentos/pdf-lib.min.js"></script>
 <script type="importmap">{"imports":{"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js":"/visothermly-orcamentos/demo/fb-demo.js","https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js":"/visothermly-orcamentos/demo/fb-demo.js","https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js":"/visothermly-orcamentos/demo/fb-demo.js","https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js":"/visothermly-orcamentos/demo/fb-demo.js"}}</script>
-<script type="module" src="/visothermly-orcamentos/demo/app.js?v=2"></script>
+<script type="module" src="/visothermly-orcamentos/demo/app.js?v=3"></script>
 </body>
 </html>
