@@ -62,7 +62,7 @@ function cabecalho() {
   else if (vistaAtual === 'def') { t = 'Definições'; s = 'Perfil, empresa, equipa e consumos'; }
   else if (vistaAtual === 'inicio') { var hr = new Date().getHours(); t = (hr < 13 ? 'Bom dia' : hr < 20 ? 'Boa tarde' : 'Boa noite') + (perfil.nome ? ', ' + perfil.nome.split(' ')[0] : ''); s = new Date().toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' }); }
   else if (vistaAtual === 'obras') { var nc = obras.filter(function (o) { return o.estado === 'Em curso'; }).length; t = 'Obras'; s = obras.length + (obras.length === 1 ? ' obra' : ' obras') + ' · ' + nc + ' em curso'; }
-  else if (vistaAtual === 'obra') { var ob = obras.find(function (x) { return x.id === obraAberta; }); t = ob ? ob.nome : 'Obra'; s = ob ? (ob.estado || 'Planeada') + (ob.cliente ? ' · ' + ob.cliente : '') : ''; }
+  else if (vistaAtual === 'obra') { var ob = obras.find(function (x) { return x.id === obraAberta; }); t = 'Obra'; s = ob ? (ob.estado || 'Planeada') + (ob.cliente ? ' · ' + ob.cliente : '') : ''; }
   else if (vistaAtual === 'orcs') { t = 'Orçamentos'; s = orcs.length + (orcs.length === 1 ? ' orçamento' : ' orçamentos'); }
   else if (vistaAtual === 'mais') { t = 'Mais'; s = 'Gestão da empresa'; }
   else if (vistaAtual === 'despesas') { t = 'Despesas'; s = 'Combustível, material e outros gastos'; }
@@ -1041,46 +1041,6 @@ function materiais(o) {
   if (can) L.push(['Cantoneiras com rede', fmtN(Math.ceil(can * 1.05)) + ' m', Math.ceil(can * 1.05 / 2.5) + ' barras de 2,5 m']);
   return L;
 }
-function renderObra() {
-  var o = obraAtual(); if (!o) { $('obra-corpo').innerHTML = '<p class="empty">Obra não encontrada.</p>'; return; }
-  if (vistaAtual === 'obra') cabecalho();
-  var dsp = despesas.filter(function (d) { return d.obraId === o.id; });
-  var gasto = dsp.reduce(function (a, d) { return a + (d.valor || 0); }, 0);
-  var ds = dias.filter(function (d) { return d.obraId === o.id; });
-  var nd = ds.reduce(function (a, d) { return a + (d.fracao || 1); }, 0);
-  var recebido = recebidoObra(o);
-  var f = o.fases || {}, p = progFases(o);
-  var eq = o.equipa || [];
-  var mat = materiais(o);
-  var h = '';
-  h += '<section class="card"><div class="ficha">' + avatar(o.nome, true) + '<div style="min-width:0"><h2 style="font-size:1.2rem">' + esc(o.nome || 'Obra') + '</h2><span class="meta">' + esc([o.cliente, o.morada].filter(Boolean).join(' · ')) + '</span></div></div>' +
-    '<div class="row">' + telLinks(o.telefone) + mapaLink(o.morada) + (o.clienteId ? '<button type="button" class="btn ghost small" data-oa="cliente">Pasta do cliente</button>' : '') + (o.orcamentoId ? '<button type="button" class="btn ghost small" data-oa="orc">Orçamento ' + esc(o.orcNum || '') + '</button>' : '') + '</div>' +
-    '<div class="grid">' + campoSel('ob_estado', 'Estado', EST_OBRA, o.estado || 'Planeada') + campo('ob_ini', 'Início', o.inicio, 'date') + campo('ob_fim', 'Fim previsto', o.fim, 'date') + '</div>' +
-    '<label>Equipa nesta obra</label><div class="checks">' + pessoas().map(function (n, i) { return '<label for="eq' + i + '"><input type="checkbox" id="eq' + i + '" data-eq="' + esc(n) + '"' + (eq.indexOf(n) >= 0 ? ' checked' : '') + '>' + esc(n) + '</label>'; }).join('') + (pessoas().length ? '' : '<p class="hint">Os nomes aparecem quando a equipa criar as suas contas.</p>') + '</div></section>';
-  h += '<section class="card"><h2>Contas da obra</h2><div class="kpis">' +
-    '<div class="kpi"><small>Valor acordado</small><b>' + eur(o.valor) + '</b></div>' +
-    '<div class="kpi"><small>Despesas</small><b>' + eur(gasto) + '</b></div>' +
-    '<div class="kpi falta"><small>Resultado</small><b>' + eur((o.valor || 0) - gasto) + '</b></div></div>' +
-    '<div class="facts"><span>Recebido do cliente: <strong>' + eur(recebido) + '</strong></span><span>Dias de equipa: <strong>' + fmtN(nd) + '</strong></span>' + (o.area ? '<span>Área: <strong>' + esc(o.area) + ' m²</strong></span>' : '') + '</div>' +
-    '<div class="grid">' + campo('ob_valor', 'Valor acordado (€)', o.valor ? fmtN(o.valor) : '', 'text', ' inputmode="decimal"') + campo('ob_area', 'Área (m²)', o.area, 'text', ' inputmode="decimal"') + '</div></section>';
-  h += pagamentosObraHTML(o);
-  h += '<section class="card"><div class="titulo"><h2>Fases do capoto</h2><b>' + p + ' %</b></div><div class="prog"><i style="width:' + p + '%"></i></div><div>' +
-    FASES.map(function (x) { var e = f[x[0]] || {}; return '<label class="fase" for="fs_' + x[0] + '"><input type="checkbox" id="fs_' + x[0] + '" data-fase="' + x[0] + '"' + (e.f ? ' checked' : '') + '><span><span style="color:var(--fg);font-weight:600;font-size:.95rem">' + x[1] + '</span>' + (e.f ? '<small>' + dataPT(e.d) + (e.por ? ' · ' + esc(e.por) : '') + '</small>' : '') + '</span></label>'; }).join('') + '</div></section>';
-  h += fotosObraHTML(o);
-  h += '<section class="card"><h2>Materiais para encomendar</h2><div class="grid">' + campo('ob_per', 'Perímetro de arranque (m)', o.perim, 'text', ' inputmode="decimal"') + campo('ob_can', 'Cantos e arestas (m)', o.cantos, 'text', ' inputmode="decimal"') + '</div>' +
-    (mat ? '<div>' + mat.map(function (r) { return '<div class="mrow2"><b>' + esc(r[0]) + '</b><span class="q">' + esc(r[1]) + (r[2] ? '<small>' + esc(r[2]) + '</small>' : '') + '</span></div>'; }).join('') + '</div><p class="hint">Calculado com os consumos das Definições. Confirmem com a ficha técnica e o fornecedor antes de encomendar.</p><button type="button" class="btn ghost small" data-oa="partilharmat" style="align-self:flex-start">Enviar lista ao fornecedor</button>' : '<p class="hint">Indique a área da obra para calcular o material.</p>') + '</section>';
-  h += '<section class="card"><h2>Diário de obra</h2><div class="grid">' + campo('dr_data', 'Dia', hoje(), 'date') + campoSel('dr_tipo', 'Tipo', TIPOS_DIA, 'Trabalho normal') + '</div>' + campoTxt('dr_txt', 'O que se fez / notas', '', 'Ex.: colagem da fachada norte; falta rede para amanhã') +
-    '<button type="button" class="btn ghost small" data-oa="diario" style="align-self:flex-start">Registar no diário</button><div>' +
-    (diario.length ? diario.map(function (d) { var par = /Parado|Falta/.test(d.tipo); return '<div class="aviso"><span class="dot ' + (par ? 'no' : 'info') + '"></span><span style="flex:1"><b style="font-size:.9rem">' + dataPT(d.data) + ' · ' + esc(d.tipo) + '</b><span class="meta">' + esc(d.texto || '') + (d.por ? ' — ' + esc(d.por) : '') + '</span></span><button type="button" class="btn danger small ico" data-rmdr="' + d.id + '" aria-label="Apagar registo">' + IC_DEL + '</button></div>'; }).join('') : '<p class="hint">Ainda sem registos.</p>') + '</div></section>';
-  h += '<section class="card"><div class="titulo"><h2>Dias de trabalho</h2><button type="button" class="btn small" data-oa="dia">Registar</button></div>' +
-    (ds.length ? '<div>' + agrupaDias(ds).slice(0, 15).map(function (g) { return '<div class="mrow2"><span style="flex:1;min-width:0"><b>' + dataPT(g.data) + '</b><span class="meta">' + esc(g.pessoas.join(', ')) + '</span></span><span class="q">' + fmtN(g.total) + (g.total === 1 ? ' dia' : ' dias') + '</span></div>'; }).join('') + '</div>' : '<p class="hint">Ainda sem dias registados.</p>') + '</section>';
-  h += '<section class="card"><div class="titulo"><h2>Despesas da obra</h2><button type="button" class="btn small" data-oa="despesa">Registar</button></div>' +
-    (dsp.length ? '<div>' + dsp.slice(0, 20).map(dspRow).join('') + '</div>' : '<p class="hint">Ainda sem despesas nesta obra.</p>') + '</section>';
-  h += '<section class="card">' + campoTxt('ob_notas', 'Notas da obra', o.notas, 'Acessos, onde deixar material, contactos no local…') + '<div class="row"><button type="button" class="btn ghost" data-oa="relatorio">Relatório final para o cliente</button><button type="button" class="btn danger" data-oa="apagar">Apagar obra</button></div></section>';
-  var foco = document.activeElement && document.activeElement.id;
-  $('obra-corpo').innerHTML = h;
-  if (foco && $(foco) && /^(ob_|dr_)/.test(foco)) { try { $(foco).focus(); } catch (e) {} }
-}
 function updObra(d) { if (!obraAberta) return; var o = obraAtual(); if (o) Object.assign(o, d); d.atualizadoEm = serverTimestamp(); updateDoc(doc(db, 'obras', obraAberta), d).catch(function (e) { falhou(e, 'guardar a obra'); }); }
 $('obra-corpo').addEventListener('change', function (e) {
   var t = e.target, o = obraAtual(); if (!o) return;
@@ -1729,6 +1689,187 @@ async function relatorioPDF(o, msg, comFotos) {
   }
   await P.fim('Relatorio_obra_' + nomeFich(o.nome || 'obra') + '.pdf');
 }
+
+// =====================================================================
+// PÁGINA DA OBRA (painel dinâmico)
+// =====================================================================
+var secAbertas = { pag: false, fases: true, fotos: false, mat: false, diario: false, dias: false, dsp: false, det: false };
+var SV = function (d) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>'; };
+var ICO = {
+  tel: SV('<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/>'),
+  wa: SV('<path d="M21 11.5a8.4 8.4 0 0 1-12.5 7.3L3 20.5l1.8-5.3A8.4 8.4 0 1 1 21 11.5z"/>'),
+  mapa: SV('<path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>'),
+  cli: SV('<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>'),
+  doc: SV('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/>'),
+  eur: SV('<path d="M18 7a7 7 0 1 0 0 10M4 10h9M4 14h9"/>'),
+  fases: SV('<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'),
+  cam: SV('<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>'),
+  caixa: SV('<path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.7z"/><path d="M3.3 7L12 12l8.7-5M12 22V12"/>'),
+  livro: SV('<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/><path d="M20 17v5H6.5A2.5 2.5 0 0 1 4 19.5"/>'),
+  equipa: SV('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>'),
+  recibo: SV('<path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 1 1V2l-1 1-3-2-3 2-3-2-3 2-3-2z"/><path d="M8 8h8M8 12h8M8 16h5"/>'),
+  ajustes: SV('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'),
+  cal: SV('<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>'),
+  flag: SV('<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/>'),
+  mais: SV('<path d="M12 5v14M5 12h14"/>')
+};
+function anel(p) { var c = 2 * Math.PI * 30; return '<svg class="anel" viewBox="0 0 72 72" aria-hidden="true"><circle cx="36" cy="36" r="30" class="a-bg"/><circle cx="36" cy="36" r="30" class="a-fg" stroke-dasharray="' + c.toFixed(1) + '" stroke-dashoffset="' + (c * (1 - p / 100)).toFixed(1) + '"/></svg><b>' + p + '%</b>'; }
+function sec(id, ic, titulo, resumo, corpo, tom) {
+  return '<details class="sec" data-sec="' + id + '"' + (secAbertas[id] ? ' open' : '') + '><summary><span class="sec-ic">' + ic + '</span><span class="sec-t"><b>' + titulo + '</b><span class="meta">' + resumo + '</span></span>' + (tom ? pill(tom[0], tom[1]) : '') + '</summary><div class="sec-b">' + corpo + '</div></details>';
+}
+function proximaFase(o) { var f = o.fases || {}; return FASES.find(function (x) { return !(f[x[0]] && f[x[0]].f); }); }
+
+function renderObra() {
+  var o = obraAtual(); if (!o) { $('obra-corpo').innerHTML = '<p class="empty">Obra não encontrada.</p>'; return; }
+  if (vistaAtual === 'obra') cabecalho();
+  var dsp = despesas.filter(function (d) { return d.obraId === o.id; });
+  var gasto = dsp.reduce(function (a, d) { return a + (d.valor || 0); }, 0);
+  var ds = dias.filter(function (d) { return d.obraId === o.id; });
+  var nd = ds.reduce(function (a, d) { return a + (d.fracao || 1); }, 0);
+  var rec = recebidoObra(o), falta = Math.max((o.valor || 0) - rec, 0);
+  var f = o.fases || {}, p = progFases(o), prox = proximaFase(o);
+  var nfeitas = FASES.filter(function (x) { return f[x[0]] && f[x[0]].f; }).length;
+  var ep = estadoPlano(o), devida = ep.find(function (e) { return e.devida && e.falta > 0.005; });
+  var eq = o.equipa || [], mat = materiais(o), est = o.estado || 'Planeada';
+  var tel = String(o.telefone || '').replace(/[^\d+]/g, ''), wa = tel.replace(/^\+/, ''); if (wa.length === 9) wa = '351' + wa;
+  var h = '<input id="of_cam" type="file" accept="image/*" capture="environment" hidden><input id="of_gal" type="file" accept="image/*" multiple hidden>';
+
+  // --- topo ---
+  var datas = o.inicio ? dataPT(o.inicio) + (o.fim ? ' → ' + dataPT(o.fim) : '') : 'Sem datas marcadas';
+  var acts = '';
+  if (tel) acts += '<a class="oh-a" href="tel:' + tel + '"><i>' + ICO.tel + '</i>Ligar</a><a class="oh-a" href="https://wa.me/' + wa + '" target="_blank" rel="noopener"><i>' + ICO.wa + '</i>WhatsApp</a>';
+  if (o.morada) acts += '<a class="oh-a" href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(o.morada) + '" target="_blank" rel="noopener"><i>' + ICO.mapa + '</i>Mapa</a>';
+  if (o.clienteId) acts += '<button type="button" class="oh-a" data-oa="cliente"><i>' + ICO.cli + '</i>Cliente</button>';
+  if (o.orcamentoId) acts += '<button type="button" class="oh-a" data-oa="orc"><i>' + ICO.doc + '</i>Orçamento</button>';
+  acts += '<button type="button" class="oh-a" data-oa="relatorio"><i>' + ICO.recibo + '</i>Relatório</button>';
+  h += '<section class="ohero"><div class="oh-top"><div class="oh-ring">' + anel(p) + '</div><div class="oh-txt"><span class="oh-est e-' + obraCls(est) + '">' + esc(est) + '</span><h2>' + esc(o.nome || 'Obra') + '</h2><p>' + esc([o.cliente, o.morada].filter(Boolean).join(' · ')) + '</p><p class="oh-d">' + ICO.cal + esc(datas) + '</p></div></div><div class="oh-acts">' + acts + '</div></section>';
+
+  // --- o que fazer agora ---
+  var ag = [];
+  if (!o.inicio && est !== 'Concluída') ag.push(['cal', 'info', 'Marcar as datas da obra', 'Para aparecer na agenda da equipa.', '<button type="button" class="btn small ghost" data-abrir="det">Definir</button>']);
+  if (devida) ag.push(['eur', 'warn', 'Cobrar ' + eur(devida.falta), (devida.t.d || 'Pagamento') + ' · ' + quandoTxt(devida.t), '<button type="button" class="btn small acc" data-oa="pagar">Registar</button>']);
+  if (prox && est !== 'Concluída') ag.push(['fases', 'blue', (nfeitas ? 'Próxima fase' : 'Primeira fase'), prox[1], '<button type="button" class="btn small" data-fasefeita="' + prox[0] + '">Feita</button>']);
+  if (!prox && est !== 'Concluída') ag.push(['flag', 'ok', 'Todas as fases feitas', 'Dar a obra como concluída?', '<button type="button" class="btn small" data-concluir="1">Concluir</button>']);
+  if (est === 'Concluída' && falta > 0.005) ag.push(['eur', 'warn', 'Falta receber ' + eur(falta), 'Obra concluída com valores em aberto.', '<button type="button" class="btn small acc" data-oa="pagar">Registar</button>']);
+  if (est === 'Concluída' && !falta) ag.push(['recibo', 'ok', 'Obra concluída e paga', 'Entregue o relatório final ao cliente.', '<button type="button" class="btn small ghost" data-oa="relatorio">Relatório</button>']);
+  if (ag.length) h += '<section class="card agora"><h2>Agora</h2>' + ag.map(function (a) { return '<div class="ag-r"><span class="ag-ic t-' + a[1] + '">' + ICO[a[0]] + '</span><span class="ag-t"><b>' + esc(a[2]) + '</b><span class="meta">' + esc(a[3]) + '</span></span>' + a[4] + '</div>'; }).join('') + '</section>';
+
+  // --- números ---
+  h += '<div class="kgrid">' +
+    '<button type="button" class="ktile dest" data-abrir="pag"><small>Recebido</small><b>' + eur(rec) + '</b><span class="kt-s">' + (o.valor ? 'de ' + eur(o.valor) : 'Sem valor acordado') + '</span><span class="kt-bar"><i style="width:' + (o.valor ? Math.min(100, Math.round(rec / o.valor * 100)) : 0) + '%"></i></span></button>' +
+    '<button type="button" class="ktile" data-abrir="dsp"><small>Resultado</small><b class="' + ((o.valor || 0) - gasto < 0 ? 'neg' : '') + '">' + eur((o.valor || 0) - gasto) + '</b><span class="kt-s">Despesas ' + eur(gasto) + '</span></button>' +
+    '<button type="button" class="ktile" data-abrir="dias"><small>Dias de equipa</small><b>' + fmtN(nd) + '</b><span class="kt-s">' + (eq.length ? esc(eq.join(', ')) : 'Equipa por definir') + '</span></button>' +
+    '<button type="button" class="ktile" data-abrir="mat"><small>Área</small><b>' + (o.area ? esc(String(o.area).replace('.', ',')) + ' m²' : '—') + '</b><span class="kt-s">' + (o.iso || o.esp ? esc([o.iso, o.esp ? o.esp + ' cm' : ''].filter(Boolean).join(' · ')) : 'Ver material') + '</span></button></div>';
+
+  // --- fotos em fita ---
+  h += '<div class="strip"><label class="strip-add" for="of_cam" aria-label="Tirar fotografia">' + ICO.cam + '<span>Foto</span></label>' + fotosObra.slice(0, 14).map(function (ft) { return '<a href="#" data-verfo="' + ft.id + '"><img src="' + esc(ft.thumb || ft.url || '') + '" alt="Fotografia ' + esc(ft.fase || '') + '" style="pointer-events:none"></a>'; }).join('') + (fotosObra.length > 14 ? '<button type="button" class="strip-mais" data-abrir="fotos">+' + (fotosObra.length - 14) + '</button>' : '') + '</div>';
+  if (estadoFotoObra) h += '<p class="hint" id="of-estado">' + esc(estadoFotoObra) + '</p>';
+
+  // --- secções ---
+  // pagamentos
+  var pc = '<div class="row"><button type="button" class="btn small" data-oa="pagar"' + (o.clienteId ? '' : ' disabled') + '>Registar pagamento</button><button type="button" class="btn ghost small" data-oa="plano">' + (ep.length ? 'Alterar plano' : 'Definir plano') + '</button></div>';
+  if (!o.clienteId) pc += '<p class="hint">Esta obra não tem cliente associado.</p>';
+  if (ep.length) {
+    var soma = (o.plano || []).reduce(function (a, t) { return a + (t.v || 0); }, 0);
+    pc += '<div>' + ep.map(function (e) {
+      var st = e.falta <= 0.005 ? pill('Pago', 'ok') : e.devida ? pill('Cobrar ' + eur(e.falta), 'warn') : e.pago > 0 ? pill('Falta ' + eur(e.falta)) : pill('Por cobrar');
+      return '<div class="mrow2"><span style="flex:1;min-width:0"><b>' + esc(e.t.d || 'Pagamento') + ' · ' + eur(e.t.v) + '</b><span class="meta">' + esc(quandoTxt(e.t)) + '</span></span><span class="q">' + st + '</span></div>';
+    }).join('') + '</div>';
+    if (o.valor && Math.abs(soma - o.valor) > 0.01) pc += '<p class="hint">O plano soma ' + eur(soma) + ' e o valor acordado é ' + eur(o.valor) + '.</p>';
+  } else pc += '<p class="hint">Defina quando o cliente paga (por exemplo 30 % na adjudicação, 40 % a meio, 30 % no fim). A app avisa quando chega a altura de cobrar.</p>';
+  var ps = pagsObra(o);
+  if (ps.length) pc += '<b class="sub">Recebido</b><div>' + ps.slice().reverse().map(function (x) { return '<div class="mrow2"><span style="flex:1;min-width:0"><b>' + eur(x.valor) + '</b><span class="meta">' + dataPT(x.data) + (x.descricao ? ' · ' + esc(x.descricao) : '') + '</span></span><button type="button" class="btn ghost small" data-recp="' + x.id + '">Recibo</button></div>'; }).join('') + '</div>';
+  h += sec('pag', ICO.eur, 'Pagamentos', falta > 0.005 ? 'Falta receber ' + eur(falta) : (o.valor ? 'Tudo recebido' : 'Sem valor acordado'), pc, devida ? ['Cobrar', 'warn'] : null);
+
+  // fases
+  var fc = '<div class="prog"><i style="width:' + p + '%"></i></div><ol class="tl">' + FASES.map(function (x) {
+    var e = f[x[0]] || {};
+    return '<li class="' + (e.f ? 'ok' : '') + (prox && prox[0] === x[0] ? ' prox' : '') + '"><label for="fs_' + x[0] + '"><input type="checkbox" id="fs_' + x[0] + '" data-fase="' + x[0] + '"' + (e.f ? ' checked' : '') + '><span class="tl-dot"></span><span class="tl-t"><b>' + x[1] + '</b>' + (e.f ? '<small>' + dataPT(e.d) + (e.por ? ' · ' + esc(e.por) : '') + '</small>' : '') + '</span></label></li>';
+  }).join('') + '</ol>';
+  h += sec('fases', ICO.fases, 'Fases do capoto', nfeitas + ' de ' + FASES.length + ' feitas' + (prox ? ' · a seguir: ' + prox[1].toLowerCase() : ''), fc);
+
+  // fotografias
+  var fo = '<div class="row" style="align-items:flex-end"><label for="of_fase" style="flex:1 1 120px">Fase das próximas fotos<select id="of_fase">' + opts(FASES_FOTO, faseFotoObra) + '</select></label><label class="btn" for="of_cam" style="color:#fff">' + ICO.cam + 'Tirar</label><label class="btn ghost" for="of_gal">Galeria</label></div>';
+  if (fotosObra.length) {
+    fo += '<div class="seg"><button type="button" data-fv="todas" aria-selected="' + (vistaFotoObra === 'todas') + '">Todas</button><button type="button" data-fv="ad" aria-selected="' + (vistaFotoObra === 'ad') + '">Antes e depois</button></div>';
+    if (vistaFotoObra === 'ad') {
+      var an = fotosObra.filter(function (x) { return x.fase === 'Antes' || x.fase === 'Visita'; }), de = fotosObra.filter(function (x) { return x.fase === 'Depois'; });
+      fo += '<div class="ad"><div><b>Antes</b><div class="fotos">' + (an.map(function (x) { return fotoCel(x, 'data-verfo', 'data-rmfo'); }).join('') || '<p class="hint">Sem fotos.</p>') + '</div></div><div><b>Depois</b><div class="fotos">' + (de.map(function (x) { return fotoCel(x, 'data-verfo', 'data-rmfo'); }).join('') || '<p class="hint">Sem fotos.</p>') + '</div></div></div>';
+    } else fo += '<div class="fotos">' + fotosObra.map(function (x) { return fotoCel(x, 'data-verfo', 'data-rmfo'); }).join('') + '</div>';
+  } else fo += '<p class="hint">Tirem fotos antes de começar e no fim: entram no relatório para o cliente.</p>';
+  h += sec('fotos', ICO.cam, 'Fotografias', fotosObra.length ? fotosObra.length + (fotosObra.length === 1 ? ' fotografia' : ' fotografias') : 'Ainda sem fotos', fo);
+
+  // material
+  var mc = '<div class="grid">' + campo('ob_area', 'Área (m²)', o.area, 'text', ' inputmode="decimal"') + campo('ob_per', 'Perímetro de arranque (m)', o.perim, 'text', ' inputmode="decimal"') + campo('ob_can', 'Cantos e arestas (m)', o.cantos, 'text', ' inputmode="decimal"') + '</div>' +
+    (mat ? '<div>' + mat.map(function (r) { return '<div class="mrow2"><b>' + esc(r[0]) + '</b><span class="q">' + esc(r[1]) + (r[2] ? '<small>' + esc(r[2]) + '</small>' : '') + '</span></div>'; }).join('') + '</div><p class="hint">Calculado com os consumos das Definições. Confirmem com a ficha técnica e o fornecedor antes de encomendar.</p><button type="button" class="btn ghost small" data-oa="partilharmat" style="align-self:flex-start">Enviar lista ao fornecedor</button>' : '<p class="hint">Indique a área da obra para calcular o material.</p>');
+  h += sec('mat', ICO.caixa, 'Material', mat ? mat.length + ' materiais calculados' : 'Indique a área para calcular', mc);
+
+  // diário
+  var dc = '<button type="button" class="btn small" data-oa="novodiario" style="align-self:flex-start">Nova entrada</button>' + (diario.length ? '<div>' + diario.map(function (d) { var par = /Parado|Falta/.test(d.tipo); return '<div class="aviso"><span class="dot ' + (par ? 'no' : 'info') + '"></span><span style="flex:1"><b style="font-size:.9rem">' + dataPT(d.data) + ' · ' + esc(d.tipo) + '</b><span class="meta">' + esc(d.texto || '') + (d.por ? ' — ' + esc(d.por) : '') + '</span></span><button type="button" class="btn danger small ico" data-rmdr="' + d.id + '" aria-label="Apagar registo">' + IC_DEL + '</button></div>'; }).join('') + '</div>' : '<p class="hint">Registem o que se fez em cada dia e os dias parados por chuva ou frio.</p>');
+  var parados = diario.filter(function (d) { return /Parado/.test(d.tipo); }).length;
+  h += sec('diario', ICO.livro, 'Diário de obra', diario.length ? diario.length + (diario.length === 1 ? ' registo' : ' registos') + ' · último a ' + dataPT(diario[0].data) + (parados ? ' · ' + parados + ' parado' + (parados === 1 ? '' : 's') : '') : 'Sem registos', dc);
+
+  // dias
+  var dd = '<button type="button" class="btn small" data-oa="dia" style="align-self:flex-start">Registar dia</button>' + (ds.length ? '<div>' + agrupaDias(ds).slice(0, 20).map(function (g) { return '<div class="mrow2"><span style="flex:1;min-width:0"><b>' + dataPT(g.data) + '</b><span class="meta">' + esc(g.pessoas.join(', ')) + '</span></span><span class="q">' + fmtN(g.total) + (g.total === 1 ? ' dia' : ' dias') + '</span></div>'; }).join('') + '</div>' : '<p class="hint">Ainda sem dias registados.</p>');
+  h += sec('dias', ICO.equipa, 'Equipa e dias', fmtN(nd) + (nd === 1 ? ' dia' : ' dias') + ' de trabalho', dd);
+
+  // despesas
+  var dpc = '<button type="button" class="btn small" data-oa="despesa" style="align-self:flex-start">Registar despesa</button>' + (dsp.length ? '<div>' + dsp.slice(0, 30).map(dspRow).join('') + '</div>' : '<p class="hint">Ainda sem despesas nesta obra.</p>');
+  h += sec('dsp', ICO.recibo, 'Despesas', dsp.length ? eur(gasto) + ' em ' + dsp.length + (dsp.length === 1 ? ' despesa' : ' despesas') : 'Sem despesas', dpc);
+
+  // detalhes
+  var dt = '<div class="grid">' + campoSel('ob_estado', 'Estado', EST_OBRA, est) + campo('ob_ini', 'Início', o.inicio, 'date') + campo('ob_fim', 'Fim previsto', o.fim, 'date') + campo('ob_valor', 'Valor acordado (€)', o.valor ? fmtN(o.valor) : '', 'text', ' inputmode="decimal"') + '</div>' +
+    '<label>Equipa nesta obra</label><div class="checks">' + pessoas().map(function (n, i) { return '<label for="eq' + i + '"><input type="checkbox" id="eq' + i + '" data-eq="' + esc(n) + '"' + (eq.indexOf(n) >= 0 ? ' checked' : '') + '>' + esc(n) + '</label>'; }).join('') + (pessoas().length ? '' : '<p class="hint">Os nomes aparecem quando a equipa criar as suas contas.</p>') + '</div>' +
+    campoTxt('ob_notas', 'Notas da obra', o.notas, 'Acessos, onde deixar material, contactos no local…') +
+    '<div class="row"><button type="button" class="btn ghost" data-oa="relatorio">Relatório final para o cliente</button><button type="button" class="btn danger" data-oa="apagar">Apagar obra</button></div>';
+  h += sec('det', ICO.ajustes, 'Detalhes da obra', 'Estado, datas, equipa, valor e notas', dt);
+
+  h += '<button type="button" class="fab" data-oa="fab" aria-label="Adicionar à obra">' + ICO.mais + '</button>';
+
+  var foco = document.activeElement && document.activeElement.id;
+  $('obra-corpo').innerHTML = h;
+  if (foco && $(foco) && /^(ob_|dr_)/.test(foco)) { try { $(foco).focus(); } catch (e) {} }
+}
+$('obra-corpo').addEventListener('toggle', function (e) { var d = e.target; if (d && d.dataset && d.dataset.sec) secAbertas[d.dataset.sec] = d.open; }, true);
+function marcarFase(o, k, feito) {
+  var f = Object.assign({}, o.fases || {}); f[k] = feito ? { f: true, d: hoje(), por: porQuem() } : { f: false };
+  var d = { fases: f }; if (feito && (o.estado || 'Planeada') === 'Planeada') d.estado = 'Em curso';
+  updObra(d); renderObra();
+}
+function dlgDiario(o) {
+  var corpo = '<div class="grid">' + campo('dr_data', 'Dia', hoje(), 'date') + campoSel('dr_tipo', 'Tipo', TIPOS_DIA, 'Trabalho normal') + '</div>' + campoTxt('dr_txt', 'O que se fez / notas', '', 'Ex.: colagem da fachada norte; falta rede para amanhã');
+  abrirDlg('Diário de obra', corpo, [{ txt: 'Registar', cls: 'acc', fn: function () {
+    var txt = val('dr_txt'), tipo = val('dr_tipo');
+    if (!txt && tipo === 'Trabalho normal') { toast('Escreva o que se fez.'); return false; }
+    setDoc(doc(collection(db, 'obras', o.id, 'diario')), { data: val('dr_data') || hoje(), tipo: tipo, texto: txt, por: porQuem(), criadoEm: serverTimestamp() }).catch(function (er) { falhou(er, 'registar no diário'); });
+    secAbertas.diario = true; toast('Registado no diário.');
+  } }]);
+}
+function dlgFab(o) {
+  var it = [['foto', 'cam', 'Fotografia'], ['dia', 'equipa', 'Dia de trabalho'], ['despesa', 'recibo', 'Despesa'], ['pagar', 'eur', 'Pagamento'], ['diario', 'livro', 'Nota no diário'], ['fase', 'fases', 'Fase feita']];
+  abrirDlg('Adicionar à obra', '<div class="qa fabg">' + it.map(function (x) { return '<button type="button" class="qbtn" data-fab="' + x[0] + '">' + ICO[x[1]] + '<span>' + x[2] + '</span></button>'; }).join('') + '</div>', []);
+  $('dlg-b').onclick = function (e) {
+    var b = e.target.closest('[data-fab]'); if (!b) return;
+    var a = b.dataset.fab;
+    if (a === 'foto') { fecharDlg(); $('of_cam').click(); }
+    else if (a === 'dia') dlgDia(o.id);
+    else if (a === 'despesa') dlgDespesa(null, o.id);
+    else if (a === 'pagar') { if (!o.clienteId) { toast('Esta obra não tem cliente associado.'); return; } dlgPagarObra(o); }
+    else if (a === 'diario') dlgDiario(o);
+    else if (a === 'fase') { var px = proximaFase(o); fecharDlg(); if (px) { marcarFase(o, px[0], true); toast('Fase feita: ' + px[1] + '.'); } else toast('Todas as fases já estão feitas.'); }
+  };
+}
+$('obra-corpo').addEventListener('click', function (e) {
+  var o = obraAtual(); if (!o) return;
+  var b = e.target.closest('[data-abrir],[data-fasefeita],[data-concluir],[data-oa="fab"],[data-oa="novodiario"]'); if (!b) return;
+  if (b.dataset.abrir) {
+    var k = b.dataset.abrir; secAbertas[k] = true; renderObra();
+    var el = document.querySelector('#obra-corpo [data-sec="' + k + '"]'); if (el) { el.open = true; setTimeout(function () { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30); }
+  } else if (b.dataset.fasefeita) { var nm = (FASES.find(function (x) { return x[0] === b.dataset.fasefeita; }) || [])[1]; marcarFase(o, b.dataset.fasefeita, true); toast('Fase feita: ' + nm + '.'); }
+  else if (b.dataset.concluir) { updObra({ estado: 'Concluída', fim: o.fim && o.fim <= hoje() ? o.fim : hoje() }); renderObra(); toast('Obra concluída.'); }
+  else if (b.dataset.oa === 'fab') dlgFab(o);
+  else if (b.dataset.oa === 'novodiario') dlgDiario(o);
+});
 
 $('dlg-form').addEventListener('submit', function (e) { e.preventDefault(); });
 
