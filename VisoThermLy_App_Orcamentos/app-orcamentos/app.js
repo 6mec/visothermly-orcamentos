@@ -51,8 +51,21 @@ function recalcSettings() {
 }
 
 // ---------- navegação ----------
+var vistaAtual = 'clientes';
+function iniciais(n) { var p = String(n || '?').trim().split(/\s+/); return ((p[0] || '?')[0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase(); }
+function corDe(s) { var h = 0; s = String(s || ''); for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360; return 'hsl(' + h + ',45%,42%)'; }
+function avatar(nome, big) { return '<span class="av' + (big ? ' big' : '') + '" style="background:' + corDe(nome) + '">' + esc(iniciais(nome)) + '</span>'; }
+function cabecalho() {
+  var t = 'Clientes', s = clientes.length + (clientes.length === 1 ? ' cliente' : ' clientes') + ' · ' + orcs.length + (orcs.length === 1 ? ' orçamento' : ' orçamentos');
+  if (vistaAtual === 'cliente') { var c = clientes.find(function (x) { return x.id === clienteAberto; }); t = clienteAberto ? (c && c.nome || 'Cliente') : 'Novo cliente'; s = 'Pasta do cliente'; }
+  else if (vistaAtual === 'novo') { t = cur && cur.num ? 'Orçamento ' + cur.num : 'Novo orçamento'; s = cur && cur.f && cur.f.c_nome ? cur.f.c_nome : 'Capoto & isolamento térmico'; }
+  else if (vistaAtual === 'def') { t = 'Definições'; s = 'Perfil, empresa e equipa'; }
+  $('h-titulo').textContent = t; $('h-sub').textContent = s;
+}
 function show(v) {
+  vistaAtual = v;
   ['clientes', 'cliente', 'novo', 'def'].forEach(function (x) { $('v-' + x).hidden = x !== v; });
+  cabecalho();
   var navV = v === 'cliente' ? 'clientes' : v;
   document.querySelectorAll('nav button').forEach(function (b) { if (b.dataset.v === navV) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
   window.scrollTo(0, 0);
@@ -202,6 +215,7 @@ $('c_sel').addEventListener('change', function () {
     $('linhas').innerHTML = h;
     $('t-lbl').textContent = r.taxa ? 'Total com IVA' : 'Total';
     $('t-val').textContent = eur(r.total);
+    $('bt-val').textContent = eur(r.total); $('bt-lbl').textContent = r.taxa ? 'Total com IVA' : 'Total';
     $('facts').innerHTML = r.info.map(function (x) { return '<span>' + esc(x[0]) + ': <strong>' + esc(x[1]) + '</strong></span>'; }).join('');
     var fb = $('falta');
     fb.hidden = !r.falta.length;
@@ -255,7 +269,9 @@ async function guardar() {
     return true;
   } finally { btn.disabled = false; }
 }
-$('b-guardar').addEventListener('click', function () { guardar(); });
+$('b-guardar').addEventListener('click', function () { guardar().then(cabecalho); });
+$('bt-guardar').addEventListener('click', function () { guardar().then(cabecalho); });
+$('bt-pdf').addEventListener('click', function () { $('b-pdf').click(); });
 $('b-novo').addEventListener('click', function () {
   if (dirty && !confirm('Este orçamento tem alterações por guardar. Começar um novo na mesma?')) return;
   cur = blankQuote(); dirty = false; lsSet(K_DRAFT, { q: cur, dirty: false }); toForm(cur); window.scrollTo(0, 0);
@@ -439,16 +455,19 @@ function pillEstado(e) {
   var cls = e === 'Aceite' || e === 'Concluído' ? 'ok' : e === 'Recusado' ? 'no' : e === 'Enviado' ? 'warn' : '';
   return '<span class="pill ' + cls + '">' + esc(e || 'Por enviar') + '</span>';
 }
+var IC_DUP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+var IC_DEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>';
+function estClasse(e) { return e === 'Aceite' || e === 'Concluído' ? 'ok' : e === 'Recusado' ? 'no' : e === 'Enviado' ? 'warn' : 'neutro'; }
 function orcHTML(items, mostrarCliente) {
   if (!items.length) return '<p class="empty">Ainda não há orçamentos.</p>';
   return items.map(function (x) {
     return '<div class="item"><div class="item-top"><b>' + esc(mostrarCliente ? (x.cliente || 'Sem nome') : 'N.º ' + x.num) + '</b><span>' + eur(x.total) + '</span></div>' +
       '<div class="meta">' + (mostrarCliente ? 'N.º ' + esc(x.num) + ' · ' : '') + dataPT(x.data) + (x.morada ? ' · ' + esc(x.morada) : '') + (x.atualizadoPor ? ' · por ' + esc(x.atualizadoPor) : '') + '</div>' +
-      '<div class="row" style="align-items:center"><label for="st' + x.id + '" style="flex:1 1 140px">Estado<select id="st' + x.id + '" data-st="' + x.id + '">' +
-      ESTADOS.map(function (e) { return '<option' + (e === (x.estado || 'Por enviar') ? ' selected' : '') + '>' + e + '</option>'; }).join('') + '</select></label>' +
+      '<div class="oacts"><label for="st' + x.id + '" class="sr">Estado</label><select id="st' + x.id + '" data-st="' + x.id + '" class="est est-' + estClasse(x.estado) + '">' +
+      ESTADOS.map(function (e) { return '<option' + (e === (x.estado || 'Por enviar') ? ' selected' : '') + '>' + e + '</option>'; }).join('') + '</select>' +
       '<button type="button" class="btn small" data-open="' + x.id + '">Abrir</button>' +
-      '<button type="button" class="btn ghost small" data-dup="' + x.id + '">Duplicar</button>' +
-      '<button type="button" class="btn danger small" data-rm="' + x.id + '">Apagar</button></div></div>';
+      '<button type="button" class="btn ghost small ico" data-dup="' + x.id + '" aria-label="Duplicar" title="Duplicar">' + IC_DUP + '</button>' +
+      '<button type="button" class="btn danger small ico" data-rm="' + x.id + '" aria-label="Apagar" title="Apagar">' + IC_DEL + '</button></div></div>';
   }).join('');
 }
 function ligarListaOrc(box) {
@@ -485,10 +504,11 @@ function renderClientes() {
   var items = clientes.filter(function (c) { return !q || ((c.nome || '') + ' ' + (c.telefone || '') + ' ' + (c.morada || '')).toLowerCase().indexOf(q) >= 0; });
   $('cli-lista').innerHTML = items.length ? items.map(function (c) {
     var os = orcs.filter(function (o) { return o.clienteId === c.id; });
-    return '<button type="button" class="cli" data-cli="' + c.id + '"><span><b>' + esc(c.nome || 'Sem nome') + '</b><span class="meta">' + esc([c.telefone, c.morada].filter(Boolean).join(' · ') || 'Sem contactos') + '</span></span>' +
+    return '<button type="button" class="cli" data-cli="' + c.id + '"><span class="cli-l">' + avatar(c.nome) + '<span style="min-width:0"><b>' + esc(c.nome || 'Sem nome') + '</b><span class="meta">' + esc([c.telefone, c.morada].filter(Boolean).join(' · ') || 'Sem contactos') + '</span></span></span>' +
       '<span style="text-align:right">' + (os.length ? pillEstado(os[0].estado) : '<span class="pill">Sem orçamentos</span>') + '</span></button>';
   }).join('') : '<p class="empty">' + (clientes.length ? 'Nenhum cliente encontrado.' : 'Ainda não há clientes. Carregue em "Novo cliente" ou guarde um orçamento.') + '</p>';
   $('orc-todos').innerHTML = orcHTML(orcs.slice(0, 40), true);
+  cabecalho();
 }
 $('cli_filtro').addEventListener('input', renderClientes);
 $('cli-lista').addEventListener('click', function (e) { var b = e.target.closest('[data-cli]'); if (b) abrirCliente(b.dataset.cli); });
@@ -503,7 +523,9 @@ function abrirCliente(id) {
   $('cf-titulo').textContent = id ? (c.nome || 'Cliente') : 'Novo cliente';
   $('cf_nome').value = c.nome || ''; $('cf_tel').value = c.telefone || ''; $('cf_email').value = c.email || '';
   $('cf_nif').value = c.nif || ''; $('cf_morada').value = c.morada || ''; $('cf_notas').value = c.notas || '';
+  $('cf-det').open = !id;
   $('cf-apagar').hidden = !id;
+  fichaTopo(c);
   ['cf-resumo'].forEach(function (s) { $(s).hidden = !id; });
   document.querySelectorAll('#v-cliente > section.card').forEach(function (s, i) { if (i > 0) s.hidden = !id; });
   $('cf-pags').innerHTML = ''; $('cf-fotos').innerHTML = ''; $('f-estado').textContent = '';
@@ -520,10 +542,22 @@ function abrirCliente(id) {
   show('cliente');
   if (!id) $('cf_nome').focus();
 }
+function fichaTopo(c) {
+  c = c || {};
+  var av = $('cf-av'); av.textContent = iniciais(c.nome || '+'); av.style.background = corDe(c.nome || '');
+  $('cf-sub').textContent = [c.telefone, c.morada].filter(Boolean).join(' · ') || (clienteAberto ? 'Sem contactos' : 'Preencha os dados e guarde');
+  var tel = String(c.telefone || '').replace(/[^\d+]/g, '');
+  $('cf-acoes').hidden = !tel;
+  if (tel) {
+    $('cf-ligar').href = 'tel:' + tel;
+    var wa = tel.replace(/^\+/, ''); if (wa.length === 9) wa = '351' + wa;
+    $('cf-wa').href = 'https://wa.me/' + wa;
+  }
+}
 function renderCliente() {
   if (!clienteAberto) return;
   var c = clientes.find(function (x) { return x.id === clienteAberto; });
-  if (c) $('cf-titulo').textContent = c.nome || 'Cliente';
+  if (c) { $('cf-titulo').textContent = c.nome || 'Cliente'; fichaTopo(c); cabecalho(); }
   $('cf-orcs').innerHTML = orcHTML(orcs.filter(function (o) { return o.clienteId === clienteAberto; }), false);
   renderKpis();
 }
