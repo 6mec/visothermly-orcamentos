@@ -1,19 +1,23 @@
 // VisoThermLy · versão de teste: base de dados falsa guardada só neste aparelho
-const KEY = 'vt-demo-v1';
+const KEY = 'vt-demo-v5';
 const H = n => { const d = new Date(Date.now() + n * 864e5); return d.toISOString().slice(0, 10); };
 function exemplo() {
   const S = {};
   S['membros/u1'] = { nome: 'Daniel (teste)', email: 'teste@visothermly.pt', telefone: '967 250 612', codigo: 'VT-4SA4QK' };
   S['membros/u2'] = { nome: 'André' }; S['membros/u3'] = { nome: 'Yuri' }; S['membros/u4'] = { nome: 'Ismael' };
-  S['config/geral'] = { s_nome: 'VisoThermLy', s_resp: 'André Araújo', s_tel: '969 251 726', s_validade: '30', s_iva: '0' };
+  S['config/geral'] = { s_nome: 'VisoThermLy', s_resp: 'André Araújo', s_tel: '969 251 726', s_validade: '30', s_iva: '0', s_custoj: '80', s_pessoas: '3' };
   S['clientes/c1'] = { nome: 'Maria Costa', telefone: '912345678', morada: 'Rua das Flores 12, Viseu', nif: '234567890', email: 'maria@exemplo.pt' };
   S['clientes/c2'] = { nome: 'José Ferreira', telefone: '913222111', morada: 'Av. da Europa 40, Mangualde' };
   S['clientes/c3'] = { nome: 'Ana Lopes', telefone: '915000111', morada: 'Rua do Castelo 3, Tondela' };
   const f1 = { c_nome: 'Maria Costa', c_tel: '912345678', o_morada: 'Rua das Flores 12, Viseu', modo: 'mo', o_area: '160', o_iso: 'EPS grafite', o_esp: '6', mo_tipo: 'm2', mo_preco: '16', mo_rend: '20', d_tipo: 'calc', d_km: '30', d_cons: '9', d_comb: '1,65', iva: '0', validade: '30', o_desc: 'Aplicação de sistema de isolamento térmico pelo exterior (capoto / ETICS) na fachada.' };
   S['orcamentos/o1'] = { num: '2026/001', data: H(-12), estado: 'Aceite', clienteId: 'c1', cliente: 'Maria Costa', morada: f1.o_morada, total: 2671.28, f: f1, extras: [] };
-  S['orcamentos/o2'] = { num: '2026/002', data: H(-9), estado: 'Enviado', enviadoEm: H(-9), clienteId: 'c2', cliente: 'José Ferreira', morada: 'Av. da Europa 40, Mangualde', total: 8900, f: { c_nome: 'José Ferreira', o_area: '420', mo_tipo: 'm2', mo_preco: '20', d_tipo: 'nao', modo: 'mo' }, extras: [{ d: 'Reparação de fissuras', v: '500' }] };
+  S['orcamentos/o2'] = { num: '2026/002', data: H(-9), estado: 'Enviado', enviadoEm: H(-9), clienteId: 'c2', cliente: 'José Ferreira', morada: 'Av. da Europa 40, Mangualde', total: 8900, f: { c_nome: 'José Ferreira', c_tel: '913222111', o_morada: 'Av. da Europa 40, Mangualde', o_area: '420', o_iso: 'EPS branco', o_esp: '6', zonas: [{ id: 'z1', nome: 'Fachada principal', area: '180', iso: 'EPS branco', esp: '6', preco: '' }, { id: 'z2', nome: 'Empena norte', area: '140', iso: 'EPS branco', esp: '8', preco: '' }, { id: 'z3', nome: 'Tardoz', area: '100', iso: 'EPS branco', esp: '6', preco: '' }], mo_tipo: 'm2', mo_preco: '20', mo_rend: '25', d_tipo: 'nao', modo: 'mo', iva: '0', alt: { on: true, na: 'EPS 6 cm', nb: 'EPS grafite 8 cm', iso: 'EPS grafite', esp: '8', mo: '21,5', nota: 'Mais 2 cm de isolamento: a casa fica mais quente no inverno e a fatura de aquecimento baixa.' } }, extras: [{ d: 'Reparação de fissuras', v: '500' }] };
   S['orcamentos/o3'] = { num: '2026/003', data: H(-2), estado: 'Aceite', clienteId: 'c3', cliente: 'Ana Lopes', morada: 'Rua do Castelo 3, Tondela', total: 5200, f: { c_nome: 'Ana Lopes', o_area: '260', mo_tipo: 'm2', mo_preco: '20', d_tipo: 'nao', modo: 'mo' }, extras: [] };
-  S['obras/b1'] = { nome: 'Moradia Maria Costa', clienteId: 'c1', cliente: 'Maria Costa', telefone: '912345678', morada: 'Rua das Flores 12, Viseu', orcamentoId: 'o1', orcNum: '2026/001', valor: 2671.28, area: '160', iso: 'EPS grafite', esp: '6', estado: 'Em curso', inicio: H(-3), fim: H(9), equipa: ['André', 'Yuri', 'Ismael'], fases: { suporte: { f: true, d: H(-3), por: 'André' }, arranque: { f: true, d: H(-2), por: 'Yuri' }, colagem: { f: true, d: H(-1), por: 'Ismael' } }, plano: [{ d: 'Adjudicação', v: 800, q: 'inicio' }, { d: 'A meio da obra', v: 1071.28, q: 'barramento' }, { d: 'Final', v: 800, q: 'fim' }] };
+  S['obras/b1'] = { nome: 'Moradia Maria Costa', clienteId: 'c1', cliente: 'Maria Costa', telefone: '912345678', morada: 'Rua das Flores 12, Viseu', orcamentoId: 'o1', orcNum: '2026/001', valor: 2671.28, area: '160', iso: 'EPS grafite', esp: '6', precoM2: 16, taxa: 0, valorOutros: 111.28, zonas: [{ id: 'w1', nome: 'Fachada principal (sul)', area: 52, iso: 'EPS grafite', esp: '6', preco: null }, { id: 'w2', nome: 'Fachada norte', area: 48, iso: 'EPS grafite', esp: '8', preco: null }, { id: 'w3', nome: 'Empenas', area: 60, iso: 'EPS grafite', esp: '6', preco: null }], autos: [{ id: 'm1', n: 1, data: H(-1), m: { w1: 40, w2: 12 }, bruto: 832, ded: 249.17, valor: 582.83, por: 'André' }], estado: 'Em curso', inicio: H(-3), fim: H(9), equipa: ['André', 'Yuri', 'Ismael'], fases: { suporte: { f: true, d: H(-3), por: 'André' }, arranque: { f: true, d: H(-2), por: 'Yuri' }, colagem: { f: true, d: H(-1), por: 'Ismael' } }, adicionais: [{ id: 'ad1', data: H(-1), desc: 'Reparar reboco solto e fissuras na fachada norte, cerca de 6 m²', valor: 180, estado: 'pendente', por: 'André' }], plano: [{ d: 'Adjudicação', v: 800, q: 'inicio' }, { d: 'Medição n.º 1', v: 582.83, q: 'data', data: H(-1), auto: 'm1' }] };
+  const ESC = (dd, quem) => { const e = {}; dd.forEach(k => { const w = new Date(H(k) + 'T12:00:00').getDay(); if (w > 0 && w < 6) e[H(k)] = quem.slice(); }); return e; };
+  S['obras/b1'].escala = ESC([-3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9], ['André', 'Yuri', 'Ismael']);
+  [3, 4].forEach(k => { const e = S['obras/b1'].escala[H(k)]; if (e) e.splice(e.indexOf('Ismael'), 1); });
+  S['obras/b2'] = { nome: 'Moradia Ana Lopes', clienteId: 'c3', cliente: 'Ana Lopes', telefone: '915000111', morada: 'Rua do Castelo 3, Tondela', orcamentoId: 'o3', orcNum: '2026/003', valor: 5200, area: '260', iso: 'EPS branco', esp: '6', precoM2: 20, taxa: 0, estado: 'Planeada', inicio: H(3), fim: H(20), equipa: ['Ismael'], fases: {}, escala: ESC([3, 4], ['Ismael']) };
   S['clientes/c1/pagamentos/p1'] = { data: H(-3), valor: 800, descricao: 'Adjudicação', obraId: 'b1', por: 'André' };
   S['pedidos/pd1'] = { nome: 'Carlos Lopes', telefone: '913111222', morada: 'Rua Nova 5, Nelas', estado: 'Visita marcada', visita: H(1), hora: '10:00', data: H(-1), origem: 'Telefone', descricao: 'Moradia de 2 pisos' };
   S['pedidos/pd2'] = { nome: 'Rita Sousa', telefone: '914555666', estado: 'Novo', data: H(-3), origem: 'WhatsApp' };
@@ -21,6 +25,13 @@ function exemplo() {
   S['dias/x1'] = { data: H(-3), pessoa: 'André', fracao: 1, obraId: 'b1', obra: 'Moradia Maria Costa' };
   S['dias/x2'] = { data: H(-3), pessoa: 'Yuri', fracao: 1, obraId: 'b1', obra: 'Moradia Maria Costa' };
   S['dias/x3'] = { data: H(-3), pessoa: 'Ismael', fracao: 1, obraId: 'b1', obra: 'Moradia Maria Costa' };
+  S['dias/y20'] = { data: H(-2), pessoa: 'André', fracao: 1, obraId: 'b1', obra: 'Moradia Maria Costa' };
+  S['dias/y21'] = { data: H(-2), pessoa: 'Yuri', fracao: 1, obraId: 'b1', obra: 'Moradia Maria Costa' };
+  S['dias/y22'] = { data: H(-2), pessoa: 'Ismael', fracao: 1, obraId: 'b1', obra: 'Moradia Maria Costa' };
+  S['dias/y10'] = { data: H(-1), pessoa: 'André', fracao: 1, obraId: 'b1', obra: 'Moradia Maria Costa' };
+  S['dias/y11'] = { data: H(-1), pessoa: 'Yuri', fracao: 1, obraId: 'b1', obra: 'Moradia Maria Costa' };
+  S['dias/y12'] = { data: H(-1), pessoa: 'Ismael', fracao: 1, obraId: 'b1', obra: 'Moradia Maria Costa' };
+  S['despesas/d2'] = { data: H(-1), valor: 38.5, categoria: 'Refeições', descricao: 'Almoço da equipa', obraId: 'b1', obra: 'Moradia Maria Costa', por: 'Yuri' };
   S['documentos/k1'] = { nome: 'Seguro de acidentes de trabalho', validade: H(20) };
   return S;
 }
