@@ -39,7 +39,7 @@ var pagamentos = [], fotos = [];
 var K_DRAFT = 'vt-rascunho-v2';
 var ESTADOS = ['Por enviar', 'Enviado', 'Aceite', 'Recusado', 'Concluído'];
 var Q_FIELDS = ['c_nome', 'c_tel', 'c_nif', 'o_morada', 'modo', 'o_area', 'o_iso', 'o_esp', 'o_desc', 'mo_tipo', 'mo_preco', 'mo_rend', 'mo_dias', 'm_mat', 'm_and', 'm_margem', 'd_tipo', 'd_km', 'd_viagens', 'd_cons', 'd_comb', 'd_port', 'd_valor', 'iva', 'validade', 'condicoes', 'notas'];
-var CFG_FIELDS = ['s_nome', 's_nif', 's_tel', 's_email', 's_morada', 's_isencao', 's_rend', 's_cons', 's_validade', 's_iva', 's_desc', 's_cond'];
+var CFG_FIELDS = ['s_nome', 's_nif', 's_tel', 's_email', 's_morada', 's_isencao', 's_rend', 's_cons', 's_validade', 's_iva', 's_desc', 's_cond', 's_iban', 's_custoj', 's_pessoas'];
 
 function recalcSettings() {
   settings = Object.assign({ s_nome: 'VisoThermLy' }, config);
@@ -50,8 +50,8 @@ function recalcSettings() {
 
 // ---------- navegação ----------
 var vistaAtual = 'inicio';
-var VISTAS = ['inicio', 'clientes', 'cliente', 'obras', 'obra', 'orcs', 'novo', 'mais', 'despesas', 'dias', 'contas', 'docs', 'def'];
-var NAV_DE = { cliente: 'clientes', obra: 'obras', novo: 'orcs', despesas: 'mais', dias: 'mais', contas: 'mais', docs: 'mais', def: 'mais' };
+var VISTAS = ['inicio', 'trab', 'cal', 'clientes', 'cliente', 'obras', 'obra', 'orcs', 'novo', 'mais', 'despesas', 'dias', 'contas', 'docs', 'def'];
+var NAV_DE = { cliente: 'clientes', obra: 'obras', novo: 'orcs', mais: 'def' };
 function iniciais(n) { var p = String(n || '?').trim().split(/\s+/); return ((p[0] || '?')[0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase(); }
 function corDe(s) { var h = 0; s = String(s || ''); for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360; return 'hsl(' + h + ',45%,42%)'; }
 function avatar(nome, big) { return '<span class="av' + (big ? ' big' : '') + '" style="background:' + corDe(nome) + '">' + esc(iniciais(nome)) + '</span>'; }
@@ -65,6 +65,8 @@ function cabecalho() {
   else if (vistaAtual === 'obra') { var ob = obras.find(function (x) { return x.id === obraAberta; }); t = 'Obra'; s = ob ? (ob.estado || 'Planeada') + (ob.cliente ? ' · ' + ob.cliente : '') : ''; }
   else if (vistaAtual === 'orcs') { t = 'Orçamentos'; s = orcs.length + (orcs.length === 1 ? ' orçamento' : ' orçamentos'); }
   else if (vistaAtual === 'mais') { t = 'Mais'; s = 'Gestão da empresa'; }
+  else if (vistaAtual === 'trab') { var nt = trabalhos().filter(function (x) { return x.k !== 'perdido' && x.k !== 'fim'; }).length; t = 'Trabalhos'; s = nt + (nt === 1 ? ' trabalho em andamento' : ' trabalhos em andamento'); }
+  else if (vistaAtual === 'cal') { t = 'Agenda'; s = 'Obras e visitas por dia'; }
   else if (vistaAtual === 'despesas') { t = 'Despesas'; s = 'Combustível, material e outros gastos'; }
   else if (vistaAtual === 'dias') { t = 'Equipa e dias'; s = 'Quem trabalhou, onde e quanto'; }
   else if (vistaAtual === 'contas') { t = 'Contas'; s = 'Recebido, gasto e resultado'; }
@@ -78,6 +80,7 @@ function show(v, dePop) {
   vistaAtual = v;
   if (v !== 'obra' && obraAberta) fecharObra();
   VISTAS.forEach(function (x) { $('v-' + x).hidden = x !== v; });
+  if (v === 'trab') renderTrab(); else if (v === 'cal') renderCal();
   if (v === 'inicio') renderInicio(); else if (v === 'obras') renderObras(); else if (v === 'orcs') renderOrcs();
   else if (v === 'despesas') { if (!$('dsp_mes').value) $('dsp_mes').value = mesAtual(); renderDespesas(); }
   else if (v === 'dias') { if (!$('dias_mes').value) $('dias_mes').value = mesAtual(); renderDias(); }
@@ -89,7 +92,7 @@ function show(v, dePop) {
   historico(v, de, dePop);
   window.scrollTo(0, (PROF[v] || 0) > (PROF[de] || 0) ? 0 : (posScroll[v] || 0));
 }
-document.querySelectorAll('nav button').forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.v); }); });
+document.querySelectorAll('nav button[data-v]').forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.v); }); });
 
 // ---------- orçamento ----------
 function blankQuote(clienteId) {
@@ -305,6 +308,7 @@ $('b-novo').addEventListener('click', function () {
     if (f.o_desc) t += '\n' + f.o_desc + '\n';
     var det = [];
     if (r.area) det.push(fmtN(r.area) + ' m² de fachada');
+    var zzT = zonasCom(f); if (zzT.length) det.push(espResumo(zzT)); else
     if (f.o_iso) det.push(f.o_iso + (num(f.o_esp) ? ' ' + fmtN(num(f.o_esp)) + ' cm' : ''));
     if (f.modo === 'mo') det.push('só mão de obra (material e andaime por conta do cliente)');
     if (det.length) t += det.join(', ') + '\n';
@@ -312,6 +316,7 @@ $('b-novo').addEventListener('click', function () {
     r.lines.forEach(function (l) { t += l[0] + ': ' + eur(l[1]) + '\n'; });
     t += '\nTotal sem IVA: ' + eur(r.base) + '\n';
     t += r.taxa ? 'IVA (' + r.taxa + ' %): ' + eur(r.ivaV) + '\nTotal com IVA: ' + eur(r.total) + '\n' : 'IVA: isento\n';
+    var rbT = computeAlt(cur); if (rbT) t += '\nOpção A (' + nomeOpA(f) + '): ' + eur(r.total) + '\nOpção B (' + nomeOpB(f) + '): ' + eur(rbT.total) + '\n' + (f.alt.nota ? f.alt.nota + '\n' : '');
     if (r.dias) t += 'Duração prevista: ' + r.dias + (r.dias === 1 ? ' dia' : ' dias') + ' de trabalho\n';
     if (f.condicoes) t += '\nPagamento: ' + f.condicoes + '\n';
     var contacto = [settings.s_resp, settings.s_tel].filter(Boolean).join(' · ');
@@ -395,6 +400,7 @@ $('b-novo').addEventListener('click', function () {
     if (f.o_desc) para(f.o_desc, 10.5, reg, dark);
     var det = [];
     if (r.area) det.push('Área: ' + fmtN(r.area) + ' m²');
+    var zzP = zonasCom(f); if (zzP.length) det.push('Isolamento: ' + espResumo(zzP)); else
     if (f.o_iso) det.push('Isolamento: ' + f.o_iso + (num(f.o_esp) ? ' ' + fmtN(num(f.o_esp)) + ' cm' : ''));
     if (r.dias) det.push('Duração prevista: ' + r.dias + (r.dias === 1 ? ' dia' : ' dias') + ' de trabalho');
     if (det.length) para(det.join('   ·   '), 9.5, reg, grey);
@@ -432,6 +438,22 @@ $('b-novo').addEventListener('click', function () {
     text('TOTAL', W - M - 230, y, 12, bold, navy);
     var tv = eur(r.total); text(tv, W - M - 8 - width(tv, 14, bold), y, 14, bold, orange);
     y -= 34;
+    var rbAlt = computeAlt(cur);
+    if (rbAlt) {
+      var AL = f.alt; need(120); y -= 4;
+      text('DUAS OPÇÕES À ESCOLHA', M, y, 9, bold, grey); y -= 20;
+      [[nomeOpA(f), r], [nomeOpB(f), rbAlt]].forEach(function (op, i) {
+        need(44);
+        page.drawRectangle({ x: M, y: y - 16, width: CW, height: 36, color: i ? L.rgb(0.984, 0.933, 0.867) : L.rgb(0.918, 0.941, 0.969) });
+        text((i ? 'Opção B: ' : 'Opção A: ') + op[0], M + 10, y + 4, 10.5, bold, navy);
+        text((op[1].area && op[1].base ? eur(op[1].base / op[1].area) + '/m² sem IVA · ' : '') + 'Total sem IVA ' + eur(op[1].base), M + 10, y - 10, 9, reg, grey);
+        var tv2 = eur(op[1].total); text(tv2, W - M - 10 - width(tv2, 13, bold), y - 3, 13, bold, navy);
+        y -= 44;
+      });
+      if (AL.nota) para(AL.nota, 9.5, reg, dark);
+      para('Os valores da tabela acima correspondem à opção A.', 8.5, reg, grey);
+      y -= 6;
+    }
     if (!r.taxa && S.s_isencao) { para(S.s_isencao, 9, reg, grey); }
     y -= 8;
 
@@ -512,10 +534,12 @@ function ligarListaOrc(box) {
 
 // ---------- clientes ----------
 $('b-novocli').addEventListener('click', function () { abrirCliente(null); });
-$('b-voltar').addEventListener('click', function () { fecharCliente(); show('clientes'); });
+var voltarCli = 'trab';
+$('b-voltar').addEventListener('click', function () { fecharCliente(); show(voltarCli); });
 
 function fecharCliente() { subsCli.forEach(function (u) { u(); }); subsCli = []; clienteAberto = null; pagamentos = []; fotos = []; }
 function abrirCliente(id) {
+  if (vistaAtual !== 'cliente') voltarCli = ['trab', 'clientes', 'inicio', 'cal'].indexOf(vistaAtual) >= 0 ? vistaAtual : 'trab';
   fecharCliente();
   clienteAberto = id;
   var c = id ? clientes.find(function (x) { return x.id === id; }) || {} : {};
@@ -959,7 +983,7 @@ $('cf-novaobra').addEventListener('click', function () { dlgNovaObra(clienteAber
 function fecharObra() { subsObra.forEach(function (u) { u(); }); subsObra = []; obraAberta = null; diario = []; fotosObra = []; estadoFotoObra = ''; vistaFotoObra = 'todas'; }
 var voltarObra = 'obras';
 function abrirObra(id) {
-  if (vistaAtual !== 'obra') voltarObra = ['cliente', 'inicio', 'orcs', 'obras', 'contas'].indexOf(vistaAtual) >= 0 ? vistaAtual : 'obras';
+  if (vistaAtual !== 'obra') voltarObra = ['cliente', 'inicio', 'orcs', 'obras', 'contas', 'trab', 'cal'].indexOf(vistaAtual) >= 0 ? vistaAtual : 'obras';
   fecharObra(); obraAberta = id;
   subsObra.push(onSnapshot(query(collection(db, 'obras', id, 'diario'), orderBy('data', 'desc')), function (s) { diario = s.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); }); renderObra(); }, function (e) { console.warn(e); }));
   subFotosObra(id);
@@ -1203,6 +1227,7 @@ $('orc_filtro').addEventListener('input', renderOrcs);
 $('b-novoorc').addEventListener('click', function () { if (dirty && !confirm('O orçamento aberto tem alterações por guardar. Começar um novo na mesma?')) return; cur = blankQuote(); dirty = false; lsSet(K_DRAFT, { q: cur, dirty: false }); toForm(cur); show('novo'); });
 
 function renderTudo() {
+  if (vistaAtual === 'trab') renderTrab(); if (vistaAtual === 'cal') renderCal();
   renderClientes();
   renderPedidos(); renderObras(); if (vistaAtual === 'obra') renderObra();
   if (!$('oseg-agenda').hidden) renderAgenda();
@@ -1223,7 +1248,7 @@ $('cf-obras').addEventListener('click', function (e) { var b = e.target.closest(
 // =====================================================================
 // FLUIDEZ: transições, voltar do telemóvel, posição de leitura
 // =====================================================================
-var PROF = { inicio: 0, clientes: 0, obras: 0, orcs: 0, mais: 0, cliente: 1, novo: 1, despesas: 1, dias: 1, contas: 1, docs: 1, def: 1, obra: 2 };
+var PROF = { inicio: 0, trab: 0, cal: 0, mais: 0, clientes: 0, obras: 0, orcs: 0, despesas: 0, dias: 0, contas: 0, docs: 0, def: 0, cliente: 2, novo: 2, obra: 3 };
 var posScroll = {}, hDepth = 0, ignorePop = false, dlgPushed = false, voltarNovo = 'orcs';
 var GUARD = {};
 ['cli-lista', 'ped-lista', 'obras-lista', 'orc-todos', 'cf-orcs', 'cf-obras', 'cf-pags', 'cf-fotos', 'ini-corpo', 'cf-dyn', 'cf-acts', 'agenda', 'dsp-lista', 'dsp-resumo', 'dias-lista', 'dias-resumo', 'ct-meses', 'ct-obras', 'docs-lista', 'obra-filtros', 'orc-filtros', 'equipa', 'obra-corpo'].forEach(function (k) { GUARD[k] = 1; });
@@ -1247,7 +1272,7 @@ function historico(v, de, dePop) {
 function voltar() {
   var v = vistaAtual;
   if (v === 'obra') { var b = voltarObra; fecharObra(); show(b === 'cliente' && clienteAberto ? 'cliente' : b, true); }
-  else if (v === 'cliente') { fecharCliente(); show('clientes', true); }
+  else if (v === 'cliente') { fecharCliente(); show(voltarCli, true); }
   else if (v === 'novo') show(voltarNovo === 'cliente' && !clienteAberto ? 'clientes' : voltarNovo, true);
   else if (PROF[v] === 1) show('mais', true);
 }
@@ -1393,7 +1418,7 @@ function dlgPlano(o) {
   function desenhar() { $('pl-rows').innerHTML = pl.map(linha).join('') || '<p class="hint">Sem parcelas. Escolha um modelo ou adicione uma parcela.</p>'; $('pl-soma').textContent = soma(); }
   var corpo = '<p class="hint">Modelos rápidos (calculados a partir do valor acordado, depois pode alterar):</p><div class="row"><button type="button" class="btn ghost small" data-pltpl="304030">30 / 40 / 30</button><button type="button" class="btn ghost small" data-pltpl="5050">50 / 50</button><button type="button" class="btn ghost small" data-pltpl="100">Tudo no fim</button></div><div id="pl-rows" style="display:flex;flex-direction:column;gap:10px"></div><button type="button" class="btn ghost small" id="pl-add" style="align-self:flex-start">+ Adicionar parcela</button><p class="hint" id="pl-soma"></p>';
   abrirDlg('Plano de pagamentos', corpo, [{ txt: 'Guardar plano', cls: 'acc', fn: function () {
-    var limpo = pl.map(function (t) { return { d: (t.d || '').trim() || 'Pagamento', v: Math.round((num(t.v) || 0) * 100) / 100, q: t.q || 'inicio', data: t.q === 'data' ? (t.data || '') : '' }; }).filter(function (t) { return t.v > 0; });
+    var limpo = pl.map(function (t) { return { d: (t.d || '').trim() || 'Pagamento', v: Math.round((num(t.v) || 0) * 100) / 100, q: t.q || 'inicio', data: t.q === 'data' ? (t.data || '') : '', auto: t.auto || null }; }).filter(function (t) { return t.v > 0; });
     updObra({ plano: limpo }); renderObra(); toast('Plano de pagamentos guardado.');
   } }]);
   desenhar();
@@ -1807,7 +1832,7 @@ function renderInicio() {
   // topo
   h += '<section class="ohero ihero"><div class="ih-top"><div><small>Por receber</small><b>' + eur(pr) + '</b><span class="kt-bar"><i style="width:' + (aceite ? Math.round(recebido / aceite * 100) : 0) + '%"></i></span><span class="ih-s">' + (aceite ? 'Recebido ' + eur(recebido) + ' de ' + eur(aceite) + ' aceites' : 'Ainda sem orçamentos aceites') + '</span></div></div>' +
     '<div class="ih-chips"><button type="button" data-goto="obras"><b>' + emCurso.length + '</b>em curso</button><button type="button" data-goto="orcs"><b>' + pend.length + '</b>orçamentos pendentes</button><button type="button" data-goto="clientes" data-ped="1"><b>' + pedN + '</b>pedidos por tratar</button></div>' +
-    '<div class="oh-acts"><button type="button" class="oh-a" data-qa="pedido"><i>' + ICO.cli + '</i>Pedido</button><button type="button" class="oh-a" data-qa="orc"><i>' + ICO.doc + '</i>Orçamento</button><button type="button" class="oh-a" data-qa="despesa"><i>' + ICO.recibo + '</i>Despesa</button><button type="button" class="oh-a" data-qa="dia"><i>' + ICO.equipa + '</i>Dia</button><button type="button" class="oh-a" data-goto="obras" data-ag="1"><i>' + ICO.cal + '</i>Agenda</button></div></section>';
+    '<div class="oh-acts"><button type="button" class="oh-a" data-qa="pedido"><i>' + ICO.cli + '</i>Pedido</button><button type="button" class="oh-a" data-qa="orc"><i>' + ICO.doc + '</i>Orçamento</button><button type="button" class="oh-a" data-qa="despesa"><i>' + ICO.recibo + '</i>Despesa</button><button type="button" class="oh-a" data-qa="dia"><i>' + ICO.equipa + '</i>Dia</button><button type="button" class="oh-a" data-goto="cal"><i>' + ICO.cal + '</i>Agenda</button></div></section>';
   // agora
   var A = avisos();
   h += '<section class="card agora"><div class="titulo"><h2>Agora</h2>' + (A.length ? '<span class="badge-n">' + A.length + '</span>' : '') + '</div>' + (A.length ? A.slice(0, 6).map(function (a) {
@@ -1832,7 +1857,7 @@ function renderInicio() {
     if (!no.length) continue;
     lista += '<div class="wk">' + diaRot(d2) + '</div>' + no.map(function (e) { return '<button type="button" class="ag visita" data-ev="' + e.tipo + ':' + e.id + '"><span class="bar"></span><span style="flex:1;min-width:0"><b style="display:block">' + esc(e.titulo) + '</b><span class="meta">' + esc(e.sub) + '</span></span></button>'; }).join('');
   }
-  h += '<section class="card"><div class="titulo"><h2>Esta semana</h2><button type="button" class="lnk" data-goto="obras" data-ag="1">Agenda</button></div><div class="dias7">' + dd + '</div>' + (lista || '<p class="hint">Nada marcado para os próximos 7 dias.</p>') + '</section>';
+  h += '<section class="card"><div class="titulo"><h2>Esta semana</h2><button type="button" class="lnk" data-goto="cal">Agenda</button></div><div class="dias7">' + dd + '</div>' + (lista || '<p class="hint">Nada marcado para os próximos 7 dias.</p>') + '</section>';
   // mês
   h += '<div class="titulo sec-tit"><h2>' + nomeMes(mes).replace(/^\w/, function (c) { return c.toUpperCase(); }) + '</h2><button type="button" class="lnk" data-goto="contas">Contas</button></div>';
   h += '<div class="kgrid"><button type="button" class="ktile" data-goto="despesas"><small>Despesas</small><b>' + eur(dm) + '</b><span class="kt-s">Combustível, material…</span></button><button type="button" class="ktile" data-goto="dias"><small>Jornadas</small><b>' + fmtN(dMes) + '</b><span class="kt-s">Dias × pessoas este mês</span></button></div>';
@@ -1859,7 +1884,7 @@ $('ini-corpo').addEventListener('click', function (e) {
   else if (b.dataset.goto) {
     show(b.dataset.goto);
     if (b.dataset.ag) document.querySelector('[data-oseg="agenda"]').click();
-    if (b.dataset.ped) document.querySelector('[data-seg="ped"]').click();
+    if (b.dataset.ped) { etapaSel = 'pedido'; show('trab'); }
   }
 });
 
@@ -2190,6 +2215,168 @@ function dlgEditDias(ids) {
 }
 $('obra-corpo').addEventListener('click', function (e) { var b = e.target.closest('[data-eddias]'); if (b) dlgEditDias(b.dataset.eddias.split(',')); });
 
+// =====================================================================
+// NOVA ESTRUTURA: Trabalhos (funil), Agenda (calendário) e botão criar
+// =====================================================================
+var ETAPAS = [
+  ['pedido', 'Pedidos', 'Contactos novos e visitas'],
+  ['orcamentar', 'A orçamentar', 'Fazer ou enviar o orçamento'],
+  ['enviado', 'Enviados', 'À espera de resposta'],
+  ['aceite', 'Aceites', 'Preparar e marcar a obra'],
+  ['obra', 'Em obra', 'A decorrer'],
+  ['fim', 'Concluídos', 'Obras acabadas'],
+  ['perdido', 'Perdidos', 'Recusados ou desistiram']
+];
+var etapaSel = 'todos';
+function trabalhos() {
+  var L = [], h = hoje();
+  pedidos.forEach(function (p) {
+    if (p.clienteId) return;
+    if (p.estado === 'Perdido') { L.push({ k: 'perdido', tipo: 'ped', id: p.id, nome: p.nome, sub: 'Pedido perdido', cid: cidade(p.morada), tel: p.telefone }); return; }
+    var info = p.visita ? 'Visita ' + diaRot(p.visita).toLowerCase() + (p.hora ? ' às ' + p.hora : '') : 'Recebido há ' + Math.max(0, diasEntre(p.data || h, h)) + ' dias · sem visita';
+    L.push({ k: 'pedido', tipo: 'ped', id: p.id, nome: p.nome, sub: info, cid: cidade(p.morada), tel: p.telefone, urg: !p.visita && diasEntre(p.data || h, h) >= 2, act: ['Orçamentar', 'pedorc:' + p.id] });
+  });
+  clientes.forEach(function (c) {
+    var os = orcs.filter(function (o) { return o.clienteId === c.id; }), ob = obras.filter(function (o) { return o.clienteId === c.id; });
+    var pago = todosPag.filter(function (x) { return x.clienteId === c.id; }).reduce(function (a, x) { return a + (x.valor || 0); }, 0);
+    var aceite = os.filter(function (o) { return o.estado === 'Aceite' || o.estado === 'Concluído'; }).reduce(function (a, o) { return a + (o.total || 0); }, 0);
+    var t = { tipo: 'cli', id: c.id, nome: c.nome, cid: cidade(c.morada), tel: c.telefone };
+    var emCurso = ob.find(function (o) { return o.estado === 'Em curso' || o.estado === 'Parada'; });
+    var plan = ob.find(function (o) { return o.estado === 'Planeada'; });
+    if (emCurso) { var px = proximaFase(emCurso); t.k = 'obra'; t.p = progFases(emCurso); t.sub = (emCurso.estado === 'Parada' ? 'Parada · ' : '') + (px ? 'A seguir: ' + px[1].toLowerCase() : 'Fases todas feitas'); t.valor = emCurso.valor; t.act = ['Abrir obra', 'obra:' + emCurso.id]; var dv = estadoPlano(emCurso).find(function (e) { return e.devida && e.falta > 0.005; }); if (dv) { t.urg = true; t.sub = 'Cobrar ' + eur(dv.falta) + ' · ' + t.sub; } }
+    else if (plan || os.some(function (o) { return o.estado === 'Aceite'; })) {
+      t.k = 'aceite';
+      var oa = os.find(function (o) { return o.estado === 'Aceite'; }); t.valor = plan ? plan.valor : oa && oa.total;
+      if (plan) { t.sub = plan.inicio ? 'Obra marcada para ' + dataPT(plan.inicio) : 'Obra criada · falta marcar datas'; t.act = ['Abrir obra', 'obra:' + plan.id]; t.urg = !plan.inicio; }
+      else { t.sub = 'Orçamento ' + oa.num + ' aceite · falta criar a obra'; t.act = ['Criar obra', 'mkobra:' + oa.id]; t.urg = true; }
+    }
+    else if (ob.length) { t.k = 'fim'; var fa = Math.max(aceite - pago, 0); t.valor = aceite; t.sub = fa > 0.005 ? 'Falta receber ' + eur(fa) : 'Pago'; t.urg = fa > 0.005; t.act = ['Abrir', 'cli:' + c.id]; }
+    else if (os.some(function (o) { return o.estado === 'Enviado'; })) { var oe = os.find(function (o) { return o.estado === 'Enviado'; }), d = diasEntre(oe.enviadoEm || oe.data, h); t.k = 'enviado'; t.valor = oe.total; t.sub = 'Orçamento ' + oe.num + ' · enviado ' + (d ? 'há ' + d + (d === 1 ? ' dia' : ' dias') : 'hoje'); t.urg = d >= 7; t.act = ['Ligar', 'tel']; }
+    else if (os.some(function (o) { return o.estado === 'Por enviar'; })) { var op = os.find(function (o) { return o.estado === 'Por enviar'; }); t.k = 'orcamentar'; t.valor = op.total; t.sub = 'Orçamento ' + op.num + ' por enviar'; t.act = ['Abrir', 'orc:' + op.id]; }
+    else if (os.length) { t.k = 'perdido'; t.sub = 'Orçamento recusado'; t.valor = os[0].total; }
+    else { t.k = 'orcamentar'; t.sub = 'Ainda sem orçamento'; t.act = ['Fazer orçamento', 'novoorc:' + c.id]; }
+    L.push(t);
+  });
+  return L;
+}
+function cartaoTrab(t) {
+  var tel = String(t.tel || '').replace(/[^\d+]/g, '');
+  var act = t.act ? (t.act[1] === 'tel' ? (tel ? '<a class="btn small ' + (t.urg ? 'acc' : 'ghost') + '" href="tel:' + tel + '">Ligar</a>' : '') : '<button type="button" class="btn small ' + (t.urg ? 'acc' : 'ghost') + '" data-tact="' + t.act[1] + '">' + t.act[0] + '</button>') : '';
+  return '<div class="tcard' + (t.urg ? ' urg' : '') + '" role="button" tabindex="0" data-trab="' + t.tipo + ':' + t.id + '">' +
+    (t.k === 'obra' ? anelMini(t.p) : avatar(t.nome)) +
+    '<span class="grow"><b>' + esc(t.nome || 'Sem nome') + '</b><span class="meta">' + esc(t.sub || '') + '</span>' + (t.cid ? '<span class="meta">' + esc(t.cid) + (t.valor ? ' · ' + eur(t.valor) : '') + '</span>' : (t.valor ? '<span class="meta">' + eur(t.valor) + '</span>' : '')) + '</span>' +
+    '<span class="tc-a">' + act + '</span></div>';
+}
+function renderTrab() {
+  var q = ($('trab_q').value || '').toLowerCase();
+  var T = trabalhos().filter(function (t) { return !q || ((t.nome || '') + ' ' + (t.cid || '') + ' ' + (t.sub || '')).toLowerCase().indexOf(q) >= 0; });
+  var cnt = {}; ETAPAS.forEach(function (e) { cnt[e[0]] = T.filter(function (t) { return t.k === e[0]; }).length; });
+  var max = Math.max.apply(null, ETAPAS.slice(0, 6).map(function (e) { return cnt[e[0]]; }).concat([1]));
+  // funil
+  $('trab-funil').innerHTML = ETAPAS.slice(0, 6).map(function (e, i) {
+    var urg = T.some(function (t) { return t.k === e[0] && t.urg; });
+    return '<button type="button" class="fn-e' + (etapaSel === e[0] ? ' sel' : '') + '" data-etapa="' + e[0] + '"><span class="fn-bar"><i style="height:' + Math.max(8, Math.round(cnt[e[0]] / max * 100)) + '%"></i></span><b>' + cnt[e[0]] + (urg ? '<em></em>' : '') + '</b><small>' + e[1] + '</small></button>';
+  }).join('');
+  $('trab-chips').innerHTML = '<button type="button" class="chip-f" data-etapa="todos" aria-pressed="' + (etapaSel === 'todos') + '">Todos · ' + T.filter(function (t) { return t.k !== 'perdido'; }).length + '</button>' + ETAPAS.map(function (e) { return cnt[e[0]] ? '<button type="button" class="chip-f" data-etapa="' + e[0] + '" aria-pressed="' + (etapaSel === e[0]) + '">' + e[1] + ' · ' + cnt[e[0]] + '</button>' : ''; }).join('');
+  var h = '';
+  ETAPAS.forEach(function (e) {
+    if (etapaSel === 'todos' ? e[0] === 'perdido' : etapaSel !== e[0]) return;
+    var l = T.filter(function (t) { return t.k === e[0]; }).sort(function (a, b) { return (b.urg ? 1 : 0) - (a.urg ? 1 : 0); });
+    if (!l.length) return;
+    h += '<div class="et-h"><span class="et-n">' + (ETAPAS.indexOf(e) + 1) + '</span><span><b>' + e[1] + '</b><small>' + e[2] + '</small></span><span class="et-c">' + l.length + '</span></div><div class="vcol tl-list">' + l.map(cartaoTrab).join('') + '</div>';
+  });
+  $('trab-lista').innerHTML = h || '<section class="card"><p class="empty">' + (q ? 'Nada encontrado.' : 'Ainda não há trabalhos. Carregue em + para registar um pedido.') + '</p></section>';
+}
+$('trab_q').addEventListener('input', renderTrab);
+$('v-trab').addEventListener('click', function (e) {
+  var et = e.target.closest('[data-etapa]');
+  if (et) { etapaSel = etapaSel === et.dataset.etapa && et.dataset.etapa !== 'todos' ? 'todos' : et.dataset.etapa; renderTrab(); return; }
+  if (e.target.closest('a')) return;
+  var ac = e.target.closest('[data-tact]');
+  if (ac) {
+    var p = ac.dataset.tact.split(':');
+    if (p[0] === 'obra') abrirObra(p[1]);
+    else if (p[0] === 'cli') abrirCliente(p[1]);
+    else if (p[0] === 'mkobra') { var o = orcs.find(function (x) { return x.id === p[1]; }); if (o) criarObraDeOrc(o); }
+    else if (p[0] === 'orc') { var x = orcs.find(function (z) { return z.id === p[1]; }); if (x) abrirOrcForm(x, false); }
+    else if (p[0] === 'novoorc') { if (dirty && !confirm('O orçamento aberto tem alterações por guardar. Começar um novo na mesma?')) return; cur = blankQuote(p[1]); dirty = false; lsSet(K_DRAFT, { q: cur, dirty: false }); toForm(cur); show('novo'); }
+    else if (p[0] === 'pedorc') { var pd = pedidos.find(function (z) { return z.id === p[1]; }); if (pd) converterPedido(pd.id, { nome: pd.nome, telefone: pd.telefone || '', morada: pd.morada || '', origem: pd.origem || '', estado: pd.estado, visita: pd.visita || '', hora: pd.hora || '', descricao: pd.descricao || '' }); }
+    return;
+  }
+  var c = e.target.closest('[data-trab]'); if (!c) return;
+  var q = c.dataset.trab.split(':');
+  if (q[0] === 'ped') dlgPedido(q[1]); else abrirCliente(q[1]);
+});
+
+// ---------- agenda em calendário ----------
+var calIni = null;
+function renderCal() {
+  if (!calIni) calIni = segunda(hoje());
+  var N = 7, fim = addDias(calIni, N - 1), h = hoje();
+  var ds = []; for (var i = 0; i < N; i++) ds.push(addDias(calIni, i));
+  var meses = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  var d0 = new Date(calIni + 'T12:00:00'), d1 = new Date(fim + 'T12:00:00');
+  $('cal-tit').textContent = d0.getDate() + ' ' + meses[d0.getMonth()] + ' – ' + d1.getDate() + ' ' + meses[d1.getMonth()];
+  var ob = obras.filter(function (o) { return o.inicio && o.estado !== 'Concluída' && (o.fim || o.inicio) >= calIni && o.inicio <= fim; });
+  var sem = obras.filter(function (o) { return !o.inicio && o.estado !== 'Concluída'; });
+  var vis = pedidos.filter(function (p) { return p.visita && p.visita >= calIni && p.visita <= fim && p.estado !== 'Perdido'; });
+  var g = '<div class="cg" style="--n:' + N + '"><div class="cg-l cg-hd"></div>' + ds.map(function (d) { var dt = new Date(d + 'T12:00:00'), we = dt.getDay() === 0 || dt.getDay() === 6; return '<div class="cg-d' + (d === h ? ' hoje' : '') + (we ? ' fds' : '') + '"><small>' + DIAS_S[dt.getDay()] + '</small><b>' + dt.getDate() + '</b></div>'; }).join('');
+  ob.forEach(function (o, r) {
+    var a = Math.max(0, diasEntre(calIni, o.inicio)), b = Math.min(N - 1, diasEntre(calIni, o.fim || o.inicio));
+    g += '<button type="button" class="cg-l" data-obra="' + o.id + '"><b>' + esc(o.nome) + '</b><small>' + esc((o.equipa || []).map(function (n) { return n.split(' ')[0]; }).join(', ') || 'Sem equipa') + '</small></button>';
+    g += '<div class="cg-row" style="grid-column:2 / span ' + N + '">' + ds.map(function (d) { return '<span class="' + (d === h ? 'hoje' : '') + '"></span>'; }).join('') + '<button type="button" class="cg-bar e-' + obraCls(o.estado) + '" data-obra="' + o.id + '" style="grid-column:' + (a + 1) + ' / ' + (b + 2) + '">' + progFases(o) + '%</button></div>';
+  });
+  if (vis.length) {
+    g += '<div class="cg-l"><b>Visitas</b><small>' + vis.length + '</small></div><div class="cg-row" style="grid-column:2 / span ' + N + '">' + ds.map(function (d) { return '<span class="' + (d === h ? 'hoje' : '') + '"></span>'; }).join('') +
+      vis.map(function (p) { return '<button type="button" class="cg-vis" data-ped="' + p.id + '" style="grid-column:' + (diasEntre(calIni, p.visita) + 1) + '" title="' + esc(p.nome) + '">' + esc(iniciais(p.nome)) + '</button>'; }).join('') + '</div>';
+  }
+  g += '</div>';
+  if (!ob.length && !vis.length) g = '<p class="empty">Nada marcado nestas duas semanas.</p>';
+  $('cal-grade').innerHTML = g;
+  // lista do período
+  var lst = '';
+  ds.forEach(function (d) {
+    var ev = vis.filter(function (p) { return p.visita === d; }).map(function (p) { return '<button type="button" class="ag visita" data-ped="' + p.id + '"><span class="bar"></span><span style="flex:1;min-width:0"><b style="display:block">Visita: ' + esc(p.nome) + '</b><span class="meta">' + esc([p.hora, p.morada].filter(Boolean).join(' · ')) + '</span></span></button>'; })
+      .concat(ob.filter(function (o) { return o.inicio === d; }).map(function (o) { return '<button type="button" class="ag" data-obra="' + o.id + '"><span class="bar"></span><span style="flex:1;min-width:0"><b style="display:block">Começa: ' + esc(o.nome) + '</b><span class="meta">' + esc((o.equipa || []).join(', ') || 'Equipa por definir') + '</span></span></button>'; }))
+      .concat(ob.filter(function (o) { return o.fim === d; }).map(function (o) { return '<button type="button" class="ag" data-obra="' + o.id + '"><span class="bar"></span><span style="flex:1;min-width:0"><b style="display:block">Fim previsto: ' + esc(o.nome) + '</b><span class="meta">' + progFases(o) + ' % das fases feitas</span></span></button>'; }));
+    if (ev.length) lst += '<div class="wk">' + diaRot(d) + (diaRot(d) === 'Hoje' || diaRot(d) === 'Amanhã' ? '' : '') + '</div>' + ev.join('');
+  });
+  $('cal-lista').innerHTML = lst || '<p class="hint">Sem visitas, inícios ou fins de obra neste período.</p>';
+  $('cal-sem').innerHTML = sem.length ? '<div class="wk">Obras sem datas</div>' + sem.map(function (o) { return '<button type="button" class="ag" data-obra="' + o.id + '"><span class="bar"></span><span style="flex:1;min-width:0"><b style="display:block">' + esc(o.nome) + '</b><span class="meta">Toque para marcar as datas</span></span></button>'; }).join('') : '';
+}
+$('cal-ant').addEventListener('click', function () { calIni = addDias(calIni || segunda(hoje()), -7); renderCal(); });
+$('cal-seg').addEventListener('click', function () { calIni = addDias(calIni || segunda(hoje()), 7); renderCal(); });
+$('cal-hoje').addEventListener('click', function () { calIni = segunda(hoje()); renderCal(); });
+$('v-cal').addEventListener('click', function (e) {
+  var o = e.target.closest('[data-obra]'); if (o) { abrirObra(o.dataset.obra); return; }
+  var p = e.target.closest('[data-ped]'); if (p) dlgPedido(p.dataset.ped);
+});
+
+// ---------- botão criar (+) ----------
+function dlgCriar() {
+  if (vistaAtual === 'obra' && obraAtual()) { dlgFab(obraAtual()); return; }
+  if (vistaAtual === 'cliente' && clienteAberto) { $('cf-fab').click(); return; }
+  var it = [['pedido', 'cli', 'Pedido', 'Alguém pediu orçamento'], ['orc', 'doc', 'Orçamento', 'Novo orçamento'], ['cliente', 'cli', 'Cliente', 'Ficha de cliente'], ['despesa', 'recibo', 'Despesa', 'Gasto ou talão'], ['dia', 'equipa', 'Dia de trabalho', 'Quem trabalhou'], ['foto', 'cam', 'Fotografia', 'Numa obra']];
+  abrirDlg('Criar', '<div class="cr-g">' + it.map(function (x) { return '<button type="button" class="cr-b" data-cr="' + x[0] + '"><span class="cr-i">' + ICO[x[1]] + '</span><b>' + x[2] + '</b><small>' + x[3] + '</small></button>'; }).join('') + '</div>', []);
+  $('dlg-b').onclick = function (ev) {
+    var b = ev.target.closest('[data-cr]'); if (!b) return; var a = b.dataset.cr;
+    if (a === 'pedido') dlgPedido(null);
+    else if (a === 'orc') { fecharDlg(); if (dirty && !confirm('O orçamento aberto tem alterações por guardar. Começar um novo na mesma?')) return; cur = blankQuote(); dirty = false; lsSet(K_DRAFT, { q: cur, dirty: false }); toForm(cur); show('novo'); }
+    else if (a === 'cliente') { fecharDlg(); abrirCliente(null); }
+    else if (a === 'despesa') dlgDespesa(null);
+    else if (a === 'dia') dlgDia(null);
+    else if (a === 'foto') {
+      var ab = obras.filter(function (o) { return o.estado !== 'Concluída'; });
+      if (!ab.length) { toast('Ainda não há obras abertas.'); return; }
+      if (ab.length === 1) { fecharDlg(); abrirObra(ab[0].id); toast('Toque em "Foto" para fotografar.'); return; }
+      $('dlg-t').textContent = 'Fotografia em que obra?';
+      $('dlg-b').innerHTML = '<div class="vcol">' + ab.map(obraRow).join('') + '</div>';
+      $('dlg-b').onclick = function (e2) { var o = e2.target.closest('[data-obra]'); if (!o) return; fecharDlg(); abrirObra(o.dataset.obra); };
+    }
+  };
+}
+$('nav-criar').addEventListener('click', dlgCriar);
+
 $('dlg-form').addEventListener('submit', function (e) { e.preventDefault(); });
 
 function ecran(qual) {
@@ -2265,3 +2452,666 @@ async function arrancar() {
 
 if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
 $('b-pdf').addEventListener('click', function () { gerarPDF().catch(function (e) { console.error(e); toast('Não foi possível gerar o PDF.'); }); });
+
+// =====================================================================
+// MENU LATERAL
+// =====================================================================
+var SEC_DE = { inicio: 'Visão geral', cal: 'Visão geral', trab: 'Comercial', clientes: 'Comercial', cliente: 'Comercial · Cliente', orcs: 'Comercial', novo: 'Comercial · Orçamento', obras: 'Produção', obra: 'Produção · Obra', dias: 'Produção', contas: 'Finanças', despesas: 'Finanças', docs: 'Finanças', def: 'Empresa', mais: 'Empresa' };
+function menuAbrir(on) {
+  if (on) $('shell').style.transformOrigin = '0 ' + Math.round(window.scrollY + window.innerHeight / 2) + 'px';
+  document.body.classList.toggle('menu', !!on);
+  $('b-menu').setAttribute('aria-expanded', on ? 'true' : 'false');
+}
+$('b-menu').addEventListener('click', function () { menuAbrir(!document.body.classList.contains('menu')); });
+$('scrim').addEventListener('click', function () { menuAbrir(false); });
+$('tb-criar').addEventListener('click', function () { $('nav-criar').click(); });
+$('nav-criar').addEventListener('click', function () { menuAbrir(false); });
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.body.classList.contains('menu')) menuAbrir(false); });
+(function () {
+  var x0 = null, y0 = 0;
+  document.addEventListener('touchstart', function (e) { var t = e.touches[0]; x0 = (t.clientX < 24 || document.body.classList.contains('menu')) ? t.clientX : null; y0 = t.clientY; }, { passive: true });
+  document.addEventListener('touchend', function (e) { if (x0 == null) return; var t = e.changedTouches[0], dx = t.clientX - x0; if (Math.abs(t.clientY - y0) > 60) return; if (dx > 60) menuAbrir(true); else if (dx < -60) menuAbrir(false); x0 = null; }, { passive: true });
+})();
+function setBadge(id, n, cls) { var el = $(id); if (!el) return; el.textContent = n || ''; el.hidden = !n; el.className = 'sd-n' + (cls ? ' ' + cls : ''); }
+function navBadges() {
+  try {
+    var T = trabalhos();
+    setBadge('sn-trab', T.filter(function (t) { return t.urg && t.k !== 'perdido'; }).length, 'acc');
+    setBadge('sn-clientes', T.filter(function (t) { return t.k === 'pedido'; }).length);
+    setBadge('sn-obras', obras.filter(function (o) { return o.estado === 'Em curso'; }).length);
+  } catch (e) {}
+  try { var av = (typeof avisos === 'function') ? avisos().filter(function (x) { return /document|seguro|valid|alvar|impic/i.test(JSON.stringify(x)); }).length : 0; setBadge('sn-docs', av, 'acc'); } catch (e) {}
+  var nm = $('quem').textContent; $('sd-av').textContent = iniciais(nm.replace(/\s*\(.*\)/, '')); $('sd-av').style.background = corDe(nm);
+}
+var _showBase = show;
+show = function (v, dePop) { menuAbrir(false); _showBase(v, dePop); $('h-sec').textContent = SEC_DE[v] || ''; navBadges(); };
+var _renderTudoBase = renderTudo;
+renderTudo = function () { _renderTudoBase.apply(this, arguments); navBadges(); };
+$('h-sec').textContent = SEC_DE[vistaAtual] || '';
+
+// =====================================================================
+// MELHORIAS: duas opções, WhatsApp, tempo, trabalhos a mais, margem real
+// =====================================================================
+function primeiroNome(n) { return String(n || '').trim().split(/\s+/)[0] || ''; }
+function assinatura() { return (perfil.nome ? primeiroNome(perfil.nome).replace(/\s*\(.*$/, '') + ' · ' : '') + (settings.s_nome || 'VisoThermLy'); }
+function soma(l, f) { return l.reduce(function (a, x) { return a + (f ? f(x) : x); }, 0); }
+
+// ---------- 1. Orçamento com duas opções ----------
+function altDe(q) { var a = q && q.f && q.f.alt; return a && a.on ? a : null; }
+function computeAlt(q) {
+  var a = altDe(q); if (!a) return null;
+  var c = JSON.parse(JSON.stringify({ f: q.f, extras: q.extras || [] }));
+  if (a.iso) c.f.o_iso = a.iso; if (a.esp) c.f.o_esp = a.esp;
+  if (num(a.mo) != null) c.f.mo_preco = a.mo;
+  if (num(a.mat) != null) c.f.m_mat = a.mat;
+  return compute(c);
+}
+function nomeOpA(f) { var a = f.alt || {}; return (a.na || '').trim() || [f.o_iso, num(f.o_esp) ? fmtN(num(f.o_esp)) + ' cm' : ''].filter(Boolean).join(' ') || 'Opção A'; }
+function nomeOpB(f) { var a = f.alt || {}; return (a.nb || '').trim() || [a.iso || f.o_iso, num(a.esp) ? fmtN(num(a.esp)) + ' cm' : ''].filter(Boolean).join(' ') || 'Opção B'; }
+(function () {
+  var iso = $('o_iso'); if (iso && $('alt_iso')) $('alt_iso').innerHTML = '<option value="">Igual à opção A</option>' + [].slice.call(iso.options).filter(function (o) { return o.value; }).map(function (o) { return '<option>' + esc(o.value) + '</option>'; }).join('');
+})();
+var ALT_F = { alt_on: 'on', alt_na: 'na', alt_nb: 'nb', alt_iso: 'iso', alt_esp: 'esp', alt_mo: 'mo', alt_mat: 'mat', alt_nota: 'nota' };
+function altParaForm() {
+  var a = (cur && cur.f && cur.f.alt) || {};
+  Object.keys(ALT_F).forEach(function (id) { var el = $(id); if (!el) return; if (el.type === 'checkbox') el.checked = !!a[ALT_F[id]]; else el.value = a[ALT_F[id]] || ''; });
+  altUI();
+}
+function altUI() {
+  if (!cur || !$('alt-campos')) return;
+  var a = cur.f.alt || {}, f = cur.f;
+  $('alt-campos').hidden = !a.on;
+  $('alt_l_mat').hidden = f.modo !== 'completa';
+  $('alt_l_mo').textContent = 'Preço da mão de obra na opção B' + (f.mo_tipo === 'm2' ? ' (€/m²)' : f.mo_tipo === 'dia' ? ' (€/dia)' : ' (€)');
+  if (!a.on) { $('alt-cmp').innerHTML = ''; return; }
+  var ra = compute(cur), rb = computeAlt(cur), dif = rb.total - ra.total;
+  function col(lbl, nome, r, cls) { return '<div class="alt-op ' + cls + '"><small>' + lbl + '</small><b>' + esc(nome) + '</b><strong>' + eur(r.total) + '</strong><span>' + (r.area && r.base ? eur(r.base / r.area) + '/m² sem IVA' : 'Total sem IVA ' + eur(r.base)) + '</span></div>'; }
+  $('alt-cmp').innerHTML = col('Opção A', nomeOpA(f), ra, '') + col('Opção B', nomeOpB(f), rb, 'b') + '<p class="hint" style="grid-column:1/-1;margin:0">A opção B fica ' + (dif >= 0 ? 'mais cara ' : 'mais barata ') + eur(Math.abs(dif)) + (ra.total ? ' (' + (dif >= 0 ? '+' : '−') + Math.round(Math.abs(dif) / ra.total * 100) + ' %)' : '') + '. As duas aparecem no PDF e o cliente escolhe.</p>';
+}
+Object.keys(ALT_F).forEach(function (id) {
+  var el = $(id); if (!el) return;
+  el.addEventListener(el.type === 'checkbox' || el.tagName === 'SELECT' ? 'change' : 'input', function () {
+    if (!cur) return; var a = cur.f.alt || (cur.f.alt = {});
+    a[ALT_F[id]] = el.type === 'checkbox' ? el.checked : el.value;
+    if (id === 'alt_on' && el.checked && !a.nb && !a.esp) { a.esp = String((num(cur.f.o_esp) || 6) + 2); $('alt_esp').value = a.esp; }
+    changed();
+  });
+});
+Q_SECS.splice(Q_SECS.indexOf('iva'), 0, 'alt');
+var estadoQBase = estadoQ;
+estadoQ = function () {
+  var q = estadoQBase(), a = altDe(cur);
+  q.S.alt = a ? [nomeOpB(cur.f) + ' · ' + eur(computeAlt(cur).total), true] : ['Opcional · por exemplo mais espessura', null];
+  return q;
+};
+var resumoQBase = resumoQ;
+resumoQ = function () {
+  resumoQBase(); if (!cur || !cur.f) return;
+  altUI();
+  var rb = computeAlt(cur); if (rb && $('qh-sub')) $('qh-sub').textContent += ' · Opção B ' + eur(rb.total);
+};
+var toFormAltBase = toForm;
+toForm = function (q) { toFormAltBase(q); altParaForm(); resumoQ(); };
+// escolha da opção quando o cliente aceita
+var mudarEstadoBase = mudarEstado;
+mudarEstado = function (x, e) {
+  mudarEstadoBase(x, e);
+  if (e === 'Aceite' && x.f && x.f.alt && x.f.alt.on) setTimeout(function () { dlgEscolha(x); }, 60);
+};
+function dlgEscolha(x) {
+  var ra = compute({ f: x.f, extras: x.extras || [] }), rb = computeAlt(x);
+  function escolher(k) {
+    x.f.escolha = k; x.total = k === 'B' ? rb.total : ra.total;
+    updateDoc(doc(db, 'orcamentos', x.id), { f: x.f, total: x.total, atualizadoEm: serverTimestamp(), atualizadoPor: porQuem() }).catch(function (er) { falhou(er, 'guardar a escolha'); });
+    toast('Opção ' + k + ' aceite · ' + eur(x.total) + '. Já pode criar a obra.');
+  }
+  abrirDlg('Que opção o cliente escolheu?', '<p class="hint">O valor da opção escolhida passa a ser o valor do orçamento e da obra.</p><div class="alt-cmp-d"><div class="alt-op"><small>Opção A</small><b>' + esc(nomeOpA(x.f)) + '</b><strong>' + eur(ra.total) + '</strong></div><div class="alt-op b"><small>Opção B</small><b>' + esc(nomeOpB(x.f)) + '</b><strong>' + eur(rb.total) + '</strong></div></div>',
+    [{ txt: 'Opção A', cls: 'ghost', fn: function () { escolher('A'); } }, { txt: 'Opção B', cls: 'acc', fn: function () { escolher('B'); } }]);
+}
+
+// ---------- 2. Mensagens prontas para WhatsApp ----------
+function waNum(tel) { var t = String(tel || '').replace(/[^\d+]/g, '').replace(/^\+/, '').replace(/^00/, ''); if (t.length === 9) t = '351' + t; return t; }
+function waUrl(tel, txt) { var n = waNum(tel); return 'https://wa.me/' + n + (txt ? '?text=' + encodeURIComponent(txt) : ''); }
+function quandoDia(iso) { if (!iso) return ''; var h = hoje(); if (iso === h) return 'hoje'; if (iso === addDias(h, 1)) return 'amanhã'; var d = new Date(iso + 'T12:00:00'); return ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'][d.getDay()] + ', dia ' + d.getDate(); }
+function modelosOrc(x) {
+  var f = x.f || {}, pn = primeiroNome(x.cliente || f.c_nome), r = compute({ f: f, extras: x.extras || [] }), rb = computeAlt(x), M = [];
+  var res = (r.area ? fmtN(r.area) + ' m² de fachada' + (f.o_iso ? ', ' + f.o_iso + (num(f.o_esp) ? ' ' + fmtN(num(f.o_esp)) + ' cm' : '') : '') + '\n' : '') +
+    (rb ? 'Opção A (' + nomeOpA(f) + '): ' + eur(r.total) + '\nOpção B (' + nomeOpB(f) + '): ' + eur(rb.total) : 'Total: ' + eur(x.total || r.total)) + (r.taxa ? ' (com IVA)' : '') +
+    (r.dias ? '\nDuração prevista: ' + r.dias + (r.dias === 1 ? ' dia' : ' dias') + ' de trabalho' : '');
+  M.push(['Enviar orçamento', 'Olá ' + pn + ', boa tarde. Segue o orçamento n.º ' + x.num + ' para o isolamento da fachada' + (x.morada ? ' em ' + cidade(x.morada) : '') + ':\n\n' + res + '\n\nEnvio a seguir o PDF com o detalhe. Qualquer dúvida, estou ao dispor.\n\n' + assinatura()]);
+  var d = diasEntre(x.enviadoEm || x.data || hoje(), hoje());
+  M.push(['Lembrar resposta', 'Olá ' + pn + ', tudo bem? ' + (d > 1 ? 'Há ' + d + ' dias' : 'Há pouco tempo') + ' enviámos o orçamento n.º ' + x.num + '. Já teve oportunidade de o ver? Se tiver alguma dúvida ou quiser ajustar alguma coisa, diga. Também podemos passar aí para conversar.\n\n' + assinatura()]);
+  M.push(['Agradecer', 'Olá ' + pn + ', obrigado pela confiança! Vamos marcar a data de início e entramos em contacto para combinar os pormenores.\n\n' + assinatura()]);
+  return M;
+}
+function modelosPed(p) {
+  var pn = primeiroNome(p.nome), eu = primeiroNome(perfil.nome || settings.s_resp || '').replace(/\s*\(.*$/, ''), M = [];
+  var apr = 'Olá ' + pn + ', ' + (eu ? 'é o ' + eu + ' da ' : 'fala da ') + (settings.s_nome || 'VisoThermLy') + '. ';
+  if (p.visita) M.push(['Confirmar visita', apr + 'Confirmo a visita ' + quandoDia(p.visita) + (p.hora ? ' às ' + p.hora : '') + (p.morada ? ' em ' + p.morada : '') + ' para ver a fachada e tirar as medidas. Se precisar de mudar a hora, diga. Até lá!']);
+  M.push(['Marcar visita', apr + 'Recebemos o seu pedido de orçamento para o isolamento da fachada. Que dia e hora lhe dá jeito para passarmos aí a medir? Demora cerca de meia hora.']);
+  return M;
+}
+function modelosObra(o) {
+  var pn = primeiroNome(o.cliente), M = [], ep = estadoPlano(o), dv = ep.find(function (e) { return e.devida && e.falta > 0.005; });
+  if (dv) M.push(['Pedir pagamento', 'Olá ' + pn + ', tudo bem? Conforme combinado, fica agora a pagamento a parte "' + (dv.t.d || 'pagamento') + '": ' + eur(dv.falta) + '.' + (settings.s_iban ? '\nIBAN: ' + settings.s_iban : '') + '\nObrigado!\n\n' + assinatura()]);
+  if (o.inicio && o.inicio >= hoje()) M.push(['Início da obra', 'Olá ' + pn + ', a obra começa ' + quandoDia(o.inicio) + '. Chegamos de manhã para montar o andaime. Se houver alguma coisa a combinar (acessos, carros, água, luz), diga.\n\n' + assinatura()]);
+  var al = alertasProximos(o, 3)[0];
+  if (al) M.push(['Aviso de tempo', 'Olá ' + pn + ', a previsão dá ' + al.a[0][2].toLowerCase() + ' para ' + quandoDia(al.d.d) + ', por isso nesse dia não vamos aplicar argamassas nem acabamento na fachada. Retomamos logo que o tempo deixar.\n\n' + assinatura()]);
+  (o.adicionais || []).filter(function (a) { return a.estado === 'pendente'; }).forEach(function (a) { M.push(['Aprovar trabalho a mais', textoAdic(o, a)]); });
+  if (o.estado === 'Concluída') M.push(['Obra concluída', 'Olá ' + pn + ', a obra está concluída. Obrigado pela confiança! Se ficou satisfeito, uma avaliação nossa no Google ajuda muito outras pessoas a encontrar-nos.\n\n' + assinatura()]);
+  M.push(['Mensagem livre', 'Olá ' + pn + ', ']);
+  return M;
+}
+function textoAdic(o, a) { return 'Olá ' + primeiroNome(o.cliente) + ', durante a obra encontrámos o seguinte: ' + a.desc.replace(/\.$/, '') + '. Para ficar bem feito, este trabalho fica em ' + eur(a.valor) + '. Podemos avançar? Basta responder a esta mensagem.\n\n' + assinatura(); }
+function dlgMsg(titulo, tel, M, sel) {
+  var i0 = Math.max(0, sel || 0);
+  var corpo = (M.length > 1 ? '<div class="wa-chips">' + M.map(function (m, i) { return '<button type="button" class="chip-f" data-wam="' + i + '" aria-pressed="' + (i === i0) + '">' + esc(m[0]) + '</button>'; }).join('') + '</div>' : '') +
+    '<label for="wa-txt">Mensagem<textarea id="wa-txt" style="min-height:190px">' + esc(M[i0][1]) + '</textarea></label>' +
+    '<p class="hint">' + (tel ? 'Para ' + esc(tel) + '. ' : 'Sem telefone registado: o WhatsApp pede para escolher o contacto. ') + 'Pode alterar o texto antes de enviar.</p>';
+  abrirDlg(titulo, corpo, [
+    { txt: 'Copiar', cls: 'ghost', fn: function () { var t = $('wa-txt').value; if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () { toast('Mensagem copiada.'); }, function () { $('wa-txt').select(); }); else $('wa-txt').select(); return false; } },
+    { txt: 'Abrir no WhatsApp', cls: 'acc', fn: function () { var u = waUrl(tel, $('wa-txt').value), w = window.open(u, '_blank'); if (!w) location.href = u; } }
+  ]);
+  $('dlg-b').onclick = function (e) { var b = e.target.closest('[data-wam]'); if (!b) return; document.querySelectorAll('[data-wam]').forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); $('wa-txt').value = M[+b.dataset.wam][1]; };
+}
+function abrirWA(chave) {
+  var p = chave.split(':');
+  if (p[0] === 'orc') { var x = orcs.find(function (o) { return o.id === p[1]; }); if (!x) return; var c = clientes.find(function (k) { return k.id === x.clienteId; }) || {}; dlgMsg('WhatsApp · ' + (x.cliente || ''), c.telefone || (x.f || {}).c_tel, modelosOrc(x), x.estado === 'Enviado' && diasEntre(x.enviadoEm || x.data, hoje()) >= 5 ? 1 : x.estado === 'Aceite' ? 2 : 0); }
+  else if (p[0] === 'ped') { var pd = pedidos.find(function (k) { return k.id === p[1]; }); if (pd) dlgMsg('WhatsApp · ' + pd.nome, pd.telefone, modelosPed(pd)); }
+  else if (p[0] === 'obra' || p[0] === 'adic') { var o = obras.find(function (k) { return k.id === p[1]; }); if (!o) return; var M = modelosObra(o), i = p[0] === 'adic' ? M.findIndex(function (m) { return m[0] === 'Aprovar trabalho a mais' && m[1] === textoAdic(o, (o.adicionais || []).find(function (a) { return a.id === p[2]; }) || {}); }) : 0; dlgMsg('WhatsApp · ' + (o.cliente || o.nome), o.telefone, M, i); }
+  else if (p[0] === 'cli') {
+    var cl = clientes.find(function (k) { return k.id === p[1]; }); if (!cl) return;
+    var ob = obras.find(function (k) { return k.clienteId === cl.id && k.estado !== 'Concluída'; }); if (ob) return abrirWA('obra:' + ob.id);
+    var oc = orcs.filter(function (k) { return k.clienteId === cl.id; }).sort(function (a, b) { return (b.data || '').localeCompare(a.data || ''); })[0]; if (oc) return abrirWA('orc:' + oc.id);
+    dlgMsg('WhatsApp · ' + cl.nome, cl.telefone, [['Mensagem livre', 'Olá ' + primeiroNome(cl.nome) + ', ']]);
+  }
+}
+document.addEventListener('click', function (e) {
+  var b = e.target.closest('[data-wa]'); if (!b) return;
+  e.preventDefault(); e.stopPropagation(); abrirWA(b.dataset.wa);
+}, true);
+var cartaoTrabBase = cartaoTrab;
+cartaoTrab = function (t) {
+  var h = cartaoTrabBase(t); if (!t.tel) return h;
+  var k = t.tipo === 'ped' ? 'ped:' + t.id : 'cli:' + t.id;
+  return h.replace('<span class="tc-a">', '<span class="tc-a"><button type="button" class="ic-wa" data-wa="' + k + '" aria-label="Mensagem WhatsApp">' + ICO.wa + '</button>');
+};
+var dlgOrcBase = dlgOrc;
+dlgOrc = function (id) { dlgOrcBase(id); $('dlg-f').innerHTML = '<button type="button" class="btn acc" data-wa="orc:' + id + '">' + ICO.wa + ' Mensagem WhatsApp</button>'; };
+var dlgPedidoBase = dlgPedido;
+dlgPedido = function (id) { dlgPedidoBase(id); if (id) $('dlg-b').insertAdjacentHTML('afterbegin', '<button type="button" class="btn ghost small" data-wa="ped:' + id + '" style="align-self:flex-start">' + ICO.wa + ' Mensagem WhatsApp</button>'); };
+if ($('b-texto')) $('b-texto').insertAdjacentHTML('afterend', '<button type="button" class="btn ghost" id="b-wa">' + ICO.wa + ' WhatsApp</button>');
+if ($('b-wa')) $('b-wa').addEventListener('click', function () {
+  fromForm(); var c = clientes.find(function (k) { return k.id === cur.clienteId; }) || {};
+  var x = { id: cur.id, num: cur.num || '(por guardar)', data: cur.data, estado: cur.estado, f: cur.f, extras: cur.extras, cliente: cur.f.c_nome, morada: cur.f.o_morada, total: compute(cur).total, enviadoEm: null, clienteId: cur.clienteId };
+  dlgMsg('WhatsApp · ' + (cur.f.c_nome || 'cliente'), c.telefone || cur.f.c_tel, modelosOrc(x), 0);
+});
+
+// ---------- 3. Tempo nas obras (Open-Meteo, sem chave) ----------
+var TEMPO = lsGet('vt-tempo-v1', {}), tempoPedido = {};
+function locDe(o) { return cidade(o.morada) || 'Viseu'; }
+function tempoExemplo() {
+  var L = []; for (var i = 0; i < 7; i++) { var d = addDias(hoje(), i); L.push({ d: d, c: i === 2 ? 63 : i === 3 ? 3 : i === 5 ? 2 : 1, tmax: [17, 16, 13, 12, 11, 15, 16][i], tmin: [8, 7, 9, 4, 2, 6, 7][i], p: [5, 10, 85, 40, 0, 10, 20][i], mm: [0, 0, 7.4, 0.6, 0, 0, 0.2][i], v: [12, 15, 34, 46, 18, 10, 14][i] }); }
+  return L;
+}
+function tempoDe(loc) { var t = TEMPO[loc]; if (window.VT_TEMPO_EXEMPLO) return tempoExemplo(); return t && t.dias && t.dias[0] && t.dias[0].d <= hoje() ? t.dias.filter(function (x) { return x.d >= hoje(); }) : null; }
+function tempoGarantir(loc) {
+  if (window.VT_TEMPO_EXEMPLO) return;
+  var t = TEMPO[loc]; if (t && Date.now() - t.ts < 3 * 3600e3) return;
+  if (tempoPedido[loc] || !navigator.onLine) return; tempoPedido[loc] = 1;
+  fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&language=pt&countryCode=PT&name=' + encodeURIComponent(loc)).then(function (r) { return r.json(); }).then(function (g) {
+    var x = g.results && g.results[0]; if (!x) throw new Error('local');
+    return fetch('https://api.open-meteo.com/v1/forecast?latitude=' + x.latitude + '&longitude=' + x.longitude + '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max&timezone=Europe%2FLisbon&forecast_days=7');
+  }).then(function (r) { return r.json(); }).then(function (w) {
+    var D = w.daily; TEMPO[loc] = { ts: Date.now(), dias: D.time.map(function (d, i) { return { d: d, c: D.weather_code[i], tmax: Math.round(D.temperature_2m_max[i]), tmin: Math.round(D.temperature_2m_min[i]), p: D.precipitation_probability_max[i] || 0, mm: D.precipitation_sum[i] || 0, v: Math.round(D.wind_speed_10m_max[i]) }; }) };
+    lsSet('vt-tempo-v1', TEMPO); tempoPedido[loc] = 0; agendarRender(); if (obraAberta) renderObra();
+  }).catch(function (e) { console.warn('tempo', e); tempoPedido[loc] = 0; TEMPO[loc] = Object.assign(TEMPO[loc] || {}, { ts: Date.now() - 2.5 * 3600e3, erro: 1 }); });
+}
+function alertasDia(x) {
+  var a = [];
+  if (x.p >= 60 || x.mm >= 1) a.push(['chuva', 'no', 'Chuva' + (x.mm >= 1 ? ' (' + fmtN(Math.round(x.mm * 10) / 10) + ' mm)' : ' (' + x.p + ' %)'), 'Não aplicar reboco, barramento nem acabamento.']);
+  if (x.tmin < 5) a.push(['frio', 'warn', 'Frio (mín. ' + x.tmin + ' °C)', 'Abaixo de 5 °C as argamassas e o acabamento não secam bem.']);
+  if (x.tmax >= 30) a.push(['calor', 'warn', 'Calor (máx. ' + x.tmax + ' °C)', 'Evitar acabamento ao sol nas horas de mais calor.']);
+  if (x.v >= 40) a.push(['vento', 'warn', 'Vento forte (' + x.v + ' km/h)', 'Atenção ao andaime e às redes de proteção.']);
+  return a;
+}
+function alertasProximos(o, n) { var t = tempoDe(locDe(o)); if (!t) return []; return t.slice(0, n).map(function (d) { return { d: d, a: alertasDia(d) }; }).filter(function (x) { return x.a.length; }); }
+function icTempo(c) {
+  var sol = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>';
+  var nuv = '<path d="M17.5 19H8a5 5 0 1 1 .9-9.9A6 6 0 0 1 20 11a4 4 0 0 1-2.5 8z"/>';
+  if (c === 0) return SV(sol);
+  if (c <= 3) return SV('<path d="M12 2v2M4.9 4.9l1.4 1.4M20 12h2M19.1 4.9l-1.4 1.4"/><path d="M15.9 9.5A4 4 0 0 0 8.2 10"/><path d="M16 20H8a4 4 0 1 1 .8-7.9A5 5 0 0 1 18 13.5a3.3 3.3 0 0 1-2 6.5z"/>');
+  if (c === 45 || c === 48) return SV(nuv + '<path d="M4 22h16"/>');
+  if (c >= 71 && c <= 77) return SV(nuv.replace('19H', '15H').replace('2.5 8z', '2.5 4z') + '<path d="M8 19h.01M12 21h.01M16 19h.01"/>');
+  if (c >= 95) return SV('<path d="M19 16.9A5 5 0 0 0 18 7h-1.3A8 8 0 1 0 4 15.3"/><path d="m13 11-4 6h6l-4 6"/>');
+  return SV('<path d="M20 16.6A5 5 0 0 0 18 7h-1.3A8 8 0 1 0 4 15.3"/><path d="M8 19v2M12 17v4M16 19v2"/>');
+}
+function tempoHTML(o) {
+  var loc = locDe(o), t = tempoDe(loc); tempoGarantir(loc);
+  var h = '<section class="card tempo" id="ob-tempo"><div class="titulo"><h2>Tempo na obra</h2><span class="meta">' + esc(loc) + ' · 7 dias</span></div>';
+  if (!t) return h + '<p class="hint">' + (TEMPO[loc] && TEMPO[loc].erro ? 'Não foi possível obter a previsão para ' + esc(loc) + '. Tenta outra vez mais tarde.' : 'A obter a previsão…') + '</p></section>';
+  h += '<div class="tp-dias">' + t.map(function (x, i) { var a = alertasDia(x), dt = new Date(x.d + 'T12:00:00'); return '<div class="tp-d' + (a.length ? ' al-' + (a.some(function (z) { return z[1] === 'no'; }) ? 'no' : 'warn') : '') + '"><small>' + (i === 0 ? 'Hoje' : DIAS_S[dt.getDay()]) + '</small>' + icTempo(x.c) + '<b>' + x.tmax + '°</b><span>' + x.tmin + '°</span><em>' + (x.p >= 20 ? x.p + '%' : '') + '</em></div>'; }).join('') + '</div>';
+  var al = t.map(function (x) { return { d: x, a: alertasDia(x) }; }).filter(function (z) { return z.a.length; });
+  if (al.length) h += '<div class="tp-al">' + al.slice(0, 4).map(function (z) { return '<div class="tp-a"><span class="dot ' + z.a[0][1] + '"></span><span><b>' + esc(quandoDia(z.d.d).replace(/^./, function (c) { return c.toUpperCase(); })) + ': ' + esc(z.a.map(function (k) { return k[2]; }).join(' · ')) + '</b><span class="meta">' + esc(z.a[0][3]) + '</span></span></div>'; }).join('') + '</div>' + (alertasProximos(o, 3).length && o.telefone ? '<button type="button" class="btn ghost small" data-wa="obra:' + o.id + '" style="align-self:flex-start">' + ICO.wa + ' Avisar o cliente</button>' : '');
+  else h += '<p class="hint" style="margin:0">Bom tempo para trabalhar nos próximos dias.</p>';
+  return h + '<p class="hint" style="margin:0;font-size:.74rem">Regra geral: aplicar entre 5 °C e 30 °C, sem chuva nem vento forte. Sigam a ficha técnica do sistema. Previsão: Open-Meteo.</p></section>';
+}
+var avisosBase = avisos;
+avisos = function () {
+  var A = avisosBase(), h = hoje();
+  obras.forEach(function (o) {
+    var ativa = o.estado === 'Em curso' || o.estado === 'Parada' || ((o.estado || 'Planeada') === 'Planeada' && o.inicio && diasEntre(h, o.inicio) <= 3);
+    if (!ativa) return; tempoGarantir(locDe(o));
+    var al = alertasProximos(o, 3)[0];
+    if (al) A.unshift([al.a[0][1] === 'no' ? 'warn' : 'info', al.a[0][2].replace(/ \(.*/, '') + ' ' + quandoDia(al.d.d) + ': ' + o.nome, al.a[0][3], 'obra:' + o.id]);
+    (o.adicionais || []).filter(function (a) { return a.estado === 'pendente'; }).forEach(function (a) { A.push(['warn', 'Trabalho a mais por aprovar · ' + eur(a.valor), a.desc + ' · ' + o.nome, 'obra:' + o.id]); });
+  });
+  return A;
+};
+
+// ---------- 4. Trabalhos a mais ----------
+function adicHTML(o) {
+  var L = o.adicionais || [], ap = L.filter(function (a) { return a.estado === 'aprovado'; }), pend = L.filter(function (a) { return a.estado === 'pendente'; });
+  var c = '<div class="row"><button type="button" class="btn small" data-adic="novo">Registar trabalho a mais</button></div>';
+  if (L.length) c += '<div>' + L.slice().reverse().map(function (a) {
+    var st = a.estado === 'aprovado' ? pill('Aprovado ' + dataPT(a.aprovadoEm), 'ok') : a.estado === 'recusado' ? pill('Recusado', 'no') : pill('Por aprovar', 'warn');
+    var b = a.estado === 'pendente' ? '<div class="row" style="gap:6px"><button type="button" class="btn small acc" data-wa="adic:' + o.id + ':' + a.id + '">' + ICO.wa + ' Pedir aprovação</button><button type="button" class="btn small" data-adic="ok:' + a.id + '">Aprovado</button><button type="button" class="btn small ghost" data-adic="no:' + a.id + '">Recusado</button></div>' : '<button type="button" class="btn ghost small" data-adic="rm:' + a.id + '">Anular</button>';
+    return '<div class="adic"><div class="adic-h"><span style="flex:1;min-width:0"><b>' + esc(a.desc) + '</b><span class="meta">' + dataPT(a.data) + (a.por ? ' · ' + esc(a.por) : '') + (a.foto ? ' · com fotografia' : '') + '</span></span><span class="q"><b>' + eur(a.valor) + '</b>' + st + '</span></div>' + b + '</div>';
+  }).join('') + '</div>';
+  else c += '<p class="hint">Quando aparece um imprevisto (reboco podre, fissuras, um peitoril a mais), registem-no aqui com o valor e peçam a aprovação do cliente por WhatsApp antes de avançar. Ao aprovar, o valor soma ao valor acordado e ao plano de pagamentos.</p>';
+  if (ap.length) c += '<p class="hint">Valor inicial ' + eur(o.valorBase != null ? o.valorBase : (o.valor || 0) - soma(ap, function (a) { return a.valor; })) + ' + trabalhos a mais ' + eur(soma(ap, function (a) { return a.valor; })) + ' = ' + eur(o.valor) + '.</p>';
+  var resumo = L.length ? (ap.length ? eur(soma(ap, function (a) { return a.valor; })) + ' aprovados' : 'Nenhum aprovado') + (pend.length ? ' · ' + pend.length + ' por aprovar' : '') : 'Imprevistos cobrados à parte';
+  return sec('adic', ICO.flag, 'Trabalhos a mais', resumo, c, pend.length ? ['Por aprovar', 'warn'] : null);
+}
+function dlgAdic(o) {
+  var corpo = campoTxt('ad_desc', 'O que é preciso fazer', '', 'Ex.: reparar reboco solto e fissuras na fachada norte, cerca de 6 m²') + '<div class="grid">' + campo('ad_valor', 'Valor a cobrar ao cliente (€)', '', 'text', ' inputmode="decimal"') + '<label for="ad_foto">Fotografia (opcional)<input id="ad_foto" type="file" accept="image/*" capture="environment"></label></div><p class="hint">Depois de guardar, pode enviar logo o pedido de aprovação ao cliente por WhatsApp.</p>';
+  abrirDlg('Trabalho a mais', corpo, [{ txt: 'Guardar e pedir aprovação', cls: 'acc', fn: function () {
+    var desc = val('ad_desc'), v = num(val('ad_valor'));
+    if (!desc) { toast('Descreva o trabalho.'); return false; } if (!v) { toast('Escreva o valor.'); return false; }
+    var a = { id: Math.random().toString(36).slice(2, 9), data: hoje(), desc: desc, valor: Math.round(v * 100) / 100, estado: 'pendente', por: porQuem() };
+    var fl = $('ad_foto').files; if (fl && fl.length) { a.foto = 1; enviarFotos([fl[0]], baseFotosObra(o), { legenda: 'Trabalho a mais: ' + desc, adicional: a.id }, 'Problema', function (m) { estadoFotoObra = m; }); }
+    updObra({ adicionais: (o.adicionais || []).concat([a]) }); secAbertas.adic = true; renderObra();
+    setTimeout(function () { abrirWA('adic:' + o.id + ':' + a.id); }, 220);
+  } }]);
+}
+function mudarAdic(o, acao, id) {
+  var L = JSON.parse(JSON.stringify(o.adicionais || [])), a = L.find(function (x) { return x.id === id; }); if (!a) return;
+  var d = { adicionais: L }, base = o.valorBase != null ? o.valorBase : (o.valor || 0) - soma((o.adicionais || []).filter(function (x) { return x.estado === 'aprovado'; }), function (x) { return x.valor; });
+  var tranche = 'Trabalho a mais: ' + a.desc;
+  if (acao === 'ok') { a.estado = 'aprovado'; a.aprovadoEm = hoje(); d.valorBase = base; d.valor = Math.round(((o.valor || 0) + a.valor) * 100) / 100; if ((o.plano || []).length) d.plano = o.plano.concat([{ d: tranche, v: a.valor, q: 'fim', data: '' }]); toast('Aprovado: ' + eur(a.valor) + ' somado ao valor da obra.'); }
+  else if (acao === 'no') { a.estado = 'recusado'; toast('Marcado como recusado.'); }
+  else if (acao === 'rm') {
+    if (!confirm('Anular este trabalho a mais?' + (a.estado === 'aprovado' ? ' O valor sai do valor da obra.' : ''))) return;
+    if (a.estado === 'aprovado') { d.valor = Math.round(((o.valor || 0) - a.valor) * 100) / 100; d.plano = (o.plano || []).filter(function (t) { return !(t.d === tranche && Math.abs(t.v - a.valor) < 0.01); }); }
+    d.adicionais = L.filter(function (x) { return x.id !== id; });
+  }
+  updObra(d); renderObra();
+}
+
+// ---------- 5. Margem real ----------
+function margemObra(o) {
+  var orc = o.orcamentoId && orcs.find(function (x) { return x.id === o.orcamentoId; });
+  var taxa = orc ? (num((orc.f || {}).iva) || 0) : 0, cj = num(settings.s_custoj != null ? settings.s_custoj : config.s_custoj);
+  var receita = (o.valor || 0) / (1 + taxa / 100);
+  var jReal = soma(dias.filter(function (d) { return d.obraId === o.id; }), function (d) { return d.fracao || 1; });
+  var gasto = soma(despesas.filter(function (d) { return d.obraId === o.id; }), function (d) { return d.valor || 0; });
+  var fz = o.estado === 'Concluída' ? 1 : progFases(o) / 100, feito = receita * fz;
+  var eqReal = cj != null ? jReal * cj : null, res = eqReal != null ? feito - eqReal - gasto : null;
+  var prev = null;
+  if (orc) {
+    var q = { f: orc.f || {}, extras: orc.extras || [] }, r = (orc.f || {}).escolha === 'B' && computeAlt(q) ? computeAlt(q) : compute(q);
+    var pess = (o.equipa || []).length || num(config.s_pessoas) || 3, jPrev = r.dias ? r.dias * pess : null, f = orc.f || {};
+    var matPrev = f.modo === 'completa' ? (num(f.o_area) || 0) * ((num(((f.escolha === 'B' && f.alt && num(f.alt.mat) != null) ? f.alt.mat : f.m_mat)) || 0) + (num(f.m_and) || 0)) : 0;
+    var desl = (r.lines.find(function (l) { return /^Deslocações/.test(l[0]); }) || [0, 0])[1];
+    var eqPrev = cj != null && jPrev != null ? jPrev * cj : null;
+    prev = { receita: r.base, jPrev: jPrev, pess: pess, eq: eqPrev, outros: matPrev + desl, res: eqPrev != null ? r.base - eqPrev - matPrev - desl : null };
+  }
+  var adic = soma((o.adicionais || []).filter(function (a) { return a.estado === 'aprovado'; }), function (a) { return a.valor; }) / (1 + taxa / 100);
+  return { taxa: taxa, cj: cj, receita: receita, fz: fz, feito: feito, jReal: jReal, gasto: gasto, eq: eqReal, res: res, pct: res != null && feito ? res / feito : null, prev: prev, adic: adic };
+}
+function pctTxt(v) { return v == null ? '—' : Math.round(v * 100) + ' %'; }
+function margemHTML(o) {
+  var m = margemObra(o), P = m.prev, conc = o.estado === 'Concluída', c = '';
+  if (m.cj == null) {
+    c = '<p class="hint">Para calcular a margem real, indique em Definições quanto custa à empresa um dia de trabalho de uma pessoa (salário, segurança social, seguro e refeição).</p><button type="button" class="btn small" data-irdef="1" style="align-self:flex-start">Abrir Definições</button>';
+    return sec('margem', ICO.eur, 'Margem real', 'Falta o custo de uma jornada', c);
+  }
+  var row = function (l, a, b, cls) { return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td>' + l + '</td><td>' + a + '</td><td>' + b + '</td></tr>'; };
+  c += '<table class="tbl mg"><thead><tr><th></th><th>Previsto</th><th>' + (conc ? 'Real' : 'Até agora') + '</th></tr></thead><tbody>' +
+    row(conc ? 'Valor da obra sem IVA' : 'Valor do trabalho feito', P ? eur(P.receita) : '—', eur(m.feito) + '<small>' + (conc ? '' : Math.round(m.fz * 100) + ' % de ' + eur(m.receita)) + (m.adic ? (conc ? '' : ' · ') + 'inclui ' + eur(m.adic) + ' a mais' : '') + '</small>') +
+    row('Equipa', P && P.jPrev != null ? eur(P.eq) + '<small>' + fmtN(P.jPrev) + ' jornadas</small>' : '—', eur(m.eq) + '<small>' + fmtN(m.jReal) + ' jornadas × ' + eur(m.cj) + '</small>') +
+    row('Material, deslocações e despesas', P ? eur(P.outros) : '—', eur(m.gasto)) +
+    row('<b>Resultado</b>', P && P.res != null ? '<b>' + eur(P.res) + '</b><small>' + pctTxt(P.receita ? P.res / P.receita : null) + '</small>' : '—', '<b class="' + (m.res < 0 ? 'neg' : 'pos') + '">' + eur(m.res) + '</b><small>' + pctTxt(m.pct) + '</small>', 'tot') + '</tbody></table>';
+  if (P && P.jPrev) {
+    var uso = m.jReal / P.jPrev, fz = progFases(o) / 100;
+    c += '<div class="mg-bar"><div><span class="meta">Jornadas usadas</span><span class="prog"><i style="width:' + Math.min(100, Math.round(uso * 100)) + '%"></i></span><b>' + Math.round(uso * 100) + ' %</b></div><div><span class="meta">Obra feita (fases)</span><span class="prog"><i style="width:' + Math.round(fz * 100) + '%"></i></span><b>' + Math.round(fz * 100) + ' %</b></div></div>';
+    if (!conc && uso > fz + 0.15) c += '<p class="warn">A obra está a gastar mais dias do que o previsto: ' + Math.round(uso * 100) + ' % das jornadas para ' + Math.round(fz * 100) + ' % das fases.</p>';
+    else if (conc && P.res != null) c += '<p class="hint">' + (m.res >= P.res ? 'Correu melhor do que o previsto: mais ' + eur(m.res - P.res) + ' de resultado.' : 'Ficou ' + eur(P.res - m.res) + ' abaixo do previsto. Vale a pena ver onde se gastou mais.') + '</p>';
+  }
+  c += '<p class="hint" style="font-size:.76rem">Previsto: dias do orçamento × ' + (P ? P.pess : 3) + ' pessoas × custo de uma jornada' + (P && P.outros ? ', mais o custo do material e das deslocações do orçamento' : '') + '. ' + (conc ? '' : 'Até agora: o valor da obra conta na proporção das fases feitas, para comparar com os custos já registados.') + '</p>';
+  var resumo = (conc ? 'Margem ' : 'Até agora ') + pctTxt(m.pct) + (P && P.res != null && P.receita ? ' · prevista ' + pctTxt(P.res / P.receita) : '');
+  return sec('margem', ICO.eur, 'Margem real', resumo, c, m.res != null && m.res < 0 && conc ? ['Prejuízo', 'no'] : null);
+}
+var renderContasBase = renderContas;
+renderContas = function () {
+  renderContasBase();
+  if (!obras.length) return;
+  var cj = num(config.s_custoj);
+  $('ct-obras').innerHTML = (cj == null ? '<p class="hint">Indique o custo de uma jornada em Definições para ver a margem real de cada obra.</p>' : '') + '<div>' + obras.map(function (o) {
+    var m = margemObra(o), P = m.prev;
+    return '<button type="button" class="mrow2" data-obra="' + o.id + '" style="width:100%;background:none;border:0;border-bottom:1px solid var(--line);text-align:left;cursor:pointer;font:inherit;color:inherit"><span style="flex:1;min-width:0"><b>' + esc(o.nome) + '</b><span class="meta">' + esc(o.estado || 'Planeada') + ' · ' + eur(m.receita) + ' sem IVA' + (m.fz < 1 ? ' (' + Math.round(m.fz * 100) + ' % feito)' : '') + ' · ' + fmtN(m.jReal) + ' jornadas · despesas ' + eur(m.gasto) + '</span></span><span class="q" style="color:' + (m.res != null && m.res < 0 ? 'var(--no)' : 'var(--ok)') + '">' + (m.res != null ? eur(m.res) + '<small>' + pctTxt(m.pct) + (P && P.res != null && P.receita ? ' · prevista ' + pctTxt(P.res / P.receita) : '') + '</small>' : '—<small>margem</small>') + '</span></button>';
+  }).join('') + '</div>';
+};
+
+// ---------- montagem na página da obra ----------
+var renderObraM5 = renderObra;
+renderObra = function () {
+  renderObraM5();
+  var o = obraAtual(); if (!o) return; var C = $('obra-corpo');
+  C.querySelectorAll('[data-m5]').forEach(function (n) { n.remove(); });
+  var M5 = function (h) { return h.replace(/^<(details|section|div)/, '<$1 data-m5'); };
+  var wa = C.querySelector('.oh-acts a[href^="https://wa.me"]'); if (wa) wa.setAttribute('data-wa', 'obra:' + o.id);
+  var ag = C.querySelector('.agora');
+  var pend = (o.adicionais || []).filter(function (a) { return a.estado === 'pendente'; });
+  if (ag && pend.length) ag.insertAdjacentHTML('beforeend', pend.map(function (a) { return '<div class="ag-r" data-m5><span class="ag-ic t-warn">' + ICO.flag + '</span><span class="ag-t"><b>Trabalho a mais por aprovar · ' + eur(a.valor) + '</b><span class="meta">' + esc(a.desc) + '</span></span><button type="button" class="btn small acc" data-wa="adic:' + o.id + ':' + a.id + '">Pedir</button></div>'; }).join(''));
+  if (o.estado !== 'Concluída') { var t = M5(tempoHTML(o)); if (ag) ag.insertAdjacentHTML('afterend', t); else C.querySelector('.ohero').insertAdjacentHTML('afterend', t); }
+  var sp = C.querySelector('[data-sec="pag"]'); if (sp) sp.insertAdjacentHTML('afterend', M5(adicHTML(o)));
+  var sd = C.querySelector('[data-sec="dsp"]'); if (sd) sd.insertAdjacentHTML('afterend', M5(margemHTML(o)));
+};
+$('obra-corpo').addEventListener('click', function (e) {
+  var o = obraAtual(); if (!o) return;
+  var b = e.target.closest('[data-adic],[data-irdef]'); if (!b) return;
+  if (b.dataset.irdef) { show('def'); var el = $('s_custoj'); if (el) setTimeout(function () { el.focus(); el.scrollIntoView({ block: 'center' }); }, 200); return; }
+  var p = b.dataset.adic.split(':');
+  if (p[0] === 'novo') dlgAdic(o); else mudarAdic(o, p[0], p[1]);
+});
+
+// =====================================================================
+// PAREDES E ESPESSURAS (várias espessuras na mesma obra) + MEDIÇÕES
+// =====================================================================
+function rid() { return Math.random().toString(36).slice(2, 9); }
+var ISOS = ['EPS branco', 'EPS grafite', 'XPS', 'Lã mineral', 'Cortiça (ICB)'];
+function descZ(z) { var t = [z.iso, num(z.esp) ? fmtN(num(z.esp)) + ' cm' : ''].filter(Boolean).join(' '); return t ? ' (' + t + ')' : ''; }
+function espResumo(Z) { var u = []; Z.forEach(function (z) { var t = [z.iso, num(z.esp) ? fmtN(num(z.esp)) + ' cm' : ''].filter(Boolean).join(' '); if (t && u.indexOf(t) < 0) u.push(t); }); return u.join(' / '); }
+function zonasCom(f) { return (f.zonas || []).filter(function (z) { return num(z.area); }); }
+
+// ---------- no orçamento ----------
+var computeZBase = compute;
+compute = function (q) {
+  var Z = zonasCom(q.f || {}); if (!Z.length) return computeZBase(q);
+  var A = soma(Z, function (z) { return num(z.area); });
+  var c = { f: Object.assign({}, q.f, { o_area: String(A) }), extras: q.extras || [] }, r = computeZBase(c);
+  if (q.f.mo_tipo === 'm2') {
+    var pg = num(c.f.mo_preco), i = r.lines.findIndex(function (l) { return /^Mão de obra/.test(l[0]); }), old = i >= 0 ? r.lines[i][1] : 0;
+    var novos = Z.map(function (z) { var p = num(z.preco) != null ? num(z.preco) : pg; return p != null ? ['Mão de obra · ' + (z.nome || 'Parede') + descZ(z) + ': ' + fmtN(num(z.area)) + ' m² × ' + eur(p), num(z.area) * p] : null; });
+    if (novos.every(Boolean)) {
+      var nv = soma(novos, function (l) { return l[1]; });
+      if (i >= 0) r.lines.splice.apply(r.lines, [i, 1].concat(novos)); else r.lines = novos.concat(r.lines);
+      r.falta = r.falta.filter(function (x) { return !/Preço da mão de obra/.test(x); });
+      r.base += nv - old; r.ivaV = r.base * r.taxa / 100; r.total = r.base + r.ivaV;
+      r.info = r.info.map(function (x) { return /^Preço por m²/.test(x[0]) ? [x[0], eur(r.base / A)] : x; });
+    }
+  }
+  r.zonas = Z; return r;
+};
+function renderZonasQ() {
+  var box = $('zonas'); if (!box || !cur) return;
+  var Z = cur.f.zonas || [];
+  box.innerHTML = Z.map(function (z, i) {
+    return '<div class="zq"><label for="zq_n' + i + '">Parede<input id="zq_n' + i + '" data-zq="' + i + '" data-k="nome" value="' + esc(z.nome || '') + '" placeholder="Ex.: fachada norte"></label>' +
+      '<label for="zq_a' + i + '">m²<input id="zq_a' + i + '" data-zq="' + i + '" data-k="area" inputmode="decimal" value="' + esc(z.area || '') + '"></label>' +
+      '<label for="zq_i' + i + '">Isolamento<select id="zq_i' + i + '" data-zq="' + i + '" data-k="iso"><option value="">—</option>' + ISOS.map(function (x) { return '<option' + (x === z.iso ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></label>' +
+      '<label for="zq_e' + i + '">cm<input id="zq_e' + i + '" data-zq="' + i + '" data-k="esp" inputmode="decimal" value="' + esc(z.esp || '') + '"></label>' +
+      '<label for="zq_p' + i + '">€/m²<input id="zq_p' + i + '" data-zq="' + i + '" data-k="preco" inputmode="decimal" value="' + esc(z.preco || '') + '" placeholder="geral"></label>' +
+      '<button type="button" class="btn danger small ico" data-zqrm="' + i + '" aria-label="Retirar parede">✕</button></div>';
+  }).join('');
+  var tem = zonasCom(cur.f).length > 0;
+  $('o_area').readOnly = tem; $('o_area').closest('label').classList.toggle('lock', tem);
+  ['o_iso', 'o_esp'].forEach(function (k) { $(k).closest('label').hidden = tem; });
+  $('zonas-tot').textContent = tem ? 'Total ' + fmtN(soma(zonasCom(cur.f), function (z) { return num(z.area); })) + ' m² · ' + espResumo(zonasCom(cur.f)) : '';
+}
+function zonasParaArea() { var Z = zonasCom(cur.f); if (Z.length) { cur.f.o_area = fmtN(soma(Z, function (z) { return num(z.area); })); $('o_area').value = cur.f.o_area; } }
+if ($('zonas')) {
+  $('zonas').addEventListener('input', function (e) { var t = e.target; if (t.dataset.zq == null) return; cur.f.zonas[+t.dataset.zq][t.dataset.k] = t.value; zonasParaArea(); changed(); if (t.dataset.k === 'area') { $('zonas-tot').textContent = 'Total ' + fmtN(soma(zonasCom(cur.f), function (z) { return num(z.area); })) + ' m² · ' + espResumo(zonasCom(cur.f)); } });
+  $('zonas').addEventListener('change', function (e) { if (e.target.dataset.zq != null) renderZonasQ(); });
+  $('zonas').addEventListener('click', function (e) { var b = e.target.closest('[data-zqrm]'); if (!b) return; cur.f.zonas.splice(+b.dataset.zqrm, 1); zonasParaArea(); renderZonasQ(); changed(); });
+  $('b-zona').addEventListener('click', function () {
+    var Z = cur.f.zonas || (cur.f.zonas = []);
+    if (!Z.length && num(cur.f.o_area)) Z.push({ id: rid(), nome: 'Fachada principal', area: cur.f.o_area, iso: cur.f.o_iso || '', esp: cur.f.o_esp || '', preco: '' });
+    Z.push({ id: rid(), nome: '', area: '', iso: (Z[0] && Z[0].iso) || cur.f.o_iso || '', esp: '', preco: '' });
+    renderZonasQ(); changed(); var n = $('zq_n' + (Z.length - 1)); if (n) n.focus();
+  });
+}
+var toFormZBase = toForm;
+toForm = function (q) { toFormZBase(q); renderZonasQ(); };
+var estadoQZBase = estadoQ;
+estadoQ = function () { var q = estadoQZBase(), Z = zonasCom(cur.f); if (Z.length) q.S.obra[0] = fmtN(soma(Z, function (z) { return num(z.area); })) + ' m² em ' + Z.length + (Z.length === 1 ? ' parede' : ' paredes') + ' · ' + (cur.f.modo === 'completa' ? 'Obra completa' : 'Só mão de obra') + ' · ' + espResumo(Z); return q; };
+
+// ---------- na obra: paredes, espessuras e medições ----------
+function precoZ(o, z) { return num(z.preco) != null ? num(z.preco) : num(o.precoM2); }
+function medidoZ(o, z) { return soma((o.autos || []), function (a) { return num((a.m || {})[z.id]) || 0; }); }
+function valorAuto(o, m) { var t = num(o.taxa) || 0; return Math.round(soma(o.zonas || [], function (z) { return (num(m[z.id]) || 0) * (precoZ(o, z) || 0); }) * (1 + t / 100) * 100) / 100; }
+function adiantObra(o) { return soma((o.plano || []).filter(function (t) { return t.q === 'inicio' && !t.auto; }), function (t) { return num(t.v) || 0; }); }
+function deduzidoObra(o) { return soma(o.autos || [], function (a) { return a.ded || 0; }); }
+function dedDe(o, bruto, fin) {
+  var adi = adiantObra(o); if (!adi) return 0;
+  var resta = Math.max(0, adi - deduzidoObra(o));
+  if (fin) return Math.round(Math.min(resta, bruto) * 100) / 100;
+  var base = (o.valorBase != null ? o.valorBase : o.valor) || 0;
+  return Math.round(Math.min(resta, base ? bruto * adi / base : 0) * 100) / 100;
+}
+function zonasObraHTML(o) {
+  var Z = o.zonas || [], au = o.autos || [], prev = soma(Z, function (z) { return num(z.area) || 0; }), med = soma(Z, function (z) { return medidoZ(o, z); });
+  var c = '<div class="row" style="justify-content:space-between;align-items:flex-end"><label for="ob_pm2" style="flex:0 1 190px">Preço geral (€/m²)<input id="ob_pm2" inputmode="decimal" value="' + (o.precoM2 != null ? esc(fmtN(o.precoM2)) : '') + '" placeholder="Ex.: 16"></label><div class="row" style="gap:6px"><button type="button" class="btn ghost small" data-zo="nova">+ Parede</button>' + (Z.length ? '<button type="button" class="btn small acc" data-zo="medir">Registar medição</button>' : '') + '</div></div>';
+  if (Z.length) {
+    c += '<div class="zo-l">' + Z.map(function (z) {
+      var m = medidoZ(o, z), a = num(z.area) || 0, p = a ? Math.min(100, Math.round(m / a * 100)) : 0, pr = precoZ(o, z);
+      return '<button type="button" class="zo" data-zo="ed:' + z.id + '"><span class="zo-t"><b>' + esc(z.nome || 'Parede') + '</b><span class="esp">' + esc([z.iso, num(z.esp) ? fmtN(num(z.esp)) + ' cm' : ''].filter(Boolean).join(' ') || 'Espessura por indicar') + '</span></span><span class="zo-n"><span class="meta">' + fmtN(Math.round(m * 100) / 100) + ' de ' + fmtN(a) + ' m²' + (pr != null ? ' · ' + eur(pr) + '/m²' : '') + '</span><span class="prog"><i style="width:' + p + '%"></i></span></span></button>';
+    }).join('') + '</div>';
+    c += '<div class="kpis"><div class="kpi"><small>Previsto</small><b>' + fmtN(prev) + ' m²</b></div><div class="kpi"><small>Medido</small><b>' + fmtN(Math.round(med * 100) / 100) + ' m²</b></div><div class="kpi"><small>Valor medido</small><b>' + eur(soma(au, function (a) { return a.bruto != null ? a.bruto : a.valor || 0; })) + '</b></div></div>';
+    var adi = adiantObra(o); if (adi) c += '<p class="hint">Adiantamento de ' + eur(adi) + ' (' + Math.round(adi / ((o.valorBase != null ? o.valorBase : o.valor) || 1) * 100) + ' % do valor): cada medição desconta a mesma percentagem. Já descontado ' + eur(deduzidoObra(o)) + ' de ' + eur(adi) + '.</p>';
+  } else c += '<p class="hint">Registem cada parede com a espessura que o empreiteiro indicar em obra (por exemplo, fachada norte 8 cm, restantes 6 cm). Depois, em cada medição, indicam os m² feitos em cada parede e a app calcula o valor a cobrar.</p>';
+  if (au.length) {
+    var ep = estadoPlano(o);
+    c += '<b class="sub">Medições</b><div>' + au.slice().reverse().map(function (a) {
+      var tr = ep.find(function (e) { return e.t.auto === a.id; }), st = tr ? (tr.falta <= 0.005 ? pill('Pago', 'ok') : pill('Cobrar ' + eur(tr.falta), 'warn')) : '';
+      var m2 = soma(Object.keys(a.m || {}), function (k) { return num(a.m[k]) || 0; });
+      return '<div class="mrow2"><span style="flex:1;min-width:0"><b>' + (a.final ? 'Medição final' : 'Medição n.º ' + a.n) + ' · ' + eur(a.valor) + '</b><span class="meta">' + dataPT(a.data) + ' · ' + fmtN(Math.round(m2 * 100) / 100) + ' m²' + (a.ded ? ' · ' + eur(a.bruto) + ' − ' + eur(a.ded) + ' de adiantamento' : '') + (a.por ? ' · ' + esc(a.por) : '') + '</span></span><span class="q">' + st + '</span></div>';
+    }).join('') + '</div>';
+  }
+  var resumo = Z.length ? fmtN(Math.round(med * 100) / 100) + ' de ' + fmtN(prev) + ' m² medidos · ' + espResumo(Z) : 'Indicar paredes e espessuras';
+  return sec('zonas', ICO.fases, 'Paredes e medições', resumo, c);
+}
+function dlgZona(o, id) {
+  var z = id ? (o.zonas || []).find(function (x) { return x.id === id; }) : { nome: '', area: '', iso: ((o.zonas || [])[0] || {}).iso || o.iso || '', esp: '', preco: null };
+  var corpo = campo('zo_n', 'Parede ou zona', z.nome, 'text', ' placeholder="Ex.: fachada norte, empena, varandas"') + '<div class="grid">' + campoSel('zo_i', 'Isolamento', [['', 'Por indicar']].concat(ISOS), z.iso || '') + campo('zo_e', 'Espessura (cm)', z.esp, 'text', ' inputmode="decimal"') + campo('zo_a', 'Área prevista (m²)', z.area ? fmtN(num(z.area)) : '', 'text', ' inputmode="decimal"') + campo('zo_p', 'Preço por m² (€)', z.preco != null && z.preco !== '' ? fmtN(num(z.preco)) : '', 'text', ' inputmode="decimal" placeholder="Igual ao geral"') + '</div><p class="hint">Deixe o preço vazio para usar o preço geral da obra. Só escreva outro quando combinarem um preço diferente para esta espessura.</p>';
+  var acoes = [{ txt: id ? 'Guardar' : 'Adicionar', cls: 'acc', fn: function () {
+    var nome = val('zo_n'); if (!nome) { toast('Dê um nome à parede.'); return false; }
+    var nz = { id: id || rid(), nome: nome, iso: val('zo_i'), esp: val('zo_e'), area: num(val('zo_a')) || 0, preco: num(val('zo_p')) };
+    var L = (o.zonas || []).slice(), k = L.findIndex(function (x) { return x.id === nz.id; }); if (k >= 0) L[k] = nz; else L.push(nz);
+    var d = { zonas: L }; if (!o.area || o.areaDeZonas) { d.area = String(soma(L, function (x) { return num(x.area) || 0; })); d.areaDeZonas = true; }
+    updObra(d); secAbertas.zonas = true; renderObra();
+  } }];
+  if (id && !(o.autos || []).some(function (a) { return num((a.m || {})[id]); })) acoes.unshift({ txt: 'Retirar', cls: 'danger', fn: function () { updObra({ zonas: (o.zonas || []).filter(function (x) { return x.id !== id; }) }); renderObra(); } });
+  abrirDlg(id ? 'Parede' : 'Nova parede', corpo, acoes);
+}
+function dlgMedir(o) {
+  var Z = o.zonas || [], n = (o.autos || []).filter(function (a) { return !a.final; }).length + 1;
+  if (Z.some(function (z) { return precoZ(o, z) == null; })) { toast('Indique primeiro o preço por m² da obra.'); var e = $('ob_pm2'); if (e) e.focus(); return; }
+  var corpo = campo('md_d', 'Data', hoje(), 'date') + '<p class="hint">Escreva os m² feitos em cada parede desde a última medição.</p>' + Z.map(function (z) {
+    var falta = Math.max(0, (num(z.area) || 0) - medidoZ(o, z));
+    return '<div class="md-r"><span><b>' + esc(z.nome) + '</b><span class="meta">' + esc([z.iso, num(z.esp) ? fmtN(num(z.esp)) + ' cm' : ''].filter(Boolean).join(' ')) + ' · falta ' + fmtN(Math.round(falta * 100) / 100) + ' m²</span></span><input id="md_' + z.id + '" data-md="' + z.id + '" data-falta="' + falta + '" inputmode="decimal" placeholder="m²" aria-label="m² feitos em ' + esc(z.nome) + '"></div>';
+  }).join('') + '<button type="button" class="btn ghost small" id="md-tudo" style="align-self:flex-start">Preencher com tudo o que falta</button><label class="sw" for="md_fin"><input type="checkbox" id="md_fin">É a medição final (a obra acabou)</label><div class="md-tot" id="md-tot"></div>';
+  abrirDlg('Medição n.º ' + n, corpo, [{ txt: 'Registar medição', cls: 'acc', fn: function () {
+    var m = {}; document.querySelectorAll('[data-md]').forEach(function (i) { var v = num(i.value); if (v) m[i.dataset.md] = v; });
+    var fin = $('md_fin').checked;
+    if (!Object.keys(m).length && !fin) { toast('Escreva os m² feitos.'); return false; }
+    var br = valorAuto(o, m), dd = dedDe(o, br, fin);
+    var a = { id: rid(), n: n, data: val('md_d') || hoje(), m: m, bruto: br, ded: dd, valor: Math.round((br - dd) * 100) / 100, por: porQuem(), final: fin };
+    var autos = (o.autos || []).concat([a]), d = { autos: autos };
+    if (a.valor > 0) d.plano = (o.plano || []).concat([{ d: (fin ? 'Medição final' : 'Medição n.º ' + n), v: a.valor, q: 'data', data: a.data, auto: a.id }]);
+    if (fin) {
+      var med = soma(autos, function (x) { return x.bruto != null ? x.bruto : x.valor || 0; }), adic = soma((o.adicionais || []).filter(function (x) { return x.estado === 'aprovado'; }), function (x) { return x.valor; });
+      d.valor = Math.round((med + adic + (o.valorOutros || 0)) * 100) / 100; d.valorBase = Math.round((med + (o.valorOutros || 0)) * 100) / 100;
+      d.plano = (d.plano || o.plano || []).filter(function (t) { return t.auto || /^Trabalho a mais/.test(t.d) || t.q === 'inicio'; });
+    }
+    updObra(d); secAbertas.zonas = true; renderObra();
+    toast((fin ? 'Medição final' : 'Medição n.º ' + n) + ': ' + eur(a.valor) + ' a cobrar' + (a.ded ? ', já com o desconto do adiantamento' : '') + '.');
+  } }]);
+  function tot() { var m = {}; document.querySelectorAll('[data-md]').forEach(function (i) { m[i.dataset.md] = num(i.value) || 0; }); var m2 = soma(Object.keys(m), function (k) { return m[k]; }), br = valorAuto(o, m), dd = dedDe(o, br, $('md_fin') && $('md_fin').checked); $('md-tot').innerHTML = (dd ? '<div class="md-d"><span>Medido ' + fmtN(Math.round(m2 * 100) / 100) + ' m²</span><span>' + eur(br) + '</span></div><div class="md-d"><span>Desconto do adiantamento</span><span>−' + eur(dd) + '</span></div>' : '') + '<div class="md-d big"><span>' + (dd ? 'A cobrar' : fmtN(Math.round(m2 * 100) / 100) + ' m²') + '</span><b>' + eur(br - dd) + '</b></div>' + (num(o.taxa) ? '<small>com IVA ' + o.taxa + ' %</small>' : ''); }
+  $('dlg-b').oninput = tot; $('dlg-b').onchange = tot;
+  $('dlg-b').onclick = function (e) { if (e.target.id === 'md-tudo') { document.querySelectorAll('[data-md]').forEach(function (i) { var f = num(i.dataset.falta); i.value = f ? fmtN(Math.round(f * 100) / 100) : ''; }); tot(); } };
+  tot();
+}
+// obra criada a partir do orçamento: copia as paredes e o preço
+var criarObraDeOrcZBase = criarObraDeOrc;
+criarObraDeOrc = function (x) {
+  var ja = obras.some(function (b) { return b.orcamentoId === x.id; });
+  criarObraDeOrcZBase(x); if (ja) return;
+  var ob = obras.find(function (b) { return b.orcamentoId === x.id; }); if (!ob) return;
+  var f = x.f || {}, Z = zonasCom(f), r = compute({ f: f, extras: x.extras || [] }), t = num(f.iva) || 0;
+  var mo = soma(r.lines.filter(function (l) { return /^Mão de obra/.test(l[0]); }), function (l) { return l[1]; });
+  var d = { taxa: t, precoM2: f.mo_tipo === 'm2' ? num(f.mo_preco) : null, valorOutros: Math.round((r.base - mo) * (1 + t / 100) * 100) / 100 };
+  if (Z.length) d.zonas = Z.map(function (z) { return { id: z.id || rid(), nome: z.nome || 'Parede', area: num(z.area), iso: z.iso || '', esp: z.esp || '', preco: num(z.preco) }; });
+  else if (f.mo_tipo === 'm2' && num(f.o_area)) d.zonas = [{ id: rid(), nome: 'Fachada', area: num(f.o_area), iso: f.o_iso || '', esp: f.o_esp || '', preco: null }];
+  if (obraAberta === ob.id) { updObra(d); renderObra(); } else { Object.assign(ob, d); updateDoc(doc(db, 'obras', ob.id), d).catch(function () {}); }
+};
+var materiaisZBase = materiais;
+materiais = function (o) {
+  var Z = (o.zonas || []).filter(function (z) { return num(z.area); }); if (!Z.length) return materiaisZBase(o);
+  var A = soma(Z, function (z) { return num(z.area); }), L = materiaisZBase(Object.assign({}, o, { area: String(A) })); if (!L) return L;
+  var k = num((config.consumos || {}).k_placa != null ? config.consumos.k_placa : K_DEF.k_placa) || 0, g = {}, ord = [];
+  Z.forEach(function (z) { var key = [z.iso || o.iso || '', num(z.esp) ? fmtN(num(z.esp)) + ' cm' : ''].filter(Boolean).join(' '); if (!(key in g)) { g[key] = 0; ord.push(key); } g[key] += num(z.area); });
+  L.splice.apply(L, [0, 1].concat(ord.map(function (key) { var m = g[key] * (1 + k / 100); return ['Placas' + (key ? ' ' + key : ''), fmtN(Math.ceil(m)) + ' m²', Math.ceil(m / 0.5) + ' placas de 1×0,5 m']; })));
+  return L;
+};
+var renderObraZ = renderObra;
+renderObra = function () {
+  renderObraZ();
+  var o = obraAtual(); if (!o) return; var C = $('obra-corpo');
+  var h = zonasObraHTML(o).replace(/^<details/, '<details data-m5');
+  var f = C.querySelector('[data-sec="fases"]'); if (f) f.insertAdjacentHTML('beforebegin', h);
+  var Z = o.zonas || [];
+  if (Z.length) { var t = C.querySelector('.ktile[data-abrir="mat"] .kt-s'); if (t) t.textContent = espResumo(Z); }
+};
+$('obra-corpo').addEventListener('click', function (e) {
+  var o = obraAtual(); if (!o) return; var b = e.target.closest('[data-zo]'); if (!b) return;
+  var a = b.dataset.zo;
+  if (a === 'nova') dlgZona(o, null); else if (a === 'medir') dlgMedir(o); else if (a.indexOf('ed:') === 0) dlgZona(o, a.slice(3));
+});
+$('obra-corpo').addEventListener('change', function (e) { if (e.target.id === 'ob_pm2') { var o = obraAtual(); if (!o) return; updObra({ precoM2: num(e.target.value) }); renderObra(); } });
+// PDF e resumo: espessuras por parede
+
+// =====================================================================
+// PLANO DA SEMANA DA EQUIPA (quem vai para que obra em cada dia)
+// =====================================================================
+function obrasAtivas() { return obras.filter(function (o) { return o.estado !== 'Concluída'; }); }
+function escalaDe(o, d) { return ((o.escala || {})[d]) || []; }
+function obraDe(nome, d) { return obras.find(function (o) { return escalaDe(o, d).indexOf(nome) >= 0; }); }
+function rotObra(o) { return primeiroNome(o.cliente) || String(o.nome || 'Obra').split(/[ –-]/)[0]; }
+function gravarEscala(o, esc) { o.escala = esc; updateDoc(doc(db, 'obras', o.id), { escala: esc, atualizadoEm: serverTimestamp() }).catch(function (e) { falhou(e, 'guardar o plano da equipa'); }); }
+function porPessoa(nome, dias, obraId) {
+  obras.forEach(function (o) {
+    var esc = JSON.parse(JSON.stringify(o.escala || {})), mud = false;
+    dias.forEach(function (d) {
+      var L = esc[d] || [], i = L.indexOf(nome);
+      if (o.id === obraId) { if (i < 0) { L.push(nome); mud = true; } }
+      else if (i >= 0) { L.splice(i, 1); mud = true; }
+      if (L.length) esc[d] = L; else delete esc[d];
+    });
+    if (mud) gravarEscala(o, esc);
+  });
+}
+function diasUteis(ini) { var L = []; for (var i = 0; i < 7; i++) { var d = addDias(ini, i), w = new Date(d + 'T12:00:00').getDay(); if (w > 0 && w < 6) L.push(d); } return L; }
+function equipaSemanaHTML(ini) {
+  var P = pessoas(), D = []; for (var i = 0; i < 7; i++) D.push(addDias(ini, i));
+  var A = obrasAtivas(), h = hoje();
+  var cab = '<tr><th class="eq-p">Pessoa</th>' + D.map(function (d) { var dt = new Date(d + 'T12:00:00'), w = dt.getDay(); return '<th class="' + (d === h ? 'hj' : '') + (w === 0 || w === 6 ? ' fds' : '') + '">' + DIAS_S[w] + '<b>' + dt.getDate() + '</b></th>'; }).join('') + '</tr>';
+  var linhas = P.map(function (n) {
+    return '<tr><th class="eq-p">' + avatar(n.replace(/\s*\(.*\)/, '')).replace('class="av"', 'class="av mini2"') + '<span>' + esc(n.replace(/\s*\(.*\)/, '')) + '</span></th>' + D.map(function (d) {
+      var o = obraDe(n, d), w = new Date(d + 'T12:00:00').getDay();
+      return '<td class="' + (d === h ? 'hj' : '') + (w === 0 || w === 6 ? ' fds' : '') + '"><button type="button" class="eq-c' + (o ? ' on' : '') + '" data-esc="' + esc(n) + '|' + d + '"' + (o ? ' style="--c:' + corDe(o.nome) + '"' : '') + ' aria-label="' + esc(n + ', ' + diaRot(d) + (o ? ': ' + o.nome : ': sem obra')) + '">' + (o ? esc(rotObra(o)) : '+') + '</button></td>';
+    }).join('') + '</tr>';
+  }).join('');
+  var leg = A.filter(function (o) { return D.some(function (d) { return escalaDe(o, d).length; }); }).map(function (o) { return '<span class="eq-lg"><i style="background:' + corDe(o.nome) + '"></i>' + esc(rotObra(o)) + ' · ' + esc(o.nome) + (o.morada ? ' · ' + esc(cidade(o.morada)) : '') + '</span>'; }).join('');
+  return '<section class="card" id="cal-eq"><div class="titulo"><h2>Plano da equipa</h2><div class="row" style="gap:6px"><button type="button" class="btn ghost small" data-eqa="copiar">Copiar semana anterior</button><button type="button" class="btn small acc" data-eqa="enviar">' + ICO.wa + ' Enviar à equipa</button></div></div>' +
+    (P.length ? '<div class="scrollx"><table class="eq-t">' + cab + linhas + '</table></div>' + (leg ? '<div class="eq-leg">' + leg + '</div>' : '') + '<p class="hint" style="margin:0">Toque num quadrado para escolher a obra dessa pessoa nesse dia. Ao registar o dia de trabalho, a app já sugere quem estava planeado.</p>' : '<p class="hint">Os nomes aparecem quando a equipa criar as suas contas.</p>') + '</section>';
+}
+function dlgEscala(nome, d) {
+  var A = obrasAtivas(), atual = obraDe(nome, d);
+  var corpo = '<p class="hint" style="margin:0">' + esc(nome.replace(/\s*\(.*\)/, '')) + ' · ' + esc(diaRot(d)) + ' (' + dataPT(d) + ')</p><div class="eq-ops">' +
+    A.map(function (o) { return '<label for="eo_' + o.id + '" class="eq-op"><input type="radio" name="eq-o" id="eo_' + o.id + '" value="' + o.id + '"' + (atual && atual.id === o.id ? ' checked' : '') + '><i style="background:' + corDe(o.nome) + '"></i><span><b>' + esc(o.nome) + '</b><span class="meta">' + esc([o.estado, cidade(o.morada)].filter(Boolean).join(' · ')) + '</span></span></label>'; }).join('') +
+    '<label for="eo_nada" class="eq-op"><input type="radio" name="eq-o" id="eo_nada" value=""' + (!atual ? ' checked' : '') + '><i style="background:var(--line)"></i><span><b>Sem obra</b><span class="meta">Folga, outra tarefa ou por decidir</span></span></label></div>' +
+    '<label class="sw" for="eq_rep"><input type="checkbox" id="eq_rep">Também nos dias úteis seguintes desta semana</label>' + (A.length ? '' : '<p class="hint">Não há obras ativas.</p>');
+  abrirDlg('Para onde vai?', corpo, [{ txt: 'Guardar', cls: 'acc', fn: function () {
+    var sel = document.querySelector('input[name="eq-o"]:checked'), oid = sel ? sel.value : '';
+    var dias = [d]; if ($('eq_rep').checked) { var seg = segunda(d); diasUteis(seg).forEach(function (x) { if (x > d) dias.push(x); }); }
+    porPessoa(nome, dias, oid); renderCal(); if (vistaAtual === 'inicio') renderInicio();
+  } }]);
+}
+function textoSemana(ini) {
+  var D = diasUteis(ini), t = 'Plano da equipa · ' + dataPT(D[0]).slice(0, 5) + ' a ' + dataPT(D[D.length - 1]).slice(0, 5) + '\n';
+  var usadas = {};
+  D.forEach(function (d) {
+    var dt = new Date(d + 'T12:00:00'), lin = [];
+    obrasAtivas().forEach(function (o) { var L = escalaDe(o, d); if (L.length) { usadas[o.id] = o; lin.push('  ' + L.map(function (n) { return n.replace(/\s*\(.*\)/, ''); }).join(', ') + ' → ' + o.nome); } });
+    t += '\n' + DIAS_S[dt.getDay()] + ' ' + dt.getDate() + ':\n' + (lin.join('\n') || '  —');
+  });
+  var ks = Object.keys(usadas);
+  if (ks.length) t += '\n\nMoradas:\n' + ks.map(function (k) { var o = usadas[k]; return '• ' + o.nome + ': ' + (o.morada || '—') + (o.morada ? '\n  https://maps.google.com/?q=' + encodeURIComponent(o.morada) : ''); }).join('\n');
+  return t;
+}
+var renderCalEqBase = renderCal;
+renderCal = function () {
+  renderCalEqBase();
+  var ini = calIni || segunda(hoje()), velho = $('cal-eq');
+  var h = equipaSemanaHTML(ini);
+  if (velho) velho.outerHTML = h; else document.querySelector('#v-cal .cal-card').insertAdjacentHTML('afterend', h);
+};
+$('v-cal').addEventListener('click', function (e) {
+  var c = e.target.closest('[data-esc]');
+  if (c) { var p = c.dataset.esc.split('|'); dlgEscala(p[0], p[1]); return; }
+  var a = e.target.closest('[data-eqa]'); if (!a) return;
+  var ini = calIni || segunda(hoje());
+  if (a.dataset.eqa === 'enviar') dlgMsg('Plano para a equipa', '', [['Plano da semana', textoSemana(ini)]]);
+  else if (a.dataset.eqa === 'copiar') {
+    var ant = addDias(ini, -7), n = 0;
+    obras.forEach(function (o) {
+      var esc = JSON.parse(JSON.stringify(o.escala || {})), mud = false;
+      for (var i = 0; i < 7; i++) { var de = addDias(ant, i), para = addDias(ini, i); if ((esc[de] || []).length && !(esc[para] || []).length && o.estado !== 'Concluída') { esc[para] = esc[de].slice(); mud = true; n++; } }
+      if (mud) gravarEscala(o, esc);
+    });
+    renderCal(); toast(n ? 'Semana anterior copiada.' : 'Não havia nada para copiar (ou esta semana já está preenchida).');
+  }
+});
+// sugerir quem estava planeado ao registar o dia
+var dlgDiaEqBase = dlgDia;
+dlgDia = function (obraId) {
+  dlgDiaEqBase(obraId);
+  function aplicar() {
+    var oid = val('dd_obra'), d = val('dd_data') || hoje(), o = oid && obras.find(function (x) { return x.id === oid; }); if (!o) return;
+    var L = escalaDe(o, d); if (!L.length) return;
+    document.querySelectorAll('[data-pess]').forEach(function (c) { c.checked = L.indexOf(c.dataset.pess) >= 0; });
+  }
+  aplicar();
+  ['dd_obra', 'dd_data'].forEach(function (k) { var el = $(k); if (el) el.addEventListener('change', aplicar); });
+};
+// no Hoje: quem vai para onde
+var renderInicioEqBase = renderInicio;
+renderInicio = function () {
+  renderInicioEqBase();
+  var d = hoje(), L = obrasAtivas().map(function (o) { return [o, escalaDe(o, d)]; }).filter(function (x) { return x[1].length; });
+  var amanha = addDias(d, 1); while ([0, 6].indexOf(new Date(amanha + 'T12:00:00').getDay()) >= 0) amanha = addDias(amanha, 1); var LA = obrasAtivas().map(function (o) { return [o, escalaDe(o, amanha)]; }).filter(function (x) { return x[1].length; });
+  if (!L.length && !LA.length) return;
+  var eu = perfil.nome || '';
+  function bloco(t, X) { return X.length ? '<div class="wk">' + t + '</div>' + X.map(function (x) { var o = x[0], vou = x[1].indexOf(eu) >= 0; return '<div class="hj-o' + (vou ? ' eu' : '') + '"><i style="background:' + corDe(o.nome) + '"></i><span style="flex:1;min-width:0"><b>' + esc(o.nome) + '</b><span class="meta">' + esc(x[1].map(function (n) { return n === eu ? 'tu' : n.replace(/\s*\(.*\)/, ''); }).join(', ')) + (o.morada ? ' · ' + esc(o.morada) : '') + '</span></span>' + (o.morada ? '<a class="btn ghost small" href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(o.morada) + '" target="_blank" rel="noopener">Mapa</a>' : '') + '</div>'; }).join('') : ''; }
+  var h = '<section class="card eq-hoje"><div class="titulo"><h2>Equipa</h2><button type="button" class="lnk" data-goto="cal">Plano da semana</button></div>' + bloco('Hoje', L) + bloco(amanha === addDias(d, 1) ? 'Amanhã' : diaRot(amanha), LA) + '</section>';
+  var ag = document.querySelector('#ini-corpo .agora'); if (ag) ag.insertAdjacentHTML('afterend', h);
+};
+
+// ---------- ecrã de arranque ----------
+var splashT0 = Date.now();
+function tirarSplash() { var s = $('splash'); if (!s || s.classList.contains('fora')) return; setTimeout(function () { s.classList.add('fora'); setTimeout(function () { s.remove(); }, 400); }, Math.max(0, 900 - (Date.now() - splashT0))); }
+var ecranSpBase = ecran;
+ecran = function (q) { ecranSpBase(q); tirarSplash(); };
+setTimeout(tirarSplash, 8000);
