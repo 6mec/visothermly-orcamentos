@@ -1141,6 +1141,7 @@ label.lock input{background:var(--surface2);color:var(--muted)}
 <div class="toast" id="toast" hidden></div>
 <script src="config.js"></script>
 <script src="pdf-lib.min.js"></script>
-<script type="module" src="app.js"></script>
+<script>setTimeout(function(){var s=document.getElementById('splash');if(s){s.classList.add('fora');setTimeout(function(){s.remove()},400)}},6000);</script>
+<script type="module" src="app.js?v=16"></script>
 </body>
 </html>
